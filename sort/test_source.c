@@ -43,9 +43,9 @@ TYPE (test_sort_vector) (size_t N, size_t stride)
   TYPE (gsl_vector) * data = FUNCTION (gsl_vector, alloc_from_block) (b2, 0, N, stride);
   TYPE (gsl_vector) * data2 = FUNCTION (gsl_vector, alloc_from_block) (b3, 0, N, stride);
 
-  BASE * small = malloc(k * sizeof(BASE));
-  BASE * large = malloc(k * sizeof(BASE));
-  size_t * index = malloc(k * sizeof(size_t));
+  BASE * small = (BASE *)malloc(k * sizeof(BASE));
+  BASE * large = (BASE *)malloc(k * sizeof(BASE));
+  size_t * index = (size_t *)malloc(k * sizeof(size_t));
 
   gsl_permutation *p = gsl_permutation_alloc (N);
 
@@ -159,7 +159,8 @@ void
 FUNCTION (my, initialize) (TYPE (gsl_vector) * v)
 {
   size_t i;
-  ATOMIC k = 0, kk;
+  ATOMIC k = 0;
+  volatile ATOMIC kk;
 
   /* Must be sorted initially */
 
@@ -167,8 +168,8 @@ FUNCTION (my, initialize) (TYPE (gsl_vector) * v)
     {
       kk = k;
       k++;
-      if (k < kk)               /* prevent overflow */
-        k = kk;
+      /* Prevent overflow */
+      if (k < kk) k = kk;
       FUNCTION (gsl_vector, set) (v, i, k);
     }
 }

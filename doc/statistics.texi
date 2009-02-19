@@ -121,6 +121,28 @@ These functions return the square root of the corresponding variance
 functions above.
 @end deftypefun
 
+@deftypefun double gsl_stats_tss (const double @var{data}[], size_t @var{stride}, size_t @var{n})
+@deftypefunx double gsl_stats_tss_m (const double @var{data}[], size_t @var{stride}, size_t @var{n}, double @var{mean})
+These functions return the total sum of squares (TSS) of @var{data} about
+the mean.  For @code{gsl_stats_tss_m} the user-supplied value of
+@var{mean} is used, and for @code{gsl_stats_tss} it is computed using
+@code{gsl_stats_mean}.
+
+@tex
+\beforedisplay
+$$
+{\rm TSS} = \sum (x_i - mean)^2
+$$
+\afterdisplay
+@end tex
+@ifinfo
+
+@example
+TSS =  \sum (x_i - mean)^2
+@end example
+@end ifinfo
+@end deftypefun
+
 @deftypefun double gsl_stats_variance_with_fixed_mean (const double @var{data}[], size_t @var{stride}, size_t @var{n}, double @var{mean})
 This function computes an unbiased estimate of the variance of
 @var{data} when the population mean @var{mean} of the underlying
@@ -494,6 +516,28 @@ $$
 The standard deviation is defined as the square root of the variance.
 This function returns the square root of the corresponding variance
 function above.
+@end deftypefun
+
+@deftypefun double gsl_stats_wtss (const double @var{w}[], const size_t @var{wstride}, const double @var{data}[], size_t @var{stride}, size_t @var{n})
+@deftypefunx double gsl_stats_wtss_m (const double @var{w}[], const size_t @var{wstride}, const double @var{data}[], size_t @var{stride}, size_t @var{n}, double @var{wmean})
+These functions return the weighted total sum of squares (TSS) of
+@var{data} about the weighted mean.  For @code{gsl_stats_wtss_m} the
+user-supplied value of @var{wmean} is used, and for @code{gsl_stats_wtss}
+it is computed using @code{gsl_stats_wmean}.
+
+@tex
+\beforedisplay
+$$
+{\rm TSS} = \sum w_i (x_i - wmean)^2
+$$
+\afterdisplay
+@end tex
+@ifinfo
+
+@example
+TSS =  \sum w_i (x_i - wmean)^2
+@end example
+@end ifinfo
 @end deftypefun
 
 @deftypefun double gsl_stats_wabsdev (const double @var{w}[], size_t @var{wstride}, const double @var{data}[], size_t @var{stride}, size_t @var{n})

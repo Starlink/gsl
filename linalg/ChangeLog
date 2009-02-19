@@ -1,3 +1,53 @@
+2008-10-20  Brian Gough  <bjg@network-theory.co.uk>
+
+	* svd.c (gsl_linalg_SV_decomp_jacobi): change use of
+	gsl_coerce_double to macro so it is not called unnecessarily
+
+2008-08-30  Brian Gough  <bjg@network-theory.co.uk>
+
+	* tridiag.c (solve_cyc_tridiag_nonsym): use x_stride when storing
+	in x[] (fixes bug #24162)
+
+2008-08-26  Brian Gough  <bjg@network-theory.co.uk>
+
+	* test.c (test_QRPT_update_dim): added tests for
+	gsl_linalg_QRPT_update
+
+	* qrpt.c (gsl_linalg_QRPT_update): handle rectangular matrices
+
+2008-07-03  Brian Gough  <bjg@hp2.network-theory.co.uk>
+
+	* Makefile.am (INCLUDES): use top_srcdir instead of top_builddir
+
+2008-04-28  Brian Gough  <bjg@network-theory.co.uk>
+
+	* bidiag.c (gsl_linalg_bidiag_unpack, gsl_linalg_bidiag_unpack2):
+	use new descending loop convention
+
+	* hermtd.c (gsl_linalg_hermtd_unpack): use new descending loop
+	convention
+
+	* hh.c (gsl_linalg_HH_svx): use new descending loop convention
+
+	* lq.c (gsl_linalg_LQ_vecQ, gsl_linalg_LQ_unpack): use new
+	descending loop convention
+
+	* qr.c (gsl_linalg_QR_Qvec, gsl_linalg_QR_unpack): use new
+	descending loop convention
+
+	* svd.c (gsl_linalg_SV_decomp_mod): use new descending loop
+	convention
+
+	* svdstep.c (chase_out_trailing_zero): use new descending loop
+	convention
+
+	* symmtd.c (gsl_linalg_symmtd_unpack): use new descending loop
+	convention
+
+2008-04-03  Brian Gough  <bjg@network-theory.co.uk>
+
+	* qr.c lq.c: removed unused definition of REAL
+
 2007-08-27  Brian Gough  <bjg@network-theory.co.uk>
 
 	* tridiag.c: use GSL_ERROR for failed allocation, signal

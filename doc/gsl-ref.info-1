@@ -1,5 +1,5 @@
-This is gsl-ref.info, produced by makeinfo version 4.8 from
-/home/bjg/gsl.redhat/doc/gsl-ref.texi.
+This is gsl-ref.info, produced by makeinfo version 4.11 from
+gsl-ref.texi.
 
 INFO-DIR-SECTION Scientific software
 START-INFO-DIR-ENTRY
@@ -7,10 +7,10 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007 The GSL Team.
+2005, 2006, 2007, 2008 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
-under the terms of the GNU Free Documentation License, Version 1.2 or
+under the terms of the GNU Free Documentation License, Version 1.3 or
 any later version published by the Free Software Foundation; with the
 Invariant Sections being "GNU General Public License" and "Free Software
 Needs Free Documentation", the Front-Cover text being "A GNU Manual",
@@ -18,8 +18,8 @@ and with the Back-Cover Text being (a) (see below).  A copy of the
 license is included in the section entitled "GNU Free Documentation
 License".
 
-   (a) The Back-Cover Text is: "You have freedom to copy and modify this
-GNU Manual, like GNU software."
+   (a) The Back-Cover Text is: "You have the freedom to copy and modify
+this GNU Manual."
 
 
 File: gsl-ref.info,  Node: Top,  Next: Introduction,  Prev: (dir),  Up: (dir)
@@ -29,7 +29,7 @@ GSL
 
 This file documents the GNU Scientific Library (GSL), a collection of
 numerical routines for scientific computing.  It corresponds to release
-1.10 of the library.  Please report any errors in this manual to
+1.12 of the library.  Please report any errors in this manual to
 <bug-gsl@gnu.org>.
 
    More information about GSL can be found at the project homepage,
@@ -43,10 +43,10 @@ from sales of the manual helps support the development of GSL.
 project homepage thanks to Daisuke Tominaga.
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007 The GSL Team.
+2005, 2006, 2007, 2008 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
-under the terms of the GNU Free Documentation License, Version 1.2 or
+under the terms of the GNU Free Documentation License, Version 1.3 or
 any later version published by the Free Software Foundation; with the
 Invariant Sections being "GNU General Public License" and "Free Software
 Needs Free Documentation", the Front-Cover text being "A GNU Manual",
@@ -54,8 +54,8 @@ and with the Back-Cover Text being (a) (see below).  A copy of the
 license is included in the section entitled "GNU Free Documentation
 License".
 
-   (a) The Back-Cover Text is: "You have freedom to copy and modify this
-GNU Manual, like GNU software."
+   (a) The Back-Cover Text is: "You have the freedom to copy and modify
+this GNU Manual."
 
 
 * Menu:
@@ -160,7 +160,7 @@ Routines are available for the following areas,
      Root-Finding                     Discrete Hankel Transforms       
      Least-Squares Fitting            Minimization                     
      IEEE Floating-Point              Physical Constants               
-     Wavelets                                                          
+     Basis Splines                    Wavelets                         
 
 The use of these routines is described in this manual.  Each chapter
 provides detailed definitions of the functions, followed by example
@@ -389,12 +389,17 @@ computing the value of the Bessel function J_0(x) for x=5,
      }
 
 The output is shown below, and should be correct to double-precision
-accuracy,
+accuracy,(1)
 
      J0(5) = -1.775967713143382920e-01
 
 The steps needed to compile this program are described in the following
 sections.
+
+   ---------- Footnotes ----------
+
+   (1) The last few digits may vary slightly depending on the compiler
+and platform used--this is normal.
 
 
 File: gsl-ref.info,  Node: Compiling and Linking,  Next: Shared Libraries,  Prev: An Example Program,  Up: Using the library
@@ -473,7 +478,7 @@ CBLAS interface,
 
      $ gcc example.o -lgsl -lcblas -latlas -lm
 
-For more information see *Note BLAS Support::.
+For more information see *note BLAS Support::.
 
 
 File: gsl-ref.info,  Node: Shared Libraries,  Next: ANSI C Compliance,  Prev: Compiling and Linking,  Up: Using the library
@@ -549,11 +554,16 @@ File: gsl-ref.info,  Node: Inline functions,  Next: Long double,  Prev: ANSI C C
 ====================
 
 The `inline' keyword is not part of the original ANSI C standard (C89)
-and the library does not export any inline function definitions by
-default. However, the library provides optional inline versions of
-performance-critical functions by conditional compilation.  The inline
-versions of these functions can be included by defining the macro
-`HAVE_INLINE' when compiling an application,
+so the library does not export any inline function definitions by
+default.  Inline functions were introduced officially in the newer C99
+standard but most C89 compilers have also included `inline' as an
+extension for a long time.
+
+   To allow the use of inline functions, the library provides optional
+inline versions of performance-critical routines by conditional
+compilation in the exported header files.  The inline versions of these
+functions can be included by defining the macro `HAVE_INLINE' when
+compiling an application,
 
      $ gcc -Wall -c -DHAVE_INLINE example.c
 
@@ -561,10 +571,16 @@ If you use `autoconf' this macro can be defined automatically.  If you
 do not define the macro `HAVE_INLINE' then the slower non-inlined
 versions of the functions will be used instead.
 
-   Note that the actual usage of the inline keyword is `extern inline',
-which eliminates unnecessary function definitions in GCC.  If the form
-`extern inline' causes problems with other compilers a stricter
-autoconf test can be used, see *Note Autoconf Macros::.
+   By default, the actual form of the inline keyword is `extern
+inline', which is a `gcc' extension that eliminates unnecessary
+function definitions.  If the form `extern inline' causes problems with
+other compilers a stricter autoconf test can be used, see *note
+Autoconf Macros::.
+
+   When compiling with `gcc' in C99 mode (`gcc -std=c99') the header
+files automatically switch to C99-compatible inline function
+declarations instead of `extern inline'.  With other C99 compilers,
+define the macro `GSL_C99_INLINE' to use these declarations.
 
 
 File: gsl-ref.info,  Node: Long double,  Next: Portability functions,  Prev: Inline functions,  Up: Using the library
@@ -572,19 +588,26 @@ File: gsl-ref.info,  Node: Long double,  Next: Portability functions,  Prev: Inl
 2.6 Long double
 ===============
 
-The extended numerical type `long double' is part of the ANSI C
-standard and should be available in every modern compiler.  However, the
-precision of `long double' is platform dependent, and this should be
-considered when using it.  The IEEE standard only specifies the minimum
+In general, the algorithms in the library are written for double
+precision only.  The `long double' type is not supported for actual
+computation.
+
+   One reason for this choice is that the precision of `long double' is
+platform dependent.  The IEEE standard only specifies the minimum
 precision of extended precision numbers, while the precision of
 `double' is the same on all platforms.
 
-   In some system libraries the `stdio.h' formatted input/output
-functions `printf' and `scanf' are not implemented correctly for `long
-double'.  Undefined or incorrect results are avoided by testing these
-functions during the `configure' stage of library compilation and
-eliminating certain GSL functions which depend on them if necessary.
-The corresponding line in the `configure' output looks like this,
+   However, it is sometimes necessary to interact with external data in
+long-double format, so the vector and matrix datatypes include
+long-double versions.
+
+   It should be noted that in some system libraries the `stdio.h'
+formatted input/output functions `printf' and `scanf' are not
+implemented correctly for `long double'.  Undefined or incorrect
+results are avoided by testing these functions during the `configure'
+stage of library compilation and eliminating certain GSL functions
+which depend on them if necessary.  The corresponding line in the
+`configure' output looks like this,
 
      checking whether printf works with long double... no
 
@@ -622,7 +645,7 @@ available you can include the following macro definitions in a file
 The application source files can then use the include command `#include
 <config.h>' to replace each occurrence of `hypot' by `gsl_hypot' when
 `hypot' is not available.  This substitution can be made automatically
-if you use `autoconf', see *Note Autoconf Macros::.
+if you use `autoconf', see *note Autoconf Macros::.
 
    In most circumstances the best strategy is to use the native
 versions of these functions when available, and fall back to GSL
@@ -1072,7 +1095,7 @@ function where an error might be reported,
 
        gsl_set_error_handler_off();
 
-       status = gsl_fft_complex_radix2_forward (data, n);
+       status = gsl_fft_complex_radix2_forward (data, stride, n);
 
        if (status) {
          if (status == GSL_EINVAL) {
@@ -1202,11 +1225,20 @@ File: gsl-ref.info,  Node: Infinities and Not-a-number,  Next: Elementary Functi
 
  -- Function: int gsl_isinf (const double X)
      This function returns +1 if X is positive infinity, -1 if X is
-     negative infinity and 0 otherwise.
+     negative infinity and 0 otherwise.(1)
 
  -- Function: int gsl_finite (const double X)
      This function returns 1 if X is a real number, and 0 if it is
      infinite or not-a-number.
+
+   ---------- Footnotes ----------
+
+   (1) Note that the C99 standard only requires the system `isinf'
+function to return a non-zero value, without the sign of the infinity.
+The implementation in some earlier versions of GSL used the system
+`isinf' function and may have this behavior on some platforms.
+Therefore, it is advisable to test the sign of X separately, if needed,
+rather than relying the sign of the return value from `gsl_isinf()'.
 
 
 File: gsl-ref.info,  Node: Elementary Functions,  Next: Small integer powers,  Prev: Infinities and Not-a-number,  Up: Mathematical Functions
@@ -1330,6 +1362,10 @@ File: gsl-ref.info,  Node: Maximum and Minimum functions,  Next: Approximate Com
 4.7 Maximum and Minimum functions
 =================================
 
+Note that the following macros perform multiple evaluations of their
+arguments, so they should not be used with arguments that have side
+effects (such as a call to a random number generator).
+
  -- Macro: GSL_MAX (a, b)
      This macro returns the maximum of A and B. It is defined as `((a)
      > (b) ? (a):(b))'.
@@ -1422,7 +1458,7 @@ defined in `gsl_complex_math.h'.
 
 * Menu:
 
-* Complex numbers::
+* Representation of complex numbers::
 * Properties of complex numbers::
 * Complex arithmetic operators::
 * Elementary Complex Functions::
@@ -1437,10 +1473,10 @@ defined in `gsl_complex_math.h'.
    (1) Note that the first edition uses different definitions.
 
 
-File: gsl-ref.info,  Node: Complex numbers,  Next: Properties of complex numbers,  Up: Complex Numbers
+File: gsl-ref.info,  Node: Representation of complex numbers,  Next: Properties of complex numbers,  Up: Complex Numbers
 
-5.1 Complex numbers
-===================
+5.1 Representation of complex numbers
+=====================================
 
 Complex numbers are represented using the type `gsl_complex'. The
 internal representation of this type may vary across platforms and
@@ -1490,7 +1526,7 @@ mapped correctly onto packed complex arrays.
      number pointed to by ZP to be set independently.
 
 
-File: gsl-ref.info,  Node: Properties of complex numbers,  Next: Complex arithmetic operators,  Prev: Complex numbers,  Up: Complex Numbers
+File: gsl-ref.info,  Node: Properties of complex numbers,  Next: Complex arithmetic operators,  Prev: Representation of complex numbers,  Up: Complex Numbers
 
 5.2 Properties of complex numbers
 =================================
@@ -1843,12 +1879,25 @@ File: gsl-ref.info,  Node: Polynomial Evaluation,  Next: Divided Difference Repr
 6.1 Polynomial Evaluation
 =========================
 
+The functions described here evaluate the polynomial c[0] + c[1] x +
+c[2] x^2 + \dots + c[len-1] x^{len-1} using Horner's method for
+stability. Inline versions of these functions are used when
+`HAVE_INLINE' is defined.
+
  -- Function: double gsl_poly_eval (const double C[], const int LEN,
           const double X)
-     This function evaluates the polynomial c[0] + c[1] x + c[2] x^2 +
-     \dots + c[len-1] x^{len-1} using Horner's method for stability.
-     An inline version of this function is used when `HAVE_INLINE' is
-     defined.
+     This function evaluates a polynomial with real coefficients for
+     the real variable X.
+
+ -- Function: gsl_complex gsl_poly_complex_eval (const double C[],
+          const int LEN, const gsl_complex Z)
+     This function evaluates a polynomial with real coefficients for
+     the complex variable Z.
+
+ -- Function: gsl_complex gsl_complex_poly_complex_eval (const
+          gsl_complex C[], const int LEN, const gsl_complex Z)
+     This function evaluates a polynomial with complex coefficients for
+     the complex variable Z.
 
 
 File: gsl-ref.info,  Node: Divided Difference Representation of Polynomials,  Next: Quadratic Equations,  Prev: Polynomial Evaluation,  Up: Polynomials
@@ -1945,8 +1994,10 @@ File: gsl-ref.info,  Node: Cubic Equations,  Next: General Polynomial Equations,
      modified.  When three real roots are found they are stored in X0,
      X1 and X2 in ascending order.  The case of coincident roots is not
      considered special.  For example, the equation (x-1)^3=0 will have
-     three roots with exactly equal values.
-
+     three roots with exactly equal values.  As in the quadratic case,
+     finite precision may cause equal or closely-spaced real roots to
+     move off the real axis into the complex plane, leading to a
+     discrete change in the number of real roots.
 
  -- Function: int gsl_poly_complex_solve_cubic (double A, double B,
           double C, gsl_complex * Z0, gsl_complex * Z1, gsl_complex *
@@ -3143,6 +3194,8 @@ File: gsl-ref.info,  Node: Real Argument,  Next: Complex Argument,  Up: Dilogari
      = - \Re \int_0^x ds \log(1-s) / s.  Note that \Im(Li_2(x)) = 0 for
      x <= 1, and -\pi\log(x) for x > 1.
 
+     Note that Abramowitz & Stegun refer to the Spence integral
+     S(x)=Li_2(1-x) as the dilogarithm rather than Li_2(x).
 
 
 File: gsl-ref.info,  Node: Complex Argument,  Prev: Real Argument,  Up: Dilogarithm
@@ -3695,7 +3748,9 @@ File: gsl-ref.info,  Node: Complete Fermi-Dirac Integrals,  Next: Incomplete Fer
 
 The complete Fermi-Dirac integral F_j(x) is given by,
 
-     F_j(x)   := (1/r\Gamma(j+1)) \int_0^\infty dt (t^j / (\exp(t-x) + 1))
+     F_j(x)   := (1/\Gamma(j+1)) \int_0^\infty dt (t^j / (\exp(t-x) + 1))
+   Note that the Fermi-Dirac integral is sometimes defined without the
+normalisation factor in other texts.
 
  -- Function: double gsl_sf_fermi_dirac_m1 (double X)
  -- Function: int gsl_sf_fermi_dirac_m1_e (double X, gsl_sf_result *
@@ -4093,7 +4148,7 @@ Hypergeometric functions are described in Abramowitz & Stegun, Chapters
  -- Function: int gsl_sf_hyperg_2F1_e (double A, double B, double C,
           double X, gsl_sf_result * RESULT)
      These routines compute the Gauss hypergeometric function
-     2F1(a,b,c,x) for |x| < 1.
+     2F1(a,b,c,x) = F(a,b,c,x) for |x| < 1.
 
      If the arguments (a,b,c,x) are too close to a singularity then the
      function can return the error code `GSL_EMAXITER' when the series
@@ -5352,7 +5407,7 @@ functions when range checking is turned off.
      These functions return a pointer to the I-th element of a vector
      V.  If I lies outside the allowed range of 0 to N-1 then the error
      handler is invoked and a null pointer is returned.  Inline
-     versions of these function are used when `HAVE_INLINE' is defined.
+     versions of these functions are used when `HAVE_INLINE' is defined.
 
 
 File: gsl-ref.info,  Node: Initializing vector elements,  Next: Reading and writing vectors,  Prev: Accessing vector elements,  Up: Vectors
@@ -5621,8 +5676,6 @@ File: gsl-ref.info,  Node: Vector operations,  Next: Finding maximum and minimum
 8.3.8 Vector operations
 -----------------------
 
-The following operations are only defined for real vectors.
-
  -- Function: int gsl_vector_add (gsl_vector * A, const gsl_vector * B)
      This function adds the elements of vector B to the elements of
      vector A, a'_i = a_i + b_i. The two vectors must have the same
@@ -5658,6 +5711,8 @@ File: gsl-ref.info,  Node: Finding maximum and minimum elements of vectors,  Nex
 8.3.9 Finding maximum and minimum elements of vectors
 -----------------------------------------------------
 
+The following operations are only defined for real vectors.
+
  -- Function: double gsl_vector_max (const gsl_vector * V)
      This function returns the maximum value in the vector V.
 
@@ -5691,6 +5746,10 @@ File: gsl-ref.info,  Node: Vector properties,  Next: Example programs for vector
 
 8.3.10 Vector properties
 ------------------------
+
+The following functions are defined for real and complex vectors.  For
+complex vectors both the real and imaginary parts must satisfy the
+conditions.
 
  -- Function: int gsl_vector_isnull (const gsl_vector * V)
  -- Function: int gsl_vector_ispos (const gsl_vector * V)
@@ -5882,7 +5941,7 @@ File: gsl-ref.info,  Node: Matrix allocation,  Next: Accessing matrix elements, 
 
 The functions for allocating memory to a matrix follow the style of
 `malloc' and `free'.  They also perform their own error checking.  If
-there is insufficient memory available to allocate a vector then the
+there is insufficient memory available to allocate a matrix then the
 functions call the GSL error handler (with an error number of
 `GSL_ENOMEM') in addition to returning a null pointer.  Thus if you use
 the library error handler to abort your program then it isn't necessary
@@ -5948,7 +6007,7 @@ where TDA is the physical row-length of the matrix.
      These functions return a pointer to the (i,j)-th element of a
      matrix M.  If I or J lie outside the allowed range of 0 to N1-1
      and 0 to N2-1 then the error handler is invoked and a null pointer
-     is returned.  Inline versions of these function are used when
+     is returned.  Inline versions of these functions are used when
      `HAVE_INLINE' is defined.
 
 
@@ -6435,6 +6494,10 @@ File: gsl-ref.info,  Node: Matrix properties,  Next: Example programs for matric
 8.4.12 Matrix properties
 ------------------------
 
+The following functions are defined for real and complex matrices.  For
+complex matrices both the real and imaginary parts must satisfy the
+conditions.
+
  -- Function: int gsl_matrix_isnull (const gsl_matrix * M)
  -- Function: int gsl_matrix_ispos (const gsl_matrix * M)
  -- Function: int gsl_matrix_isneg (const gsl_matrix * M)
@@ -6733,7 +6796,7 @@ File: gsl-ref.info,  Node: Permutation properties,  Next: Permutation functions,
      This function returns a pointer to the array of elements in the
      permutation P.
 
- -- Function: int gsl_permutation_valid (gsl_permutation * P)
+ -- Function: int gsl_permutation_valid (const gsl_permutation * P)
      This function checks that the permutation P is valid.  The N
      elements should contain each of the numbers 0 to N-1 once and only
      once.
@@ -7339,73 +7402,4 @@ when using these functions.
 * Computing the rank::
 * Sorting Examples::
 * Sorting References and Further Reading::
-
-
-File: gsl-ref.info,  Node: Sorting objects,  Next: Sorting vectors,  Up: Sorting
-
-11.1 Sorting objects
-====================
-
-The following function provides a simple alternative to the standard
-library function `qsort'.  It is intended for systems lacking `qsort',
-not as a replacement for it.  The function `qsort' should be used
-whenever possible, as it will be faster and can provide stable ordering
-of equal elements.  Documentation for `qsort' is available in the `GNU
-C Library Reference Manual'.
-
-   The functions described in this section are defined in the header
-file `gsl_heapsort.h'.
-
- -- Function: void gsl_heapsort (void * ARRAY, size_t COUNT, size_t
-          SIZE, gsl_comparison_fn_t COMPARE)
-     This function sorts the COUNT elements of the array ARRAY, each of
-     size SIZE, into ascending order using the comparison function
-     COMPARE.  The type of the comparison function is defined by,
-
-          int (*gsl_comparison_fn_t) (const void * a,
-                                      const void * b)
-
-     A comparison function should return a negative integer if the first
-     argument is less than the second argument, `0' if the two arguments
-     are equal and a positive integer if the first argument is greater
-     than the second argument.
-
-     For example, the following function can be used to sort doubles
-     into ascending numerical order.
-
-          int
-          compare_doubles (const double * a,
-                           const double * b)
-          {
-              if (*a > *b)
-                 return 1;
-              else if (*a < *b)
-                 return -1;
-              else
-                 return 0;
-          }
-
-     The appropriate function call to perform the sort is,
-
-          gsl_heapsort (array, count, sizeof(double),
-                        compare_doubles);
-
-     Note that unlike `qsort' the heapsort algorithm cannot be made into
-     a stable sort by pointer arithmetic.  The trick of comparing
-     pointers for equal elements in the comparison function does not
-     work for the heapsort algorithm.  The heapsort algorithm performs
-     an internal rearrangement of the data which destroys its initial
-     ordering.
-
- -- Function: int gsl_heapsort_index (size_t * P, const void * ARRAY,
-          size_t COUNT, size_t SIZE, gsl_comparison_fn_t COMPARE)
-     This function indirectly sorts the COUNT elements of the array
-     ARRAY, each of size SIZE, into ascending order using the
-     comparison function COMPARE.  The resulting permutation is stored
-     in P, an array of length N.  The elements of P give the index of
-     the array element which would have been stored in that position if
-     the array had been sorted in place.  The first element of P gives
-     the index of the least element in ARRAY, and the last element of P
-     gives the index of the greatest element in ARRAY.  The array
-     itself is not changed.
 

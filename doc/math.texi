@@ -118,7 +118,14 @@ This function returns 1 if @var{x} is not-a-number.
 
 @deftypefun int gsl_isinf (const double @var{x})
 This function returns @math{+1} if @var{x} is positive infinity,
-@math{-1} if @var{x} is negative infinity and 0 otherwise.
+@math{-1} if @var{x} is negative infinity and 0
+otherwise.@footnote{Note that the C99 standard only requires the
+system @code{isinf} function to return a non-zero value, without the
+sign of the infinity.  The implementation in some earlier versions of
+GSL used the system @code{isinf} function and may have this behavior
+on some platforms.  Therefore, it is advisable to test the sign of
+@var{x} separately, if needed, rather than relying the sign of the
+return value from @code{gsl_isinf()}.}
 @end deftypefun
 
 @deftypefun int gsl_finite (const double @var{x})
@@ -274,10 +281,14 @@ integer type.
 @node Maximum and Minimum functions
 @section Maximum and Minimum functions
 
+Note that the following macros perform multiple evaluations of their
+arguments, so they should not be used with arguments that have side
+effects (such as a call to a random number generator).
+
 @defmac GSL_MAX (a, b)
 @cindex maximum of two numbers
-This macro returns the maximum of @var{a} and @var{b}. It is defined as 
-@code{((a) > (b) ? (a):(b))}.
+This macro returns the maximum of @var{a} and @var{b}. It is defined
+as @code{((a) > (b) ? (a):(b))}.  
 @end defmac
 
 @defmac GSL_MIN (a, b)

@@ -98,6 +98,19 @@ FUNCTION (test, func) (const size_t stridea, const size_t strideb)
   }
 
   {
+    double ss = FUNCTION(gsl_stats,tss) (groupb, strideb, nb);
+    double expected = 0.01624436;
+    gsl_test_rel (ss, expected, rel, NAME(gsl_stats) "_ss");
+  }
+
+  {
+    double mean = FUNCTION(gsl_stats,mean) (groupa, stridea, na);
+    double ss = FUNCTION(gsl_stats,tss_m) (groupa, stridea, na, mean);
+    double expected = 1.59372400000000e-02;
+    gsl_test_rel (ss, expected, rel, NAME(gsl_stats) "_ss_m");
+  }
+
+  {
     double absdev = FUNCTION(gsl_stats,absdev) (groupa, stridea, na);
     double expected = 0.0287571428571429;
     gsl_test_rel (absdev, expected, rel, NAME(gsl_stats) "_absdev");
@@ -139,6 +152,22 @@ FUNCTION (test, func) (const size_t stridea, const size_t strideb)
     double expected = 0.0277409978706664;
     gsl_test_rel (wsd, expected, rel, NAME(gsl_stats) "_wsd");
   }
+
+
+  {
+    double wtss = FUNCTION(gsl_stats,wtss) (w, strideb, groupa, stridea, na);
+    double expected =  1.39310864162578e-02;
+    gsl_test_rel (wtss, expected, rel, NAME(gsl_stats) "_wtss");
+  }
+
+  {
+    double wmean = FUNCTION(gsl_stats,wmean) (w, strideb, groupa, stridea, na);
+    double wtss = FUNCTION(gsl_stats,wtss_m) (w, strideb, groupa, stridea, na, wmean);
+    double expected =  1.39310864162578e-02;
+    gsl_test_rel (wtss, expected, rel, NAME(gsl_stats) "_wtss_m");
+  }
+
+
 
   {
     double wabsdev = FUNCTION(gsl_stats,wabsdev) (w, strideb, groupa, stridea, na);

@@ -58,7 +58,7 @@ int test_bessel(void)
 #ifdef TEST_LARGE
   TEST_SF(s, gsl_sf_bessel_Jn_e, (0, 1.0e+10, &r), 2.1755917502468917269e-06, TEST_SQRT_TOL0, GSL_SUCCESS);
   TEST_SF(s, gsl_sf_bessel_Jn_e, (1, 1.0e+10, &r), -7.676508175684157103e-06, TEST_TOL4, GSL_SUCCESS);
-  TEST_SF(s, gsl_sf_bessel_Jn_e, (0, 20000, &r), -7.676508175684157103e-06, TEST_TOL4, GSL_SUCCESS);
+  TEST_SF(s, gsl_sf_bessel_Jn_e, (0, 20000, &r), 0.00556597490495494615709982972, TEST_TOL4, GSL_SUCCESS);
 #endif
 
   TEST_SF(s, gsl_sf_bessel_Y0_e, (0.1, &r),         -1.5342386513503668441,    TEST_TOL0, GSL_SUCCESS);
@@ -178,6 +178,13 @@ int test_bessel(void)
   /* Bug report by Mario Santos, value computed from AS 10.1.8 */
   TEST_SF(s,  gsl_sf_bessel_jl_e, (100, 1000.0, &r), -0.00025326311230945818285, TEST_TOL4, GSL_SUCCESS);
 
+  /* Bug reported by Koichi Takahashi <ktakahashi@molsci.org>,
+     computed from Pari besseljh(n,x) and AS 10.1.1 */
+
+  TEST_SF(s,  gsl_sf_bessel_jl_e, (30, 3878.62, &r), -0.00023285567034330878410434732790, TEST_TOL4, GSL_SUCCESS);
+  TEST_SF(s,  gsl_sf_bessel_jl_e, (49, 9912.63, &r), 5.2043354544842669214485107019E-5 , TEST_TOL4, GSL_SUCCESS);
+  TEST_SF(s,  gsl_sf_bessel_jl_e, (49, 9950.35, &r), 5.0077368819565969286578715503E-5 , TEST_TOL4, GSL_SUCCESS);
+  TEST_SF(s,  gsl_sf_bessel_jl_e, (52, 9930.51, &r), -7.4838588266727718650124475651E-6 , TEST_TOL4, GSL_SUCCESS);
 
   TEST_SF(s,  gsl_sf_bessel_y0_e, (0.001, &r), -999.99950000004166670, TEST_TOL0, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_bessel_y0_e, (  1.0, &r), -0.5403023058681397174, TEST_TOL0, GSL_SUCCESS);

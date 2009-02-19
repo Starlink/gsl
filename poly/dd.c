@@ -49,22 +49,6 @@ gsl_poly_dd_init (double dd[], const double xa[], const double ya[],
   return GSL_SUCCESS;
 }
 
-#ifndef HIDE_INLINE_STATIC
-double
-gsl_poly_dd_eval (const double dd[], const double xa[], const size_t size, const double x)
-{
-  size_t i;
-  double y = dd[size - 1];
-
-  for (i = size - 1; i--;)
-    {
-      y = dd[i] + (x - xa[i]) * y;
-    }
-
-  return y;
-}
-#endif
-
 int
 gsl_poly_dd_taylor (double c[], double xp, 
                     const double dd[], const double xa[], size_t size,
@@ -82,7 +66,7 @@ gsl_poly_dd_taylor (double c[], double xp,
 
   c[0] = dd[0];
 
-  for (i = size - 1; i > 0 && i--;)
+  for (i = size - 1; i-- > 0;)
     {
       w[i] = -w[i + 1] * (xa[size - 2 - i] - xp);
 

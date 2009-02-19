@@ -259,7 +259,7 @@ int test_hyperg(void)
 
   TEST_SF(s, gsl_sf_hyperg_1F1_e, (-26, 2.0, 100.0, &r), 1.444786781107436954e+19, TEST_TOL3, GSL_SUCCESS);
 
-#if 0
+#ifdef FIXME
   /* This one is computed with a huge error, there is loss of
      precision but the error estimate flags the problem (assuming the
      user looks at it).  We should probably trap any return with
@@ -276,7 +276,7 @@ int test_hyperg(void)
 
   TEST_SF(s, gsl_sf_hyperg_1F1_e, (1.0, 1000000.5, 1001000.5, &r), 3480.3699557431856166, TEST_TOL4, GSL_SUCCESS);
 
-#if 0 /* FIX THESE NEXT RELEASE */
+#ifdef FIXME /* FIX THESE NEXT RELEASE */
   TEST_SF(s, gsl_sf_hyperg_1F1_e, (1.1, 1000000.5, 1001000.5, &r), 7304.6126942641350122, TEST_TOL3, GSL_SUCCESS);
   TEST_SF(s, gsl_sf_hyperg_1F1_e, (0.9, 1000000.5, 1001000.5, &r), 1645.4879293475410982, TEST_TOL3, GSL_SUCCESS);
 #endif
@@ -424,6 +424,11 @@ int test_hyperg(void)
   TEST_SF(s, gsl_sf_hyperg_U_e, (-50.5, 100.1, 70, &r),  3.249026971618851e+84, TEST_TOL2, GSL_SUCCESS);
   TEST_SF(s, gsl_sf_hyperg_U_e, (-50.5, 100.1, 100, &r),  1.003401902126641e+85, TEST_TOL1, GSL_SUCCESS);
 
+  /* Bug report from Stefan Gerlach */
+
+#ifdef FIXME
+  TEST_SF(s, gsl_sf_hyperg_U_e, (-2.0, 4.0, 1.0, &r),  11.0, TEST_TOL0, GSL_SUCCESS);
+#endif
 
   /* 2F1 */
 
@@ -459,6 +464,12 @@ int test_hyperg(void)
   TEST_SF(s, gsl_sf_hyperg_2F1_e, (1.5, 0.5, 2.0, -1.0+1.0/65536.0, &r), 0.762762124908845424449, TEST_TOL0, GSL_SUCCESS);
   TEST_SF(s, gsl_sf_hyperg_2F1_e, (1.5, 0.5, 2.0, -1.0+1.0/1048576.0, &r), 0.762759911089064738044, TEST_TOL0, GSL_SUCCESS);
 
+  /* added special handling with x == 1.0 , Richard J. Mathar, 2008-01-09 */
+
+  TEST_SF(s, gsl_sf_hyperg_2F1_e, (1.5, 0.5, 3.0, 1.0, &r), 1.6976527263135502482014268 , TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s, gsl_sf_hyperg_2F1_e, (1.5, -4.2, 3.0, 1.0, &r), .15583601560025710649555254 , TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s, gsl_sf_hyperg_2F1_e, (-7.4, 0.7, -1.5, 1.0, &r), -.34478866959246584996859 , TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s, gsl_sf_hyperg_2F1_e, (0.1, -2.7, -1.5, 1.0, &r), 1.059766766063610122925 , TEST_TOL2, GSL_SUCCESS);
 
   /* 2F1 conj */
 
@@ -469,14 +480,13 @@ int test_hyperg(void)
   TEST_SF(s, gsl_sf_hyperg_2F1_conj_e, (8, 8, 5, -0.5, &r), 0.00023301916814505902809, TEST_TOL3, GSL_SUCCESS);
   TEST_SF(s, gsl_sf_hyperg_2F1_conj_e, (25, 25, 1, -0.5, &r), 5.1696944096e-06, TEST_SQRT_TOL0, GSL_SUCCESS);
 
-  /* FIXME: the "true" values here may not be so good */
-  /*
-  TEST_SF(s, gsl_sf_hyperg_2F0_e, (0.01, 1.0, -0.02, &r), 0.999803886708565   , TEST_TOL0, GSL_SUCCESS);
-  TEST_SF(s, gsl_sf_hyperg_2F0_e, (0.1,  0.5, -0.02, &r), 0.999015947934831   , TEST_TOL0, GSL_SUCCESS);
-  TEST_SF(s, gsl_sf_hyperg_2F0_e, (1,   1, -0.02, &r), 0.980755496569062    , TEST_TOL0, GSL_SUCCESS);
-  TEST_SF(s, gsl_sf_hyperg_2F0_e, (8,   8, -0.02, &r), 0.3299059284994299   , TEST_TOL0, GSL_SUCCESS);
-  TEST_SF(s, gsl_sf_hyperg_2F0_e, (50, 50, -0.02, &r), 2.688995263773233e-13, TEST_TOL0, GSL_SUCCESS);
-  */
+  /* updated correct values, testing enabled, Richard J. Mathar, 2008-01-09 */
+
+  TEST_SF(s, gsl_sf_hyperg_2F0_e, (0.01, 1.0, -0.02, &r), .99980388665511730901180717   , TEST_TOL0, GSL_SUCCESS);
+  TEST_SF(s, gsl_sf_hyperg_2F0_e, (0.1,  0.5, -0.02, &r), .99901595171179281891589794   , TEST_TOL0, GSL_SUCCESS);
+  TEST_SF(s, gsl_sf_hyperg_2F0_e, (1,   1, -0.02, &r), .98075549650574351826538049000    , TEST_TOL0, GSL_SUCCESS);
+  TEST_SF(s, gsl_sf_hyperg_2F0_e, (8,   8, -0.02, &r), .32990592849626965538692141   , TEST_TOL0, GSL_SUCCESS);
+  TEST_SF(s, gsl_sf_hyperg_2F0_e, (50, 50, -0.02, &r), .2688995263772964415245902e-12 , TEST_TOL0, GSL_SUCCESS);
 
 
   /* 2F1 renorm */

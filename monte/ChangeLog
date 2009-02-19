@@ -1,3 +1,31 @@
+2008-11-20  Brian Gough  <bjg@network-theory.co.uk>
+
+	* vegas.c (gsl_monte_vegas_integrate): improve the chisq
+	calculation to avoid cancellation errors in the original
+	formula (fixes bug #24510)
+
+	* test.c (MONTE_ERROR_TEST): added test cases for negative chisq
+	in vegas
+
+2008-07-03  Brian Gough  <bjg@hp2.network-theory.co.uk>
+
+	* Makefile.am (INCLUDES): use top_srcdir instead of top_builddir
+
+2008-04-26  Brian Gough  <bjg@network-theory.co.uk>
+
+	* vegas.c (gsl_monte_vegas_integrate): compute running totals as
+	volatile double to prevent problems with excess precision, use
+	meaningful variable names for sum of squares, variance and sigma.
+
+	* test_main.c: compute the ensemble mean more accurately for the tests
+
+	* test.c: added a test for warm-start vegas, as well as cold-start
+
+	* miser.c (gsl_monte_miser_integrate): catch zero weights to avoid
+	division by zero
+
+	* test.c (main): added test for step-type function
+
 2004-06-02  Brian Gough  <bjg@network-theory.co.uk>
 
 	* test_main.c: handle the case where sd==0 && error[i] !=0 more
