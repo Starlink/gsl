@@ -1,3 +1,28 @@
+2008-10-13  Brian Gough  <bjg@network-theory.co.uk>
+
+	* log1p.c: use gsl_sys.h header file
+
+	* infnan.c: use gsl_sys.h header file
+
+	* hypot.c: use gsl_sys.h header file
+
+	* fdiv.c: use gsl_sys.h header file
+
+	* coerce.c: use gsl_sys.h header file
+
+2008-10-08  Brian Gough  <bjg@network-theory.co.uk>
+
+	* infnan.c (gsl_isinf): handle the case where isinf(-inf) 
+	returns	+1
+
+2008-07-03  Brian Gough  <bjg@hp2.network-theory.co.uk>
+
+	* prec.c: compile inline functions from header here
+
+	* pow_int.c: compile inline functions from header here
+
+	* minmax.c: compile inline functions from header here
+
 2008-03-18  Brian Gough  <bjg@network-theory.co.uk>
 
 	* test.c (main): use volatile to avoid extended precision in loop

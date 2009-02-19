@@ -1,3 +1,34 @@
+2008-12-04  Brian Gough  <bjg@network-theory.co.uk>
+
+	* gamma_inc.c (gamma_inc_D): propagate cancellation error
+	in (x-a)/x for x close to a
+
+2008-12-03  Brian Gough  <bjg@network-theory.co.uk>
+
+	* exp.c (exprel_n_CF): changed N to double, to allow non-integer
+	usage for gamma_inc, double error factor to allow for two
+	parameters in recurrence.
+	(gsl_sf_exprel_n_CF_e): exported function to allow calls to
+	exprel_n_CF
+
+	* gamma_inc.c (gamma_inc_P_series): improved convergence condition
+	using estimate of the remainder of the series, added continued
+	fraction as a fallback, increased nmax to 10000
+
+2008-08-26  Brian Gough  <bjg@network-theory.co.uk>
+
+	* ellint.c (gsl_sf_ellint_Kcomp_e): corrected taylor expansion for
+	k close to 1.
+
+2008-07-03  Brian Gough  <bjg@hp2.network-theory.co.uk>
+
+	* Makefile.am (INCLUDES): use top_srcdir instead of top_builddir
+
+2008-06-27  Brian Gough  <bjg@network-theory.co.uk>
+
+	* legendre_poly.c (gsl_sf_legendre_array_size): removed inline
+	version of this function in gsl_sf_legendre.h
+
 2008-03-17  Brian Gough  <bjg@network-theory.co.uk>
 
 	* hyperg_2F1.c (gsl_sf_hyperg_2F1_e): replace duplicate error

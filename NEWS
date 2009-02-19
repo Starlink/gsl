@@ -1,4 +1,75 @@
-* What is new in gsl-1.11:
+* What is new in gsl-1.12:
+
+** Upgraded to latest libtool, autoconf and automake (libtool-2.2.6,
+   autoconf-2.63, automake-1.10.2)
+
+** Improved the convergence of gsl_sf_gamma_inc_P for x/a ~=~ 1 and
+   large x,a.  Fixes problems with large arguments in cdf functions
+   such as gsl_cdf_chisq_Pinv(x,nu) [bug 24704].
+
+** Fixed gsl_ran_gamma_knuth to handle the case of a >= UINT_MAX [bug
+   #24897]
+
+** Added gsl_bspline_eval_deriv to compute bspline derivatives
+   (Rhys Ulerich)
+
+** Added a faster simplex mininimser gsl_multimin_fminimizer_nmsimplex2
+   which is O(N) instead of O(N^2) [bug #24418]
+
+** Improved the original chi-squared formula in gsl_monte_vegas to
+   avoid catastrophic cancellation [bug #24510].  The previous formula
+   could return incorrect or negative values for relative errors <
+   1e-8, which could occur when integrating very smooth functions.
+
+** Added new auxiliary functions gsl_cheb_order, gsl_cheb_size,
+   gsl_cheb_coeffs for Chebyshev series [bug #21830]
+
+** Updated license of the reference manual to GNU FDL version 1.3.
+
+** Fixed a bug where the gsl_isinf function would return +1 for -Inf
+   on systems where isinf(-Inf) returns the non-standard value +1.
+   [bug #24489]
+
+** Added missing functions gsl_vector_complex_{isnonneg,add,sub,mul,
+   div,scale,add_constant} and gsl_matrix_complex_float_isnonneg [bug
+   #22478]
+
+** Cross compilation should now work for x86 hosts.
+
+** Fixed a bug in gsl_interp_accel_find() where values lying on the
+   upper boundary between interpolation points could return the index
+   from the lower side. [bug #24211]
+
+** Fixed gsl_linalg_solve_cyc_tridiag so that its output respects the
+   solution vector's stride. Previously the x_stride value was ignored
+   causing the output to be incorrect for non-unit stride. [bug #24162]
+
+** Corrected a bug in the series calculation of gsl_sf_ellint_Kcomp
+   for k close to 1. [bug #24146]
+
+** Extended gsl_linalg_QRPT_update to handle rectangular matrices.
+   Corrected definition of the update formula in the manual for
+   both gsl_linalg_QR_update and gsl_linalg_QRPT_update.
+
+** Added routine gsl_linalg_cholesky_invert
+
+** Fixed a bug the simplex algorithm which caused the second highest
+   point to be incorrectly equal to the first when the first value was
+   the highest, which could cause suboptimal convergence. [bug #23192]
+
+** Fixed a problem with convergence for inverse gamma and chisq
+   distribitions, gsl_cdf_gamma_{P,Q}inv and gsl_cdf_chisq_{P,Q}inv.
+   [bug #23101]
+
+** Improved the handling of constant regions in Vegas by eliminating
+   spurious excess precision when computing box variances.
+
+** Fixed a potential division by zero in gsl_monte_miser when the
+   left/right weight factors decrease below 1.
+
+** Fixed incorrect dimensions check in gsl_matrix_sub{row,column}
+
+* What was new in gsl-1.11:
 
 ** The GSL repository and bug database are now hosted at Savannah
    http://savannah.gnu.org/projects/gsl/

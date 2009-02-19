@@ -446,3 +446,14 @@ evaluation and ode improvements
   gsl_cdf_hypergeometric_{P,Q}
 
 *  Claude Dion <claude.dion@tp.umu.se> documentation bug reports
+
+* Michael Kuklik <mkuklik@gmail.com> bug report for simplex
+
+* Paul Accisano, bug report and fix for cyclic solver
+
+* Thomas Weber <thomas.weber.mail@gmail.com> bug and patch for interp
+  accelerator
+
+* Lori A. Pritchett-Sheats bug report for vegas chisq.
+
+* Frank Wang <frank.wang@validusre.bm> bug report for gsl_ran_gamma_knuth.

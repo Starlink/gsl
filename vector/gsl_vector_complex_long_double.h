@@ -142,18 +142,6 @@ gsl_vector_complex_long_double_const_imag (const gsl_vector_complex_long_double 
 
 /* Operations */
 
-gsl_complex_long_double 
-gsl_vector_complex_long_double_get (const gsl_vector_complex_long_double * v, const size_t i);
-
-void gsl_vector_complex_long_double_set (gsl_vector_complex_long_double * v, const size_t i,
-                                   gsl_complex_long_double z);
-
-gsl_complex_long_double 
-*gsl_vector_complex_long_double_ptr (gsl_vector_complex_long_double * v, const size_t i);
-
-const gsl_complex_long_double 
-*gsl_vector_complex_long_double_const_ptr (const gsl_vector_complex_long_double * v, const size_t i);
-
 void gsl_vector_complex_long_double_set_zero (gsl_vector_complex_long_double * v);
 void gsl_vector_complex_long_double_set_all (gsl_vector_complex_long_double * v,
                                        gsl_complex_long_double z);
@@ -179,16 +167,29 @@ int gsl_vector_complex_long_double_swap_elements (gsl_vector_complex_long_double
 int gsl_vector_complex_long_double_isnull (const gsl_vector_complex_long_double * v);
 int gsl_vector_complex_long_double_ispos (const gsl_vector_complex_long_double * v);
 int gsl_vector_complex_long_double_isneg (const gsl_vector_complex_long_double * v);
+int gsl_vector_complex_long_double_isnonneg (const gsl_vector_complex_long_double * v);
+
+int gsl_vector_complex_long_double_add (gsl_vector_complex_long_double * a, const gsl_vector_complex_long_double * b);
+int gsl_vector_complex_long_double_sub (gsl_vector_complex_long_double * a, const gsl_vector_complex_long_double * b);
+int gsl_vector_complex_long_double_mul (gsl_vector_complex_long_double * a, const gsl_vector_complex_long_double * b);
+int gsl_vector_complex_long_double_div (gsl_vector_complex_long_double * a, const gsl_vector_complex_long_double * b);
+int gsl_vector_complex_long_double_scale (gsl_vector_complex_long_double * a, const gsl_complex_long_double x);
+int gsl_vector_complex_long_double_add_constant (gsl_vector_complex_long_double * a, const gsl_complex_long_double x);
+
+INLINE_DECL gsl_complex_long_double gsl_vector_complex_long_double_get (const gsl_vector_complex_long_double * v, const size_t i);
+INLINE_DECL void gsl_vector_complex_long_double_set (gsl_vector_complex_long_double * v, const size_t i, gsl_complex_long_double z);
+INLINE_DECL gsl_complex_long_double *gsl_vector_complex_long_double_ptr (gsl_vector_complex_long_double * v, const size_t i);
+INLINE_DECL const gsl_complex_long_double *gsl_vector_complex_long_double_const_ptr (const gsl_vector_complex_long_double * v, const size_t i);
 
 #ifdef HAVE_INLINE
 
-extern inline
+INLINE_FUN
 gsl_complex_long_double
 gsl_vector_complex_long_double_get (const gsl_vector_complex_long_double * v,
                               const size_t i)
 {
 #if GSL_RANGE_CHECK
-  if (i >= v->size)
+  if (GSL_RANGE_COND(i >= v->size))
     {
       gsl_complex_long_double zero = {{0, 0}};
       GSL_ERROR_VAL ("index out of range", GSL_EINVAL, zero);
@@ -197,13 +198,13 @@ gsl_vector_complex_long_double_get (const gsl_vector_complex_long_double * v,
   return *GSL_COMPLEX_LONG_DOUBLE_AT (v, i);
 }
 
-extern inline
+INLINE_FUN
 void
 gsl_vector_complex_long_double_set (gsl_vector_complex_long_double * v,
                               const size_t i, gsl_complex_long_double z)
 {
 #if GSL_RANGE_CHECK
-  if (i >= v->size)
+  if (GSL_RANGE_COND(i >= v->size))
     {
       GSL_ERROR_VOID ("index out of range", GSL_EINVAL);
     }
@@ -211,13 +212,13 @@ gsl_vector_complex_long_double_set (gsl_vector_complex_long_double * v,
   *GSL_COMPLEX_LONG_DOUBLE_AT (v, i) = z;
 }
 
-extern inline
+INLINE_FUN
 gsl_complex_long_double *
 gsl_vector_complex_long_double_ptr (gsl_vector_complex_long_double * v,
                               const size_t i)
 {
 #if GSL_RANGE_CHECK
-  if (i >= v->size)
+  if (GSL_RANGE_COND(i >= v->size))
     {
       GSL_ERROR_NULL ("index out of range", GSL_EINVAL);
     }
@@ -225,13 +226,13 @@ gsl_vector_complex_long_double_ptr (gsl_vector_complex_long_double * v,
   return GSL_COMPLEX_LONG_DOUBLE_AT (v, i);
 }
 
-extern inline
+INLINE_FUN
 const gsl_complex_long_double *
 gsl_vector_complex_long_double_const_ptr (const gsl_vector_complex_long_double * v,
                                     const size_t i)
 {
 #if GSL_RANGE_CHECK
-  if (i >= v->size)
+  if (GSL_RANGE_COND(i >= v->size))
     {
       GSL_ERROR_NULL ("index out of range", GSL_EINVAL);
     }

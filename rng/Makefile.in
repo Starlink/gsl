@@ -53,7 +53,7 @@ am_libgslrng_la_OBJECTS = borosh13.lo cmrg.lo coveyou.lo default.lo \
 	rand48.lo rand.lo random.lo randu.lo ranf.lo ranlux.lo \
 	ranlxd.lo ranlxs.lo ranmar.lo rng.lo slatec.lo taus.lo \
 	taus113.lo transputer.lo tt.lo types.lo uni32.lo uni.lo vax.lo \
-	waterman14.lo zuf.lo
+	waterman14.lo zuf.lo inline.lo
 libgslrng_la_OBJECTS = $(am_libgslrng_la_OBJECTS)
 am_test_OBJECTS = test.$(OBJEXT)
 test_OBJECTS = $(am_test_OBJECTS)
@@ -139,6 +139,7 @@ LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
+LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
@@ -146,7 +147,10 @@ MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
+OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OTOOL = @OTOOL@
+OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -211,8 +215,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libgslrng.la 
 pkginclude_HEADERS = gsl_rng.h
-INCLUDES = -I$(top_builddir)
-libgslrng_la_SOURCES = borosh13.c cmrg.c coveyou.c default.c file.c fishman18.c fishman20.c fishman2x.c gfsr4.c knuthran2.c knuthran.c knuthran2002.c lecuyer21.c minstd.c mrg.c mt.c r250.c ran0.c ran1.c ran2.c ran3.c rand48.c rand.c random.c randu.c ranf.c ranlux.c ranlxd.c ranlxs.c ranmar.c rng.c slatec.c taus.c taus113.c transputer.c tt.c types.c uni32.c uni.c vax.c waterman14.c zuf.c
+INCLUDES = -I$(top_srcdir)
+libgslrng_la_SOURCES = borosh13.c cmrg.c coveyou.c default.c file.c fishman18.c fishman20.c fishman2x.c gfsr4.c knuthran2.c knuthran.c knuthran2002.c lecuyer21.c minstd.c mrg.c mt.c r250.c ran0.c ran1.c ran2.c ran3.c rand48.c rand.c random.c randu.c ranf.c ranlux.c ranlxd.c ranlxs.c ranmar.c rng.c slatec.c taus.c taus113.c transputer.c tt.c types.c uni32.c uni.c vax.c waterman14.c zuf.c inline.c
 CLEANFILES = test.dat
 noinst_HEADERS = schrage.c
 test_SOURCES = test.c

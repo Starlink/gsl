@@ -905,6 +905,11 @@ memory allocation.  All memory should be allocated and freed through
 separate functions and passed around as a "workspace" argument.  This
 allows memory allocation to be factored out of tight loops.
 
+To avoid confusion over ownership, workspaces should not own each
+other or contain other workspaces.  For clarity and ease of use in
+different contexts, they should be allocated from integer arguments
+rather than derived from other structs.
+
 @node Memory layout, Linear Algebra Levels, Memory allocation and ownership, Design
 @section Memory layout
 
@@ -1117,17 +1122,38 @@ for (i = N - 1; i >= 0; i--) @{ ... @} /* DOESN'T WORK */
 use something like
 
 @example
-for (i = N; i > 0 && i--;) @{ ... @}
+for (i = N; i-- > 0;) @{ ... @}
 @end example
 
 @noindent
-to avoid problems with wrap-around at @code{i=0}.  
+to avoid problems with wrap-around at @code{i=0}.  Note that the
+post-decrement ensures that the loop variable is tested before it
+reaches zero.  Beware that @code{i} will wraparound on exit from the
+loop.  (This could also be written as @code{for (i = N; i--;)} since
+the test for @code{i>0} is equivalent to @code{i!=0} for an unsigned
+integer)
 
 If you really want to avoid confusion use a separate variable to invert
 the loop order,
 @example
 for (i = 0; i < N; i++) @{ j = N - i; ... @}
 @end example
+
+Note (BJG). Originally, I suggested using
+
+@example
+for (i = N; i > 0 && i--;) @{ ... @}
+@end example
+
+which makes the test for @code{i>0} explicit and leaves @code{i=0} on
+exit from the loop.  However, it is slower as there is an additional
+branch which prevents unrolling.  Thanks to J. Seward for pointing
+this out.
+
+Note: As a matter of style, please use post-increment (@code{i++}) and
+post-decrement (@code{i--}) operators by default and only use
+pre-increment (@code{++i}) and pre-decrement (@code{--i}) operators
+where specifically needed.
 
 @node Arrays vs Pointers, Pointers, size_t, Design
 @section Arrays vs Pointers

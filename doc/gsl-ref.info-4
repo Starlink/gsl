@@ -1,4 +1,4 @@
-This is gsl-ref.info, produced by makeinfo version 4.8 from
+This is gsl-ref.info, produced by makeinfo version 4.11 from
 gsl-ref.texi.
 
 INFO-DIR-SECTION Scientific software
@@ -7,10 +7,10 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007 The GSL Team.
+2005, 2006, 2007, 2008 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
-under the terms of the GNU Free Documentation License, Version 1.2 or
+under the terms of the GNU Free Documentation License, Version 1.3 or
 any later version published by the Free Software Foundation; with the
 Invariant Sections being "GNU General Public License" and "Free Software
 Needs Free Documentation", the Front-Cover text being "A GNU Manual",
@@ -20,6 +20,86 @@ License".
 
    (a) The Back-Cover Text is: "You have the freedom to copy and modify
 this GNU Manual."
+
+
+File: gsl-ref.info,  Node: Multimin Caveats,  Next: Initializing the Multidimensional Minimizer,  Prev: Multimin Overview,  Up: Multidimensional Minimization
+
+35.2 Caveats
+============
+
+Note that the minimization algorithms can only search for one local
+minimum at a time.  When there are several local minima in the search
+area, the first minimum to be found will be returned; however it is
+difficult to predict which of the minima this will be.  In most cases,
+no error will be reported if you try to find a local minimum in an area
+where there is more than one.
+
+   It is also important to note that the minimization algorithms find
+local minima; there is no way to determine whether a minimum is a global
+minimum of the function in question.
+
+
+File: gsl-ref.info,  Node: Initializing the Multidimensional Minimizer,  Next: Providing a function to minimize,  Prev: Multimin Caveats,  Up: Multidimensional Minimization
+
+35.3 Initializing the Multidimensional Minimizer
+================================================
+
+The following function initializes a multidimensional minimizer.  The
+minimizer itself depends only on the dimension of the problem and the
+algorithm and can be reused for different problems.
+
+ -- Function: gsl_multimin_fdfminimizer *
+gsl_multimin_fdfminimizer_alloc (const gsl_multimin_fdfminimizer_type *
+          T, size_t N)
+ -- Function: gsl_multimin_fminimizer * gsl_multimin_fminimizer_alloc
+          (const gsl_multimin_fminimizer_type * T, size_t N)
+     This function returns a pointer to a newly allocated instance of a
+     minimizer of type T for an N-dimension function.  If there is
+     insufficient memory to create the minimizer then the function
+     returns a null pointer and the error handler is invoked with an
+     error code of `GSL_ENOMEM'.
+
+ -- Function: int gsl_multimin_fdfminimizer_set
+          (gsl_multimin_fdfminimizer * S, gsl_multimin_function_fdf *
+          FDF, const gsl_vector * X, double STEP_SIZE, double TOL)
+     This function initializes the minimizer S to minimize the function
+     FDF starting from the initial point X.  The size of the first
+     trial step is given by STEP_SIZE.  The accuracy of the line
+     minimization is specified by TOL.  The precise meaning of this
+     parameter depends on the method used.  Typically the line
+     minimization is considered successful if the gradient of the
+     function g is orthogonal to the current search direction p to a
+     relative accuracy of TOL, where dot(p,g) < tol |p| |g|.  A TOL
+     value of 0.1 is suitable for most purposes, since line
+     minimization only needs to be carried out approximately.    Note
+     that setting TOL to zero will force the use of "exact"
+     line-searches, which are extremely expensive.
+
+ -- Function: int gsl_multimin_fminimizer_set (gsl_multimin_fminimizer
+          * S, gsl_multimin_function * F, const gsl_vector * X, const
+          gsl_vector * STEP_SIZE)
+     This function initializes the minimizer S to minimize the function
+     F, starting from the initial point X. The size of the initial
+     trial steps is given in vector STEP_SIZE. The precise meaning of
+     this parameter depends on the method used.
+
+ -- Function: void gsl_multimin_fdfminimizer_free
+          (gsl_multimin_fdfminimizer * S)
+ -- Function: void gsl_multimin_fminimizer_free
+          (gsl_multimin_fminimizer * S)
+     This function frees all the memory associated with the minimizer S.
+
+ -- Function: const char * gsl_multimin_fdfminimizer_name (const
+          gsl_multimin_fdfminimizer * S)
+ -- Function: const char * gsl_multimin_fminimizer_name (const
+          gsl_multimin_fminimizer * S)
+     This function returns a pointer to the name of the minimizer.  For
+     example,
+
+          printf ("s is a '%s' minimizer\n",
+                  gsl_multimin_fdfminimizer_name (s));
+
+     would print something like `s is a 'conjugate_pr' minimizer'.
 
 
 File: gsl-ref.info,  Node: Providing a function to minimize,  Next: Multimin Iteration,  Prev: Initializing the Multidimensional Minimizer,  Up: Multidimensional Minimization
@@ -182,7 +262,7 @@ functions,
      new starting point.
 
 
-File: gsl-ref.info,  Node: Multimin Stopping Criteria,  Next: Multimin Algorithms,  Prev: Multimin Iteration,  Up: Multidimensional Minimization
+File: gsl-ref.info,  Node: Multimin Stopping Criteria,  Next: Multimin Algorithms with Derivatives,  Prev: Multimin Iteration,  Up: Multidimensional Minimization
 
 35.6 Stopping Criteria
 ======================
@@ -221,15 +301,15 @@ below allow the user to test the precision of the current result.
      than tolerance, otherwise `GSL_CONTINUE' is returned.
 
 
-File: gsl-ref.info,  Node: Multimin Algorithms,  Next: Multimin Examples,  Prev: Multimin Stopping Criteria,  Up: Multidimensional Minimization
+File: gsl-ref.info,  Node: Multimin Algorithms with Derivatives,  Next: Multimin Algorithms without Derivatives,  Prev: Multimin Stopping Criteria,  Up: Multidimensional Minimization
 
-35.7 Algorithms
-===============
+35.7 Algorithms with Derivatives
+================================
 
 There are several minimization methods available. The best choice of
-algorithm depends on the problem.  All of the algorithms use the value
-of the function and its gradient at each evaluation point, except for
-the Simplex algorithm which uses function values only.
+algorithm depends on the problem.  The algorithms described in this
+section use the value of the function and its gradient at each
+evaluation point.
 
  -- Minimizer: gsl_multimin_fdfminimizer_conjugate_fr
      This is the Fletcher-Reeves conjugate gradient algorithm. The
@@ -286,10 +366,20 @@ the Simplex algorithm which uses function values only.
      method is inefficient and is included only for demonstration
      purposes.
 
+
+File: gsl-ref.info,  Node: Multimin Algorithms without Derivatives,  Next: Multimin Examples,  Prev: Multimin Algorithms with Derivatives,  Up: Multidimensional Minimization
+
+35.8 Algorithms without Derivatives
+===================================
+
+The algorithms described in this section use only the value of the
+function at each evaluation point.
+
+ -- Minimizer: gsl_multimin_fminimizer_nmsimplex2
  -- Minimizer: gsl_multimin_fminimizer_nmsimplex
-     This is the Simplex algorithm of Nelder and Mead. It constructs n
-     vectors p_i from the starting vector X and the vector STEP_SIZE as
-     follows:
+     These methods use the Simplex algorithm of Nelder and Mead. They
+     construct n vectors p_i from the starting vector X and the vector
+     STEP_SIZE as follows:
 
           p_0 = (x_0, x_1, ... , x_n)
           p_1 = (x_0 + step_size_0, x_1, ... , x_n)
@@ -309,16 +399,22 @@ the Simplex algorithm which uses function values only.
      to the nature of the algorithm not every step improves the current
      best parameter vector.  Usually several iterations are required.
 
-     The routine calculates the minimizer specific characteristic size
-     as the average distance from the geometrical center of the simplex
-     to all its vertices.  This size can be used as a stopping
-     criteria, as the simplex contracts itself near the minimum. The
-     size is returned by the function `gsl_multimin_fminimizer_size'.
+     The minimizer-specific characteristic size is calculated as the
+     average distance from the geometrical center of the simplex to all
+     its vertices.  This size can be used as a stopping criteria, as the
+     simplex contracts itself near the minimum. The size is returned by
+     the function `gsl_multimin_fminimizer_size'.
+
+     The `nmsimplex2' version of this minimiser is a new O(N)
+     implementation of the earlier O(N^2) `nmsimplex' minimiser.  It
+     calculates the size of simplex as the RMS distance of each vertex
+     from the center rather than the mean distance, which has the
+     advantage of allowing a linear update.
 
 
-File: gsl-ref.info,  Node: Multimin Examples,  Next: Multimin References and Further Reading,  Prev: Multimin Algorithms,  Up: Multidimensional Minimization
+File: gsl-ref.info,  Node: Multimin Examples,  Next: Multimin References and Further Reading,  Prev: Multimin Algorithms without Derivatives,  Up: Multidimensional Minimization
 
-35.8 Examples
+35.9 Examples
 =============
 
 This example program finds the minimum of the paraboloid function
@@ -424,7 +520,7 @@ minimize the same example object function, as above.
        double par[5] = {1.0, 2.0, 10.0, 20.0, 30.0};
 
        const gsl_multimin_fminimizer_type *T =
-         gsl_multimin_fminimizer_nmsimplex;
+         gsl_multimin_fminimizer_nmsimplex2;
        gsl_multimin_fminimizer *s = NULL;
        gsl_vector *ss, *x;
        gsl_multimin_function minex_func;
@@ -466,7 +562,7 @@ minimize the same example object function, as above.
                printf ("converged to minimum at\n");
              }
 
-           printf ("%5d %10.3e %10.3ef f() = %7.3f size = %.3f\n",
+           printf ("%5d %10.3e %10.3e f() = %7.3f size = %.3f\n",
                    iter,
                    gsl_vector_get (s->x, 0),
                    gsl_vector_get (s->x, 1),
@@ -484,32 +580,31 @@ minimize the same example object function, as above.
 The minimum search stops when the Simplex size drops to 0.01. The
 output is shown below.
 
-         1  6.500e+00  5.000e+00 f() = 512.500 size = 1.082
-         2  5.250e+00  4.000e+00 f() = 290.625 size = 1.372
-         3  5.250e+00  4.000e+00 f() = 290.625 size = 1.372
-         4  5.500e+00  1.000e+00 f() = 252.500 size = 1.372
-         5  2.625e+00  3.500e+00 f() = 101.406 size = 1.823
-         6  3.469e+00  1.375e+00 f() = 98.760  size = 1.526
-         7  1.820e+00  3.156e+00 f() = 63.467  size = 1.105
-         8  1.820e+00  3.156e+00 f() = 63.467  size = 1.105
-         9  1.016e+00  2.812e+00 f() = 43.206  size = 1.105
-        10  2.041e+00  2.008e+00 f() = 40.838  size = 0.645
-        11  1.236e+00  1.664e+00 f() = 32.816  size = 0.645
-        12  1.236e+00  1.664e+00 f() = 32.816  size = 0.447
-        13  5.225e-01  1.980e+00 f() = 32.288  size = 0.447
-        14  1.103e+00  2.073e+00 f() = 30.214  size = 0.345
-        15  1.103e+00  2.073e+00 f() = 30.214  size = 0.264
-        16  1.103e+00  2.073e+00 f() = 30.214  size = 0.160
-        17  9.864e-01  1.934e+00 f() = 30.090  size = 0.132
-        18  9.190e-01  1.987e+00 f() = 30.069  size = 0.092
-        19  1.028e+00  2.017e+00 f() = 30.013  size = 0.056
-        20  1.028e+00  2.017e+00 f() = 30.013  size = 0.046
-        21  1.028e+00  2.017e+00 f() = 30.013  size = 0.033
-        22  9.874e-01  1.985e+00 f() = 30.006  size = 0.028
-        23  9.846e-01  1.995e+00 f() = 30.003  size = 0.023
-        24  1.007e+00  2.003e+00 f() = 30.001  size = 0.012
+         1  6.500e+00  5.000e+00 f() = 512.500 size = 1.130
+         2  5.250e+00  4.000e+00 f() = 290.625 size = 1.409
+         3  5.250e+00  4.000e+00 f() = 290.625 size = 1.409
+         4  5.500e+00  1.000e+00 f() = 252.500 size = 1.409
+         5  2.625e+00  3.500e+00 f() = 101.406 size = 1.847
+         6  2.625e+00  3.500e+00 f() = 101.406 size = 1.847
+         7  0.000e+00  3.000e+00 f() =  60.000 size = 1.847
+         8  2.094e+00  1.875e+00 f() =  42.275 size = 1.321
+         9  2.578e-01  1.906e+00 f() =  35.684 size = 1.069
+        10  5.879e-01  2.445e+00 f() =  35.664 size = 0.841
+        11  1.258e+00  2.025e+00 f() =  30.680 size = 0.476
+        12  1.258e+00  2.025e+00 f() =  30.680 size = 0.367
+        13  1.093e+00  1.849e+00 f() =  30.539 size = 0.300
+        14  8.830e-01  2.004e+00 f() =  30.137 size = 0.172
+        15  8.830e-01  2.004e+00 f() =  30.137 size = 0.126
+        16  9.582e-01  2.060e+00 f() =  30.090 size = 0.106
+        17  1.022e+00  2.004e+00 f() =  30.005 size = 0.063
+        18  1.022e+00  2.004e+00 f() =  30.005 size = 0.043
+        19  1.022e+00  2.004e+00 f() =  30.005 size = 0.043
+        20  1.022e+00  2.004e+00 f() =  30.005 size = 0.027
+        21  1.022e+00  2.004e+00 f() =  30.005 size = 0.022
+        22  9.920e-01  1.997e+00 f() =  30.001 size = 0.016
+        23  9.920e-01  1.997e+00 f() =  30.001 size = 0.013
      converged to minimum at
-        25  1.007e+00  2.003e+00 f() = 30.001  size = 0.010
+        24  9.920e-01  1.997e+00 f() =  30.001 size = 0.008
 
 The simplex size first increases, while the simplex moves towards the
 minimum. After a while the size begins to decrease as the simplex
@@ -518,8 +613,8 @@ contracts around the minimum.
 
 File: gsl-ref.info,  Node: Multimin References and Further Reading,  Prev: Multimin Examples,  Up: Multidimensional Minimization
 
-35.9 References and Further Reading
-===================================
+35.10 References and Further Reading
+====================================
 
 The conjugate gradient and BFGS methods are described in detail in the
 following book,
@@ -1503,7 +1598,7 @@ File: gsl-ref.info,  Node: Computing the covariance matrix of best fit parameter
      \sigma^2 C.  This estimates the statistical error on the best-fit
      parameters from the scatter of the underlying data.
 
-     For more information about covariance matrices see *Note Fitting
+     For more information about covariance matrices see *note Fitting
      Overview::.
 
 
@@ -1792,6 +1887,7 @@ prototypes for the bspline functions and related declarations.
 * Initializing the B-splines solver::
 * Constructing the knots vector::
 * Evaluation of B-spline basis functions::
+* Evaluation of B-spline basis function derivatives::
 * Example programs for B-splines::
 * References and Further Reading::
 
@@ -1832,6 +1928,8 @@ File: gsl-ref.info,  Node: Initializing the B-splines solver,  Next: Constructin
 38.2 Initializing the B-splines solver
 ======================================
 
+Using B-splines requires a gsl_bspline_workspace:
+
  -- Function: gsl_bspline_workspace * gsl_bspline_alloc (const size_t
           K, const size_t NBREAK)
      This function allocates a workspace for computing B-splines of
@@ -1841,6 +1939,20 @@ File: gsl-ref.info,  Node: Initializing the B-splines solver,  Next: Constructin
 
  -- Function: void gsl_bspline_free (gsl_bspline_workspace * W)
      This function frees the memory associated with the workspace W.
+
+   Evaluation of B-spline basis function derivatives additionally
+requires a `gsl_bspline_deriv_workspace':
+
+ -- Function: gsl_bspline_deriv_workspace * gsl_bspline_deriv_alloc
+          (const size_t K)
+     This function allocates a workspace for computing the derivatives
+     of a B-spline basis function of order K.  The size of the workspace
+     is O(2k^2).
+
+ -- Function: void gsl_bspline_deriv_free (gsl_bspline_deriv_workspace
+          * W)
+     This function frees the memory associated with the derivative
+     workspace W.
 
 
 File: gsl-ref.info,  Node: Constructing the knots vector,  Next: Evaluation of B-spline basis functions,  Prev: Initializing the B-splines solver,  Up: Basis Splines
@@ -1860,7 +1972,7 @@ File: gsl-ref.info,  Node: Constructing the knots vector,  Next: Evaluation of B
      specified NBREAK parameter. The knots are stored in `w->knots'.
 
 
-File: gsl-ref.info,  Node: Evaluation of B-spline basis functions,  Next: Example programs for B-splines,  Prev: Constructing the knots vector,  Up: Basis Splines
+File: gsl-ref.info,  Node: Evaluation of B-spline basis functions,  Next: Evaluation of B-spline basis function derivatives,  Prev: Constructing the knots vector,  Up: Basis Splines
 
 38.4 Evaluation of B-splines
 ============================
@@ -1875,14 +1987,59 @@ File: gsl-ref.info,  Node: Evaluation of B-spline basis functions,  Next: Exampl
      compute them individually, due to the nature of the defining
      recurrence relation.
 
+ -- Function: int gsl_bspline_eval_nonzero (const double X, gsl_vector
+          * BK, size_t * ISTART, size_t * IEND, gsl_bspline_workspace *
+          W)
+     This function evaluates all potentially nonzero B-spline basis
+     functions at the position X and stores them in BK, so that the ith
+     element of BK is B_(istart+i)(x).  The last element of BK is
+     B_(iend)(x).  BK must be of length k.  Only returning nonzero
+     basis functions allows users to more cheaply perform tasks
+     requiring linear combinations of the basis functions, e.g.  when
+     evaluating an interpolated function.
+
  -- Function: size_t gsl_bspline_ncoeffs (gsl_bspline_workspace * W)
      This function returns the number of B-spline coefficients given by
      n = nbreak + k - 2.
 
 
-File: gsl-ref.info,  Node: Example programs for B-splines,  Next: References and Further Reading,  Prev: Evaluation of B-spline basis functions,  Up: Basis Splines
+File: gsl-ref.info,  Node: Evaluation of B-spline basis function derivatives,  Next: Example programs for B-splines,  Prev: Evaluation of B-spline basis functions,  Up: Basis Splines
 
-38.5 Example programs for B-splines
+38.5 Evaluation of B-spline derivatives
+=======================================
+
+ -- Function: int gsl_bspline_deriv_eval (const double X, const size_t
+          NDERIV, gsl_matrix * DB, gsl_bspline_workspace * W,
+          gsl_bspline_deriv_workspace * DW)
+     This function evaluates all B-spline basis function derivatives of
+     orders 0 through nderiv (inclusive) at the position X and stores
+     them in DB.  The (i,j)th element of DB is d^j/dx^j B_i(x).  DB
+     must be of size n = nbreak + k - 2 by nderiv + 1.  The value n may
+     also be obtained by calling `gsl_bspline_ncoeffs'.  Note that
+     function evaluations are included as the 0th order derivatives in
+     DB.  It is far more efficient to compute all of the basis
+     functions derivatives at once than to compute them individually,
+     due to the nature of the defining recurrence relation.
+
+ -- Function: int gsl_bspline_deriv_eval_nonzero (const double X, const
+          size_t NDERIV, gsl_matrix * DB, size_t * ISTART, size_t *
+          IEND, gsl_bspline_workspace * W, gsl_bspline_deriv_workspace
+          * DW)
+     This function evaluates all potentially nonzero B-spline basis
+     function derivatives of orders 0 through nderiv (inclusive) at the
+     position X and stores them in DB.  The (i,j)th element of DB is
+     d^j/dx^j B_(istart+i)(x).  The last row of DB contains d^j/dx^j
+     B_(iend)(x).  DB must be of size k by at least nderiv + 1.  Note
+     that function evaluations are included as the 0th order
+     derivatives in DB.  Only returning nonzero basis functions allows
+     users to more cheaply perform tasks requiring linear combinations
+     of the basis functions, e.g.  when evaluating an interpolated
+     function.
+
+
+File: gsl-ref.info,  Node: Example programs for B-splines,  Next: References and Further Reading,  Prev: Evaluation of B-spline basis function derivatives,  Up: Basis Splines
+
+38.6 Example programs for B-splines
 ===================================
 
 The following program computes a linear least squares fit to data using
@@ -2024,7 +2181,7 @@ gaussian noise added.
 
 File: gsl-ref.info,  Node: References and Further Reading,  Prev: Example programs for B-splines,  Up: Basis Splines
 
-38.6 References and Further Reading
+38.7 References and Further Reading
 ===================================
 
 Further information on the algorithms described in this section can be
@@ -2034,7 +2191,8 @@ found in the following book,
      ISBN 0-387-90356-9.
 
 A large collection of B-spline routines is available in the PPPACK
-library available at `http://www.netlib.org/pppack'.
+library available at `http://www.netlib.org/pppack', which is also part
+of SLATEC.
 
 
 File: gsl-ref.info,  Node: Physical Constants,  Next: IEEE floating-point arithmetic,  Prev: Basis Splines,  Up: Top
@@ -3144,8 +3302,8 @@ programs:
 
      gcc -ansi -pedantic -Werror -Wall -W
        -Wmissing-prototypes -Wstrict-prototypes
-       -Wtraditional -Wconversion -Wshadow
-       -Wpointer-arith -Wcast-qual -Wcast-align
+       -Wconversion -Wshadow -Wpointer-arith
+       -Wcast-qual -Wcast-align
        -Wwrite-strings -Wnested-externs
        -fshort-enums -fno-common -Dinline= -g -O2
 
@@ -5043,12 +5201,12 @@ File: gsl-ref.info,  Node: GNU Free Documentation License,  Next: Function Index
 GNU Free Documentation License
 ******************************
 
-                      Version 1.2, November 2002
-     Copyright (C) 2000,2001,2002 Free Software Foundation, Inc.
-     51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA
+                     Version 1.3, 3 November 2008
+     Copyright (C) 2000, 2001, 2002, 2007, 2008 Free Software Foundation, Inc.
+     `http://fsf.org/'
 
-     Everyone is permitted to copy and distribute verbatim copies of this license
-     document, but changing it is not allowed.
+     Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is
+     not allowed.
 
   0. PREAMBLE
 
@@ -5146,6 +5304,9 @@ GNU Free Documentation License
      works in formats which do not have any title page as such, "Title
      Page" means the text near the most prominent appearance of the
      work's title, preceding the beginning of the body of the text.
+
+     The "publisher" means any person or entity that distributes copies
+     of the Document to the public.
 
      A section "Entitled XYZ" means a named subunit of the Document
      whose title either is precisely XYZ or contains XYZ in parentheses
@@ -5412,12 +5573,29 @@ GNU Free Documentation License
   9. TERMINATION
 
      You may not copy, modify, sublicense, or distribute the Document
-     except as expressly provided for under this License.  Any other
-     attempt to copy, modify, sublicense or distribute the Document is
-     void, and will automatically terminate your rights under this
-     License.  However, parties who have received copies, or rights,
-     from you under this License will not have their licenses
-     terminated so long as such parties remain in full compliance.
+     except as expressly provided under this License.  Any attempt
+     otherwise to copy, modify, sublicense, or distribute it is void,
+     and will automatically terminate your rights under this License.
+
+     However, if you cease all violation of this License, then your
+     license from a particular copyright holder is reinstated (a)
+     provisionally, unless and until the copyright holder explicitly
+     and finally terminates your license, and (b) permanently, if the
+     copyright holder fails to notify you of the violation by some
+     reasonable means prior to 60 days after the cessation.
+
+     Moreover, your license from a particular copyright holder is
+     reinstated permanently if the copyright holder notifies you of the
+     violation by some reasonable means, this is the first time you have
+     received notice of violation of this License (for any work) from
+     that copyright holder, and you cure the violation prior to 30 days
+     after your receipt of the notice.
+
+     Termination of your rights under this section does not terminate
+     the licenses of parties who have received copies or rights from
+     you under this License.  If your rights have been terminated and
+     not permanently reinstated, receipt of a copy of some or all of
+     the same material does not give you any rights to use it.
 
  10. FUTURE REVISIONS OF THIS LICENSE
 
@@ -5435,7 +5613,41 @@ GNU Free Documentation License
      published (not as a draft) by the Free Software Foundation.  If
      the Document does not specify a version number of this License,
      you may choose any version ever published (not as a draft) by the
-     Free Software Foundation.
+     Free Software Foundation.  If the Document specifies that a proxy
+     can decide which future versions of this License can be used, that
+     proxy's public statement of acceptance of a version permanently
+     authorizes you to choose that version for the Document.
+
+ 11. RELICENSING
+
+     "Massive Multiauthor Collaboration Site" (or "MMC Site") means any
+     World Wide Web server that publishes copyrightable works and also
+     provides prominent facilities for anybody to edit those works.  A
+     public wiki that anybody can edit is an example of such a server.
+     A "Massive Multiauthor Collaboration" (or "MMC") contained in the
+     site means any set of copyrightable works thus published on the MMC
+     site.
+
+     "CC-BY-SA" means the Creative Commons Attribution-Share Alike 3.0
+     license published by Creative Commons Corporation, a not-for-profit
+     corporation with a principal place of business in San Francisco,
+     California, as well as future copyleft versions of that license
+     published by that same organization.
+
+     "Incorporate" means to publish or republish a Document, in whole or
+     in part, as part of another Document.
+
+     An MMC is "eligible for relicensing" if it is licensed under this
+     License, and if all works that were first published under this
+     License somewhere other than this MMC, and subsequently
+     incorporated in whole or in part into the MMC, (1) had no cover
+     texts or invariant sections, and (2) were thus incorporated prior
+     to November 1, 2008.
+
+     The operator of an MMC Site may republish an MMC contained in the
+     site under CC-BY-SA on the same site at any time before August 1,
+     2009, provided the MMC is eligible for relicensing.
+
 
 ADDENDUM: How to use this License for your documents
 ====================================================
@@ -5444,10 +5656,10 @@ To use this License in a document you have written, include a copy of
 the License in the document and put the following copyright and license
 notices just after the title page:
 
-       Copyright (C) YEAR YOUR NAME.
+       Copyright (C)  YEAR  YOUR NAME.
        Permission is granted to copy, distribute and/or modify
        this document under the terms of the GNU Free
-       Documentation License, Version 1.2 or any later version
+       Documentation License, Version 1.3 or any later version
        published by the Free Software Foundation; with no
        Invariant Sections, no Front-Cover Texts, and no
        Back-Cover Texts.  A copy of the license is included in

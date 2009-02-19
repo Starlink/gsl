@@ -259,7 +259,7 @@ int test_hyperg(void)
 
   TEST_SF(s, gsl_sf_hyperg_1F1_e, (-26, 2.0, 100.0, &r), 1.444786781107436954e+19, TEST_TOL3, GSL_SUCCESS);
 
-#if 0
+#ifdef FIXME
   /* This one is computed with a huge error, there is loss of
      precision but the error estimate flags the problem (assuming the
      user looks at it).  We should probably trap any return with
@@ -276,7 +276,7 @@ int test_hyperg(void)
 
   TEST_SF(s, gsl_sf_hyperg_1F1_e, (1.0, 1000000.5, 1001000.5, &r), 3480.3699557431856166, TEST_TOL4, GSL_SUCCESS);
 
-#if 0 /* FIX THESE NEXT RELEASE */
+#ifdef FIXME /* FIX THESE NEXT RELEASE */
   TEST_SF(s, gsl_sf_hyperg_1F1_e, (1.1, 1000000.5, 1001000.5, &r), 7304.6126942641350122, TEST_TOL3, GSL_SUCCESS);
   TEST_SF(s, gsl_sf_hyperg_1F1_e, (0.9, 1000000.5, 1001000.5, &r), 1645.4879293475410982, TEST_TOL3, GSL_SUCCESS);
 #endif
@@ -424,6 +424,11 @@ int test_hyperg(void)
   TEST_SF(s, gsl_sf_hyperg_U_e, (-50.5, 100.1, 70, &r),  3.249026971618851e+84, TEST_TOL2, GSL_SUCCESS);
   TEST_SF(s, gsl_sf_hyperg_U_e, (-50.5, 100.1, 100, &r),  1.003401902126641e+85, TEST_TOL1, GSL_SUCCESS);
 
+  /* Bug report from Stefan Gerlach */
+
+#ifdef FIXME
+  TEST_SF(s, gsl_sf_hyperg_U_e, (-2.0, 4.0, 1.0, &r),  11.0, TEST_TOL0, GSL_SUCCESS);
+#endif
 
   /* 2F1 */
 
@@ -461,10 +466,10 @@ int test_hyperg(void)
 
   /* added special handling with x == 1.0 , Richard J. Mathar, 2008-01-09 */
 
-  TEST_SF(s, gsl_sf_hyperg_2F1_e, (1.5, 0.5, 3.0, 1.0, &r), 1.6976527263135502482014268 , TEST_TOL0, GSL_SUCCESS);
-  TEST_SF(s, gsl_sf_hyperg_2F1_e, (1.5, -4.2, 3.0, 1.0, &r), .15583601560025710649555254 , TEST_TOL0, GSL_SUCCESS);
-  TEST_SF(s, gsl_sf_hyperg_2F1_e, (-7.4, 0.7, -1.5, 1.0, &r), -.34478866959246584996859 , TEST_TOL0, GSL_SUCCESS);
-  TEST_SF(s, gsl_sf_hyperg_2F1_e, (0.1, -2.7, -1.5, 1.0, &r), 1.059766766063610122925 , TEST_TOL0, GSL_SUCCESS);
+  TEST_SF(s, gsl_sf_hyperg_2F1_e, (1.5, 0.5, 3.0, 1.0, &r), 1.6976527263135502482014268 , TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s, gsl_sf_hyperg_2F1_e, (1.5, -4.2, 3.0, 1.0, &r), .15583601560025710649555254 , TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s, gsl_sf_hyperg_2F1_e, (-7.4, 0.7, -1.5, 1.0, &r), -.34478866959246584996859 , TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s, gsl_sf_hyperg_2F1_e, (0.1, -2.7, -1.5, 1.0, &r), 1.059766766063610122925 , TEST_TOL2, GSL_SUCCESS);
 
   /* 2F1 conj */
 

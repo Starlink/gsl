@@ -48,7 +48,8 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libgslmultimin_la_LIBADD =
 am_libgslmultimin_la_OBJECTS = fdfminimizer.lo steepest_descent.lo \
 	conjugate_fr.lo conjugate_pr.lo convergence.lo diff.lo \
-	vector_bfgs.lo vector_bfgs2.lo fminimizer.lo simplex.lo
+	vector_bfgs.lo vector_bfgs2.lo fminimizer.lo simplex.lo \
+	simplex2.lo
 libgslmultimin_la_OBJECTS = $(am_libgslmultimin_la_OBJECTS)
 am_test_OBJECTS = test.$(OBJEXT) test_funcs.$(OBJEXT)
 test_OBJECTS = $(am_test_OBJECTS)
@@ -139,6 +140,7 @@ LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
+LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
@@ -146,7 +148,10 @@ MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
+OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OTOOL = @OTOOL@
+OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -211,8 +216,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libgslmultimin.la 
 pkginclude_HEADERS = gsl_multimin.h
-INCLUDES = -I$(top_builddir)
-libgslmultimin_la_SOURCES = fdfminimizer.c steepest_descent.c conjugate_fr.c conjugate_pr.c convergence.c diff.c vector_bfgs.c vector_bfgs2.c fminimizer.c simplex.c
+INCLUDES = -I$(top_srcdir)
+libgslmultimin_la_SOURCES = fdfminimizer.c steepest_descent.c conjugate_fr.c conjugate_pr.c convergence.c diff.c vector_bfgs.c vector_bfgs2.c fminimizer.c simplex.c simplex2.c
 noinst_HEADERS = directional_minimize.c linear_minimize.c linear_wrapper.c
 TESTS = $(check_PROGRAMS) 
 test_SOURCES = test.c test_funcs.c test_funcs.h

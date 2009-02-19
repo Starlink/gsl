@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([gsl],[1.11])
+AC_INIT([gsl],[1.12])
 AC_CONFIG_SRCDIR(gsl_math.h)
 
 AM_INIT_AUTOMAKE([gnu no-dependencies])
@@ -23,6 +23,7 @@ dnl gsl-1.8    libgsl 9:0:9  libgslcblas 0:0:0
 dnl gsl-1.9    libgsl 10:0:10 libgslcblas 0:0:0 
 dnl gsl-1.10   libgsl 10:0:10 (*) libgslcblas 0:0:0 
 dnl gsl-1.11   libgsl 12:0:12  libgslcblas 0:0:0 
+dnl gsl-1.12   libgsl 13:0:13  libgslcblas 0:0:0 
 dnl 
 dnl (*) There was an error on this release.  Firstly, the versioning
 dnl numbers were not updated.  Secondly, 2 functions were removed, but
@@ -43,9 +44,9 @@ dnl interfaces have been removed. removal has precedence over adding,
 dnl so set to 0 if both happened.
 
 dnl
-GSL_CURRENT=12
+GSL_CURRENT=13
 GSL_REVISION=0
-GSL_AGE=12
+GSL_AGE=13
 dnl
 CBLAS_CURRENT=0
 CBLAS_REVISION=0
@@ -96,7 +97,7 @@ AC_SUBST(GSL_LIBS)
 dnl Check for "extern inline", using a modified version of the test
 dnl for AC_C_INLINE from acspecific.mt
 dnl
-AC_CACHE_CHECK([for extern inline], ac_cv_c_extern_inline,
+AC_CACHE_CHECK([for GNU-style extern inline], ac_cv_c_extern_inline,
 [ac_cv_c_extern_inline=no
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[extern $ac_cv_c_inline double foo(double x);
 extern $ac_cv_c_inline double foo(double x) { return x + 1.0 ; } ;
@@ -105,6 +106,19 @@ double foo (double x) { return x + 1.0 ; };]], [[  foo(1.0)  ]])],[ac_cv_c_exter
 
 if test "$ac_cv_c_extern_inline" != no ; then
    AC_DEFINE(HAVE_INLINE,[],[Define if you have inline])
+else
+   AC_CACHE_CHECK([for C99-style inline], ac_cv_c_c99inline,
+   [ac_cv_c_c99inline=no
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef __GNUC_STDC_INLINE__
+   inline double foo(double x);
+   inline double foo(double x) { return x + 1.0 ; };
+   #endif]], 
+   [[  foo(1.0)  ]])],[ac_cv_c_c99inline="yes"],[])
+   ])
+
+   if test "$ac_cv_c_c99inline" != no ; then
+      AC_DEFINE(HAVE_INLINE,[],[Define if you have inline])
+   fi
 fi
 
 dnl Checks for header files.
@@ -311,8 +325,13 @@ if test "$ac_cv_c_ieee_interface" = "gnux86" ; then
     AC_RUN_IFELSE([AC_LANG_PROGRAM([[
 #include <stdlib.h>
 #define _FPU_SETMXCSR(cw_sse) asm volatile ("ldmxcsr %0" : : "m" (*&cw_sse))
-]], [[ unsigned int mode = 0x1f80 ; _FPU_SETMXCSR(mode); exit(0); ]])],[ac_cv_c_fpu_sse="yes"])
-    ])
+]], [[ unsigned int mode = 0x1f80 ; _FPU_SETMXCSR(mode); exit(0); ]])],[ac_cv_c_fpu_sse="yes"],[ac_cv_c_fpu_sse="no"],[
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <stdlib.h>
+#define _FPU_SETMXCSR(cw_sse) asm volatile ("ldmxcsr %0" : : "m" (*&cw_sse))
+]], [[ unsigned int mode = 0x1f80 ; _FPU_SETMXCSR(mode); exit(0); ]])],[ac_cv_c_fpu_sse="yes"],[ac_cv_c_fpu_sse="no"])
+])])
+
     if test $ac_cv_c_fpu_sse = yes; then
         AC_DEFINE([HAVE_FPU_X86_SSE], 1,
                   [Define if x86 processor has sse extensions.])

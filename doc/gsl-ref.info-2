@@ -1,4 +1,4 @@
-This is gsl-ref.info, produced by makeinfo version 4.8 from
+This is gsl-ref.info, produced by makeinfo version 4.11 from
 gsl-ref.texi.
 
 INFO-DIR-SECTION Scientific software
@@ -7,10 +7,10 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007 The GSL Team.
+2005, 2006, 2007, 2008 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
-under the terms of the GNU Free Documentation License, Version 1.2 or
+under the terms of the GNU Free Documentation License, Version 1.3 or
 any later version published by the Free Software Foundation; with the
 Invariant Sections being "GNU General Public License" and "Free Software
 Needs Free Documentation", the Front-Cover text being "A GNU Manual",
@@ -20,6 +20,75 @@ License".
 
    (a) The Back-Cover Text is: "You have the freedom to copy and modify
 this GNU Manual."
+
+
+File: gsl-ref.info,  Node: Sorting objects,  Next: Sorting vectors,  Up: Sorting
+
+11.1 Sorting objects
+====================
+
+The following function provides a simple alternative to the standard
+library function `qsort'.  It is intended for systems lacking `qsort',
+not as a replacement for it.  The function `qsort' should be used
+whenever possible, as it will be faster and can provide stable ordering
+of equal elements.  Documentation for `qsort' is available in the `GNU
+C Library Reference Manual'.
+
+   The functions described in this section are defined in the header
+file `gsl_heapsort.h'.
+
+ -- Function: void gsl_heapsort (void * ARRAY, size_t COUNT, size_t
+          SIZE, gsl_comparison_fn_t COMPARE)
+     This function sorts the COUNT elements of the array ARRAY, each of
+     size SIZE, into ascending order using the comparison function
+     COMPARE.  The type of the comparison function is defined by,
+
+          int (*gsl_comparison_fn_t) (const void * a,
+                                      const void * b)
+
+     A comparison function should return a negative integer if the first
+     argument is less than the second argument, `0' if the two arguments
+     are equal and a positive integer if the first argument is greater
+     than the second argument.
+
+     For example, the following function can be used to sort doubles
+     into ascending numerical order.
+
+          int
+          compare_doubles (const double * a,
+                           const double * b)
+          {
+              if (*a > *b)
+                 return 1;
+              else if (*a < *b)
+                 return -1;
+              else
+                 return 0;
+          }
+
+     The appropriate function call to perform the sort is,
+
+          gsl_heapsort (array, count, sizeof(double),
+                        compare_doubles);
+
+     Note that unlike `qsort' the heapsort algorithm cannot be made into
+     a stable sort by pointer arithmetic.  The trick of comparing
+     pointers for equal elements in the comparison function does not
+     work for the heapsort algorithm.  The heapsort algorithm performs
+     an internal rearrangement of the data which destroys its initial
+     ordering.
+
+ -- Function: int gsl_heapsort_index (size_t * P, const void * ARRAY,
+          size_t COUNT, size_t SIZE, gsl_comparison_fn_t COMPARE)
+     This function indirectly sorts the COUNT elements of the array
+     ARRAY, each of size SIZE, into ascending order using the
+     comparison function COMPARE.  The resulting permutation is stored
+     in P, an array of length N.  The elements of P give the index of
+     the array element which would have been stored in that position if
+     the array had been sorted in place.  The first element of P gives
+     the index of the least element in ARRAY, and the last element of P
+     gives the index of the greatest element in ARRAY.  The array
+     itself is not changed.
 
 
 File: gsl-ref.info,  Node: Sorting vectors,  Next: Selecting the k smallest or largest elements,  Prev: Sorting objects,  Up: Sorting
@@ -384,6 +453,10 @@ Z
 Thus, for example, the name SGEMM stands for "single-precision general
 matrix-matrix multiply" and ZGEMM stands for "double-precision complex
 matrix-matrix multiply".
+
+   Note that the vector and matrix arguments to BLAS functions must not
+be aliased, as the results are undefined when the underlying arrays
+overlap (*note Aliasing of arrays::).
 
 * Menu:
 
@@ -861,7 +934,7 @@ File: gsl-ref.info,  Node: Level 3 GSL BLAS Interface,  Prev: Level 2 GSL BLAS I
           BETA, gsl_matrix_complex * C)
      These functions compute a rank-k update of the hermitian matrix C,
      C = \alpha A A^H + \beta C when TRANS is `CblasNoTrans' and C =
-     \alpha A^H A + \beta C when TRANS is `CblasTrans'.  Since the
+     \alpha A^H A + \beta C when TRANS is `CblasConjTrans'.  Since the
      matrix C is hermitian only its upper half or lower half need to be
      stored.  When UPLO is `CblasUpper' then the upper triangle and
      diagonal of C are used, and when UPLO is `CblasLower' then the
@@ -1080,15 +1153,16 @@ singular matrices.
           B, gsl_vector_complex * X)
      These functions solve the square system A x = b using the LU
      decomposition of A into (LU, P) given by `gsl_linalg_LU_decomp' or
-     `gsl_linalg_complex_LU_decomp'.
+     `gsl_linalg_complex_LU_decomp' as input.
 
  -- Function: int gsl_linalg_LU_svx (const gsl_matrix * LU, const
           gsl_permutation * P, gsl_vector * X)
  -- Function: int gsl_linalg_complex_LU_svx (const gsl_matrix_complex *
           LU, const gsl_permutation * P, gsl_vector_complex * X)
      These functions solve the square system A x = b in-place using the
-     LU decomposition of A into (LU,P). On input X should contain the
-     right-hand side b, which is replaced by the solution on output.
+     precomputed LU decomposition of A into (LU,P). On input X should
+     contain the right-hand side b, which is replaced by the solution
+     on output.
 
  -- Function: int gsl_linalg_LU_refine (const gsl_matrix * A, const
           gsl_matrix * LU, const gsl_permutation * P, const gsl_vector
@@ -1098,9 +1172,9 @@ singular matrices.
           gsl_permutation * P, const gsl_vector_complex * B,
           gsl_vector_complex * X, gsl_vector_complex * RESIDUAL)
      These functions apply an iterative improvement to X, the solution
-     of A x = b, using the LU decomposition of A into (LU,P). The
-     initial residual r = A x - b is also computed and stored in
-     RESIDUAL.
+     of A x = b, from the precomputed LU decomposition of A into
+     (LU,P). The initial residual r = A x - b is also computed and
+     stored in RESIDUAL.
 
  -- Function: int gsl_linalg_LU_invert (const gsl_matrix * LU, const
           gsl_permutation * P, gsl_matrix * INVERSE)
@@ -1178,16 +1252,18 @@ rank.
  -- Function: int gsl_linalg_QR_solve (const gsl_matrix * QR, const
           gsl_vector * TAU, const gsl_vector * B, gsl_vector * X)
      This function solves the square system A x = b using the QR
-     decomposition of A into (QR, TAU) given by `gsl_linalg_QR_decomp'.
-     The least-squares solution for rectangular systems can be found
-     using `gsl_linalg_QR_lssolve'.
+     decomposition of A held in (QR, TAU) which must have been computed
+     previously with `gsl_linalg_QR_decomp'.  The least-squares
+     solution for rectangular systems can be found using
+     `gsl_linalg_QR_lssolve'.
 
  -- Function: int gsl_linalg_QR_svx (const gsl_matrix * QR, const
           gsl_vector * TAU, gsl_vector * X)
      This function solves the square system A x = b in-place using the
-     QR decomposition of A into (QR,TAU) given by
-     `gsl_linalg_QR_decomp'. On input X should contain the right-hand
-     side b, which is replaced by the solution on output.
+     QR decomposition of A held in (QR,TAU) which must have been
+     computed previously by `gsl_linalg_QR_decomp'.  On input X should
+     contain the right-hand side b, which is replaced by the solution
+     on output.
 
  -- Function: int gsl_linalg_QR_lssolve (const gsl_matrix * QR, const
           gsl_vector * TAU, const gsl_vector * B, gsl_vector * X,
@@ -1195,10 +1271,10 @@ rank.
      This function finds the least squares solution to the
      overdetermined system A x = b where the matrix A has more rows than
      columns.  The least squares solution minimizes the Euclidean norm
-     of the residual, ||Ax - b||.The routine uses the QR decomposition
-     of A into (QR, TAU) given by `gsl_linalg_QR_decomp'.  The solution
-     is returned in X.  The residual is computed as a by-product and
-     stored in RESIDUAL.
+     of the residual, ||Ax - b||.The routine requires as input the QR
+     decomposition of A into (QR, TAU) given by `gsl_linalg_QR_decomp'.
+     The solution is returned in X.  The residual is computed as a
+     by-product and stored in RESIDUAL.
 
  -- Function: int gsl_linalg_QR_QTvec (const gsl_matrix * QR, const
           gsl_vector * TAU, gsl_vector * V)
@@ -1250,7 +1326,7 @@ rank.
  -- Function: int gsl_linalg_QR_update (gsl_matrix * Q, gsl_matrix * R,
           gsl_vector * W, const gsl_vector * V)
      This function performs a rank-1 update w v^T of the QR
-     decomposition (Q, R). The update is given by Q'R' = Q R + w v^T
+     decomposition (Q, R). The update is given by Q'R' = Q (R + w v^T)
      where the output matrices Q' and R' are also orthogonal and right
      triangular. Note that W is destroyed by the update.
 
@@ -1315,13 +1391,13 @@ QRP^T since A = Q R P^T.
           gsl_vector * TAU, const gsl_permutation * P, const gsl_vector
           * B, gsl_vector * X)
      This function solves the square system A x = b using the QRP^T
-     decomposition of A into (QR, TAU, P) given by
-     `gsl_linalg_QRPT_decomp'.
+     decomposition of A held in (QR, TAU, P) which must have been
+     computed previously by `gsl_linalg_QRPT_decomp'.
 
  -- Function: int gsl_linalg_QRPT_svx (const gsl_matrix * QR, const
           gsl_vector * TAU, const gsl_permutation * P, gsl_vector * X)
      This function solves the square system A x = b in-place using the
-     QRP^T decomposition of A into (QR,TAU,P). On input X should
+     QRP^T decomposition of A held in (QR,TAU,P). On input X should
      contain the right-hand side b, which is replaced by the solution
      on output.
 
@@ -1333,12 +1409,12 @@ QRP^T since A = Q R P^T.
      unpacked form as (Q, R).
 
  -- Function: int gsl_linalg_QRPT_update (gsl_matrix * Q, gsl_matrix *
-          R, const gsl_permutation * P, gsl_vector * U, const
+          R, const gsl_permutation * P, gsl_vector * W, const
           gsl_vector * V)
      This function performs a rank-1 update w v^T of the QRP^T
-     decomposition (Q, R, P). The update is given by Q'R' = Q R + w v^T
-     where the output matrices Q' and R' are also orthogonal and right
-     triangular. Note that W is destroyed by the update. The
+     decomposition (Q, R, P). The update is given by Q'R' = Q (R + w
+     v^T P) where the output matrices Q' and R' are also orthogonal and
+     right triangular. Note that W is destroyed by the update. The
      permutation P is not changed.
 
  -- Function: int gsl_linalg_QRPT_Rsolve (const gsl_matrix * QR, const
@@ -1383,6 +1459,12 @@ columns of V corresponding to the zero singular values.  Similarly, the
 range of A is given by columns of U corresponding to the non-zero
 singular values.
 
+   Note that the routines here compute the "thin" version of the SVD
+with U as M-by-N orthogonal matrix. This allows in-place computation
+and is the most commonly-used form in practice.  Mathematically, the
+"full" SVD is defined with U as an M-by-M orthogonal matrix and S as an
+M-by-N diagonal matrix (with additional rows of zeros).
+
  -- Function: int gsl_linalg_SV_decomp (gsl_matrix * A, gsl_matrix * V,
           gsl_vector * S, gsl_vector * WORK)
      This function factorizes the M-by-N matrix A into the singular
@@ -1412,7 +1494,8 @@ singular values.
  -- Function: int gsl_linalg_SV_solve (gsl_matrix * U, gsl_matrix * V,
           gsl_vector * S, const gsl_vector * B, gsl_vector * X)
      This function solves the system A x = b using the singular value
-     decomposition (U, S, V) of A given by `gsl_linalg_SV_decomp'.
+     decomposition (U, S, V) held in A which must have been computed
+     previously by `gsl_linalg_SV_decomp'.
 
      Only non-zero singular values are used in computing the solution.
      The parts of the solution corresponding to singular values of zero
@@ -1464,8 +1547,8 @@ L^T x = y), which can be solved by forward and back-substitution.
           gsl_matrix_complex * CHOLESKY, const gsl_vector_complex * B,
           gsl_vector_complex * X)
      These functions solve the system A x = b using the Cholesky
-     decomposition of A into the matrix CHOLESKY given by
-     `gsl_linalg_cholesky_decomp' or
+     decomposition of A held in the matrix CHOLESKY which must have
+     been previously computed by `gsl_linalg_cholesky_decomp' or
      `gsl_linalg_complex_cholesky_decomp'.
 
  -- Function: int gsl_linalg_cholesky_svx (const gsl_matrix * CHOLESKY,
@@ -1473,10 +1556,16 @@ L^T x = y), which can be solved by forward and back-substitution.
  -- Function: int gsl_linalg_complex_cholesky_svx (const
           gsl_matrix_complex * CHOLESKY, gsl_vector_complex * X)
      These functions solve the system A x = b in-place using the
-     Cholesky decomposition of A into the matrix CHOLESKY given by
-     `gsl_linalg_cholesky_decomp' or
+     Cholesky decomposition of A held in the matrix CHOLESKY which must
+     have been previously computed by by `gsl_linalg_cholesky_decomp' or
      `gsl_linalg_complex_cholesky_decomp'. On input X should contain
      the right-hand side b, which is replaced by the solution on output.
+
+ -- Function: int gsl_linalg_cholesky_invert (gsl_matrix * CHOLESKY)
+     This function computes the inverse of the matrix CHOLESKY which
+     must have been previously computed by `gsl_linalg_cholesky_decomp'.
+     The inverse of the original matrix A is stored in CHOLESKY on
+     output.
 
 
 File: gsl-ref.info,  Node: Tridiagonal Decomposition of Real Symmetric Matrices,  Next: Tridiagonal Decomposition of Hermitian Matrices,  Prev: Cholesky Decomposition,  Up: Linear Algebra
@@ -1658,7 +1747,7 @@ The size of U is M-by-N and the size of V is N-by-N.
  -- Function: int gsl_linalg_bidiag_unpack (const gsl_matrix * A, const
           gsl_vector * TAU_U, gsl_matrix * U, const gsl_vector * TAU_V,
           gsl_matrix * V, gsl_vector * DIAG, gsl_vector * SUPERDIAG)
-     This function unpacks the bidiagonal decomposition of A given by
+     This function unpacks the bidiagonal decomposition of A produced by
      `gsl_linalg_bidiag_decomp', (A, TAU_U, TAU_V) into the separate
      orthogonal matrices U, V and the diagonal vector DIAG and
      superdiagonal SUPERDIAG.  Note that U is stored as a compact
@@ -1666,7 +1755,7 @@ The size of U is M-by-N and the size of V is N-by-N.
 
  -- Function: int gsl_linalg_bidiag_unpack2 (gsl_matrix * A, gsl_vector
           * TAU_U, gsl_vector * TAU_V, gsl_matrix * V)
-     This function unpacks the bidiagonal decomposition of A given by
+     This function unpacks the bidiagonal decomposition of A produced by
      `gsl_linalg_bidiag_decomp', (A, TAU_U, TAU_V) into the separate
      orthogonal matrices U, V and the diagonal vector DIAG and
      superdiagonal SUPERDIAG.  The matrix U is stored in-place in A.
@@ -1674,8 +1763,8 @@ The size of U is M-by-N and the size of V is N-by-N.
  -- Function: int gsl_linalg_bidiag_unpack_B (const gsl_matrix * A,
           gsl_vector * DIAG, gsl_vector * SUPERDIAG)
      This function unpacks the diagonal and superdiagonal of the
-     bidiagonal decomposition of A given by `gsl_linalg_bidiag_decomp',
-     into the diagonal vector DIAG and superdiagonal vector SUPERDIAG.
+     bidiagonal decomposition of A from `gsl_linalg_bidiag_decomp', into
+     the diagonal vector DIAG and superdiagonal vector SUPERDIAG.
 
 
 File: gsl-ref.info,  Node: Householder Transformations,  Next: Householder solver for linear systems,  Prev: Bidiagonalization,  Up: Linear Algebra
@@ -1949,7 +2038,11 @@ the following papers,
 
      J.C. Nash, "A one-sided transformation method for the singular
      value decomposition and algebraic eigenproblem", `Computer
-     Journal', Volume 18, Number 1 (1973), p 74-76
+     Journal', Volume 18, Number 1 (1975), p 74-76
+
+     J.C. Nash and S. Shlien "Simple algorithms for the partial singular
+     value decomposition", `Computer Journal', Volume 30 (1987), p
+     268-275.
 
      James Demmel, Kresimir Veselic, "Jacobi's Method is more accurate
      than QR", `Lapack Working Note 15' (LAWN-15), October 1989.
@@ -2131,7 +2224,7 @@ shift Francis method.
      the matrix prior to computing eigenvalues. This transformation is
      designed to make the rows and columns of the matrix have comparable
      norms, and can result in more accurate eigenvalues for matrices
-     whose entries vary widely in magnitude. See *Note Balancing:: for
+     whose entries vary widely in magnitude. See *note Balancing:: for
      more information. Note that the balancing transformation does not
      preserve the orthogonality of the Schur vectors, so if you wish to
      compute the Schur vectors with `gsl_eigen_nonsymm_Z' you will
@@ -3304,7 +3397,8 @@ files `gsl_fft_real.h'
 
      The following table shows the correspondence between the output
      DATA and the equivalent results obtained by considering the input
-     data as a complex sequence with zero imaginary part,
+     data as a complex sequence with zero imaginary part (assuming
+     STRIDE=1),
 
           complex[0].real    =    data[0]
           complex[0].imag    =    0
@@ -3323,8 +3417,8 @@ files `gsl_fft_real.h'
           complex[N-1].real  =    data[1]
           complex[N-1].imag  =   -data[N-1]
      Note that the output data can be converted into the full complex
-     sequence using the function `gsl_fft_halfcomplex_unpack' described
-     in the next section.
+     sequence using the function `gsl_fft_halfcomplex_radix2_unpack'
+     described below.
 
    The radix-2 FFT functions for halfcomplex data are declared in the
 header file `gsl_fft_halfcomplex.h'.
@@ -3339,6 +3433,40 @@ header file `gsl_fft_halfcomplex.h'.
      `gsl_fft_real_radix2'.  The result is a real array stored in
      natural order.
 
+ -- Function: int gsl_fft_halfcomplex_radix2_unpack (const double
+          HALFCOMPLEX_COEFFICIENT[], gsl_complex_packed_array
+          COMPLEX_COEFFICIENT, size_t STRIDE, size_t N)
+     This function converts HALFCOMPLEX_COEFFICIENT, an array of
+     half-complex coefficients as returned by
+     `gsl_fft_real_radix2_transform', into an ordinary complex array,
+     COMPLEX_COEFFICIENT.  It fills in the complex array using the
+     symmetry z_k = z_{N-k}^* to reconstruct the redundant elements.
+     The algorithm for the conversion is,
+
+          complex_coefficient[0].real
+            = halfcomplex_coefficient[0];
+          complex_coefficient[0].imag
+            = 0.0;
+
+          for (i = 1; i < n - i; i++)
+            {
+              double hc_real
+                = halfcomplex_coefficient[i*stride];
+              double hc_imag
+                = halfcomplex_coefficient[(n-i)*stride];
+              complex_coefficient[i*stride].real = hc_real;
+              complex_coefficient[i*stride].imag = hc_imag;
+              complex_coefficient[(n - i)*stride].real = hc_real;
+              complex_coefficient[(n - i)*stride].imag = -hc_imag;
+            }
+
+          if (i == n - i)
+            {
+              complex_coefficient[i*stride].real
+                = halfcomplex_coefficient[(n - 1)*stride];
+              complex_coefficient[i*stride].imag
+                = 0.0;
+            }
 
 
 File: gsl-ref.info,  Node: Mixed-radix FFT routines for real data,  Next: FFT References and Further Reading,  Prev: Radix-2 FFT routines for real data,  Up: Fast Fourier Transforms
@@ -3486,9 +3614,9 @@ data,
 
           for (i = 0; i < n; i++)
             {
-              complex_coefficient[i].real
-                = real_coefficient[i];
-              complex_coefficient[i].imag
+              complex_coefficient[i*stride].real
+                = real_coefficient[i*stride];
+              complex_coefficient[i*stride].imag
                 = 0.0;
             }
 
@@ -3510,20 +3638,20 @@ data,
           for (i = 1; i < n - i; i++)
             {
               double hc_real
-                = halfcomplex_coefficient[2 * i - 1];
+                = halfcomplex_coefficient[(2 * i - 1)*stride];
               double hc_imag
-                = halfcomplex_coefficient[2 * i];
-              complex_coefficient[i].real = hc_real;
-              complex_coefficient[i].imag = hc_imag;
-              complex_coefficient[n - i].real = hc_real;
-              complex_coefficient[n - i].imag = -hc_imag;
+                = halfcomplex_coefficient[(2 * i)*stride];
+              complex_coefficient[i*stride].real = hc_real;
+              complex_coefficient[i*stride].imag = hc_imag;
+              complex_coefficient[(n - i)*stride].real = hc_real;
+              complex_coefficient[(n - i)*stride].imag = -hc_imag;
             }
 
           if (i == n - i)
             {
-              complex_coefficient[i].real
-                = halfcomplex_coefficient[n - 1];
-              complex_coefficient[i].imag
+              complex_coefficient[i*stride].real
+                = halfcomplex_coefficient[(n - 1)*stride];
+              complex_coefficient[i*stride].imag
                 = 0.0;
             }
 
@@ -4481,12 +4609,20 @@ File: gsl-ref.info,  Node: Random number generator initialization,  Next: Sampli
      generator.  If the generator is seeded with the same value of S on
      two different runs, the same stream of random numbers will be
      generated by successive calls to the routines below.  If different
-     values of S are supplied, then the generated streams of random
+     values of S >= 1 are supplied, then the generated streams of random
      numbers should be completely different.  If the seed S is zero
      then the standard seed from the original implementation is used
      instead.  For example, the original Fortran source code for the
      `ranlux' generator used a seed of 314159265, and so choosing S
      equal to zero reproduces this when using `gsl_rng_ranlux'.
+
+     When using multiple seeds with the same generator, choose seed
+     values greater than zero to avoid collisions with the default
+     setting.
+
+     Note that the most generators only accept 32-bit seeds, with higher
+     values being reduced modulo 2^32.  For generators with smaller
+     ranges the maximum seed value will typically be lower.
 
  -- Function: void gsl_rng_free (gsl_rng * R)
      This function frees all the memory associated with the generator R.
@@ -4710,7 +4846,7 @@ File: gsl-ref.info,  Node: Reading and writing random number generator state,  N
 ======================================================
 
 The library provides functions for reading and writing the random
-number state to a file as binary data or formatted text.
+number state to a file as binary data.
 
  -- Function: int gsl_rng_fwrite (FILE * STREAM, const gsl_rng * R)
      This function writes the random number state of the random number
@@ -5489,7 +5625,7 @@ The following quasi-random sequence algorithms are available,
      valid up to 40 dimensions.
 
  -- Generator: gsl_qrng_halton
- -- Generator: gsl_qrng_reverse_halton
+ -- Generator: gsl_qrng_reversehalton
      These generators use the Halton and reverse Halton sequences
      described in J.H. Halton, `Numerische Mathematik' 2, 84-90 (1960)
      and B. Vandewoestyne and R. Cools `Computational and Applied
@@ -6821,131 +6957,4 @@ File: gsl-ref.info,  Node: The Geometric Distribution,  Next: The Hypergeometric
  -- Function: double gsl_cdf_geometric_Q (unsigned int K, double P)
      These functions compute the cumulative distribution functions
      P(k), Q(k) for the geometric distribution with parameter P.
-
-
-File: gsl-ref.info,  Node: The Hypergeometric Distribution,  Next: The Logarithmic Distribution,  Prev: The Geometric Distribution,  Up: Random Number Distributions
-
-19.36 The Hypergeometric Distribution
-=====================================
-
- -- Function: unsigned int gsl_ran_hypergeometric (const gsl_rng * R,
-          unsigned int N1, unsigned int N2, unsigned int T)
-     This function returns a random integer from the hypergeometric
-     distribution.  The probability distribution for hypergeometric
-     random variates is,
-
-          p(k) =  C(n_1, k) C(n_2, t - k) / C(n_1 + n_2, t)
-
-     where C(a,b) = a!/(b!(a-b)!) and t <= n_1 + n_2.  The domain of k
-     is max(0,t-n_2), ..., min(t,n_1).
-
-     If a population contains n_1 elements of "type 1" and n_2 elements
-     of "type 2" then the hypergeometric distribution gives the
-     probability of obtaining k elements of "type 1" in t samples from
-     the population without replacement.
-
- -- Function: double gsl_ran_hypergeometric_pdf (unsigned int K,
-          unsigned int N1, unsigned int N2, unsigned int T)
-     This function computes the probability p(k) of obtaining K from a
-     hypergeometric distribution with parameters N1, N2, T, using the
-     formula given above.
-
-
- -- Function: double gsl_cdf_hypergeometric_P (unsigned int K, unsigned
-          int N1, unsigned int N2, unsigned int T)
- -- Function: double gsl_cdf_hypergeometric_Q (unsigned int K, unsigned
-          int N1, unsigned int N2, unsigned int T)
-     These functions compute the cumulative distribution functions
-     P(k), Q(k) for the hypergeometric distribution with parameters N1,
-     N2 and T.
-
-
-File: gsl-ref.info,  Node: The Logarithmic Distribution,  Next: Shuffling and Sampling,  Prev: The Hypergeometric Distribution,  Up: Random Number Distributions
-
-19.37 The Logarithmic Distribution
-==================================
-
- -- Function: unsigned int gsl_ran_logarithmic (const gsl_rng * R,
-          double P)
-     This function returns a random integer from the logarithmic
-     distribution.  The probability distribution for logarithmic random
-     variates is,
-
-          p(k) = {-1 \over \log(1-p)} {(p^k \over k)}
-
-     for k >= 1.
-
- -- Function: double gsl_ran_logarithmic_pdf (unsigned int K, double P)
-     This function computes the probability p(k) of obtaining K from a
-     logarithmic distribution with probability parameter P, using the
-     formula given above.
-
-
-
-File: gsl-ref.info,  Node: Shuffling and Sampling,  Next: Random Number Distribution Examples,  Prev: The Logarithmic Distribution,  Up: Random Number Distributions
-
-19.38 Shuffling and Sampling
-============================
-
-The following functions allow the shuffling and sampling of a set of
-objects.  The algorithms rely on a random number generator as a source
-of randomness and a poor quality generator can lead to correlations in
-the output.  In particular it is important to avoid generators with a
-short period.  For more information see Knuth, v2, 3rd ed, Section
-3.4.2, "Random Sampling and Shuffling".
-
- -- Function: void gsl_ran_shuffle (const gsl_rng * R, void * BASE,
-          size_t N, size_t SIZE)
-     This function randomly shuffles the order of N objects, each of
-     size SIZE, stored in the array BASE[0..N-1].  The output of the
-     random number generator R is used to produce the permutation.  The
-     algorithm generates all possible n!  permutations with equal
-     probability, assuming a perfect source of random numbers.
-
-     The following code shows how to shuffle the numbers from 0 to 51,
-
-          int a[52];
-
-          for (i = 0; i < 52; i++)
-            {
-              a[i] = i;
-            }
-
-          gsl_ran_shuffle (r, a, 52, sizeof (int));
-
-
- -- Function: int gsl_ran_choose (const gsl_rng * R, void * DEST,
-          size_t K, void * SRC, size_t N, size_t SIZE)
-     This function fills the array DEST[k] with K objects taken
-     randomly from the N elements of the array SRC[0..N-1].  The
-     objects are each of size SIZE.  The output of the random number
-     generator R is used to make the selection.  The algorithm ensures
-     all possible samples are equally likely, assuming a perfect source
-     of randomness.
-
-     The objects are sampled _without_ replacement, thus each object can
-     only appear once in DEST[k].  It is required that K be less than
-     or equal to `n'.  The objects in DEST will be in the same relative
-     order as those in SRC.  You will need to call `gsl_ran_shuffle(r,
-     dest, n, size)' if you want to randomize the order.
-
-     The following code shows how to select a random sample of three
-     unique numbers from the set 0 to 99,
-
-          double a[3], b[100];
-
-          for (i = 0; i < 100; i++)
-            {
-              b[i] = (double) i;
-            }
-
-          gsl_ran_choose (r, a, 3, b, 100, sizeof (double));
-
-
- -- Function: void gsl_ran_sample (const gsl_rng * R, void * DEST,
-          size_t K, void * SRC, size_t N, size_t SIZE)
-     This function is like `gsl_ran_choose' but samples K items from
-     the original array of N items SRC with replacement, so the same
-     object can appear more than once in the output sequence DEST.
-     There is no requirement that K be less than N in this case.
 

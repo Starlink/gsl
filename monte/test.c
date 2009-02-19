@@ -34,6 +34,7 @@
 #include <gsl/gsl_monte_vegas.h>
 
 #define CONSTANT
+#define STEP
 #define PRODUCT
 #define GAUSSIAN
 #define DBLGAUSSIAN
@@ -49,6 +50,7 @@ double xu2[11] = { 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 };
 double xu3[2]  = { GSL_DBL_MAX, GSL_DBL_MAX };
 
 double fconst (double x[], size_t d, void *params);
+double fstep (double x[], size_t d, void *params);
 double f0 (double x[], size_t d, void *params);
 double f1 (double x[], size_t d, void *params);
 double f2 (double x[], size_t d, void *params);
@@ -116,6 +118,7 @@ main (void)
   double c = (1.0 + sqrt (10.0)) / 9.0;
 
   gsl_monte_function Fc = make_function(&fconst, 0, 0);
+  gsl_monte_function Fs = make_function(&fstep, 0, 0);
   gsl_monte_function F0 = make_function(&f0, 0, &a);
   gsl_monte_function F1 = make_function(&f1, 0, &a);
   gsl_monte_function F2 = make_function(&f2, 0, &a);
@@ -147,6 +150,20 @@ main (void)
     add(problems,&n, &Fc, xl, xu,  8, 1000, 1.0, 0.0, "constant, 8d");
     add(problems,&n, &Fc, xl, xu,  9, 1000, 1.0, 0.0, "constant, 9d");
     add(problems,&n, &Fc, xl, xu, 10, 1000, 1.0, 0.0, "constant, 10d");
+#endif
+
+#ifdef STEP
+    /* variance(Fs) = 0.4/sqrt(1000) */
+    add(problems,&n, &Fs, xl, xu,  1, 100000, 0.8, 1.264e-3, "step, 1d");
+    add(problems,&n, &Fs, xl, xu,  2, 100000, 0.8, 1.264e-3, "step, 2d");
+    add(problems,&n, &Fs, xl, xu,  3, 100000, 0.8, 1.264e-3, "step, 3d");
+    add(problems,&n, &Fs, xl, xu,  4, 100000, 0.8, 1.264e-3, "step, 4d");
+    add(problems,&n, &Fs, xl, xu,  5, 100000, 0.8, 1.264e-3, "step, 5d");
+    add(problems,&n, &Fs, xl, xu,  6, 100000, 0.8, 1.264e-3, "step, 6d");
+    add(problems,&n, &Fs, xl, xu,  7, 100000, 0.8, 1.264e-3, "step, 7d");
+    add(problems,&n, &Fs, xl, xu,  8, 100000, 0.8, 1.264e-3, "step, 8d");
+    add(problems,&n, &Fs, xl, xu,  9, 100000, 0.8, 1.264e-3, "step, 9d");
+    add(problems,&n, &Fs, xl, xu, 10, 100000, 0.8, 1.264e-3, "step, 10d");
 #endif
 
 #ifdef PRODUCT
@@ -269,10 +286,10 @@ main (void)
 #define NAME "vegas"
 #define MONTE_STATE gsl_monte_vegas_state
 #define MONTE_ALLOC gsl_monte_vegas_alloc
-#define MONTE_INTEGRATE(f,xl,xu,dim,calls,r,s,res,err) { gsl_monte_vegas_integrate(f,xl,xu,dim,calls,r,s,res,err) ; if (s->chisq < 0.5 || s->chisq > 2) gsl_monte_vegas_integrate(f,xl,xu,dim,calls,r,s,res,err); }
+#define MONTE_INTEGRATE(f,xl,xu,dim,calls,r,s,res,err) { gsl_monte_vegas_integrate(f,xl,xu,dim,calls,r,s,res,err) ;  }
 #define MONTE_FREE gsl_monte_vegas_free
 #define MONTE_SPEEDUP 3
-#define MONTE_ERROR_TEST(err,expected) gsl_test(err > 3.0 * (expected == 0 ? 1.0/(I->calls/MONTE_SPEEDUP) : expected), NAME ", %s, abserr[%d] (obs %g vs exp %g)", I->description, i, err, expected)
+#define MONTE_ERROR_TEST(err,expected) gsl_test(err > 3.0 * (expected == 0 ? 1.0/(I->calls/MONTE_SPEEDUP) : expected), NAME ", %s, abserr[%d] (obs %g vs exp %g)", I->description, i, err, expected) ; gsl_test(s->chisq < 0, NAME " returns valid chisq (%g)", s->chisq)
 #include "test_main.c"
 #undef NAME
 #undef MONTE_STATE
@@ -282,6 +299,26 @@ main (void)
 #undef MONTE_ERROR_TEST
 #undef MONTE_SPEEDUP
 #endif
+
+
+#ifdef VEGAS
+#define NAME "vegas(warm)"
+#define MONTE_STATE gsl_monte_vegas_state
+#define MONTE_ALLOC gsl_monte_vegas_alloc
+#define MONTE_INTEGRATE(f,xl,xu,dim,calls,r,s,res,err) { gsl_monte_vegas_integrate(f,xl,xu,dim,calls,r,s,res,err) ; gsl_monte_vegas_integrate(f,xl,xu,dim,calls,r,s,res,err); }
+#define MONTE_FREE gsl_monte_vegas_free
+#define MONTE_SPEEDUP 3
+#define MONTE_ERROR_TEST(err,expected) gsl_test(err > 3.0 * (expected == 0 ? 1.0/(I->calls/MONTE_SPEEDUP) : expected), NAME ", %s, abserr[%d] (obs %g vs exp %g)", I->description, i, err, expected); gsl_test(s->chisq < 0, NAME " returns valid chisq (%g)", s->chisq)
+#include "test_main.c"
+#undef NAME
+#undef MONTE_STATE
+#undef MONTE_ALLOC
+#undef MONTE_INTEGRATE
+#undef MONTE_FREE
+#undef MONTE_ERROR_TEST
+#undef MONTE_SPEEDUP
+#endif
+
       
   exit (gsl_test_summary ());
 }
@@ -291,6 +328,14 @@ double
 fconst (double x[], size_t num_dim, void *params)
 {
   return 1;
+}
+
+
+/* Step-type (pulse) function */
+double
+fstep (double x[], size_t num_dim, void *params)
+{
+  return (x[0] > 0.1 && x[0] < 0.9) ? 1 : 0;
 }
 
 /* Simple product function */
