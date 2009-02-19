@@ -185,7 +185,9 @@ gsl_sf_bessel_IJ_taylor_e(const double nu, const double x,
 }
 
 
-/* x >> nu*nu+1
+/* Hankel's Asymptotic Expansion - A&S 9.2.5
+ *  
+ * x >> nu*nu+1
  * error ~ O( ((nu*nu+1)/x)^4 )
  *
  * empirical error analysis:
@@ -202,24 +204,57 @@ gsl_sf_bessel_IJ_taylor_e(const double nu, const double x,
  * originally given was screwy (it didn't make sense that the
  * "empirical" error was coming out O(eps^3)).
  * With Q to proper order, the error is O(eps^4).
+ *
+ * Sat Mar 15 05:16:18 GMT 2008 [BG]
+ * Extended to use additional terms in the series to gain
+ * higher accuracy.
+ *
  */
+
 int
 gsl_sf_bessel_Jnu_asympx_e(const double nu, const double x, gsl_sf_result * result)
 {
-  double mu   = 4.0*nu*nu;
-  double mum1 = mu-1.0;
-  double mum9 = mu-9.0;
-  double mum25 = mu-25.0;
+  double mu  = 4.0*nu*nu;
   double chi = x - (0.5*nu + 0.25)*M_PI;
-  double P   = 1.0 - mum1*mum9/(128.0*x*x);
-  double Q   = mum1/(8.0*x) * (1.0 - mum9*mum25/(384.0*x*x));
-  double pre = sqrt(2.0/(M_PI*x));
-  double c   = cos(chi);
-  double s   = sin(chi);
-  double r   = mu/x;
-  result->val  = pre * (c*P - s*Q);
-  result->err  = pre * GSL_DBL_EPSILON * (1.0 + fabs(x)) * (fabs(c*P) + fabs(s*Q));
-  result->err += pre * fabs(0.1*r*r*r*r);
+
+  double P   = 0.0; 
+  double Q   = 0.0;
+  
+  double k = 0, t = 1;
+  int convP, convQ;
+
+  do
+    {
+      t *= (k == 0) ? 1 : -(mu - (2*k-1)*(2*k-1)) / (k * (8 * x));
+      convP = fabs(t) < GSL_DBL_EPSILON * fabs(P);
+      P += t;
+      
+      k++;
+
+      t *= (mu - (2*k-1)*(2*k-1)) / (k * (8 * x));
+      convQ = fabs(t) < GSL_DBL_EPSILON * fabs(Q);
+      Q += t;
+
+      /* To preserve the consistency of the series we need to exit
+         when P and Q have the same number of terms */
+
+      if (convP && convQ && k > (nu / 2)) 
+        break;
+
+      k++;
+    }
+  while (k < 1000);
+
+  {
+    double pre = sqrt(2.0/(M_PI*x));
+    double c   = cos(chi);
+    double s   = sin(chi);
+    
+    result->val  = pre * (c*P - s*Q);
+    result->err  = pre * GSL_DBL_EPSILON * (fabs(c*P) + fabs(s*Q) + fabs(t)) * (1 + fabs(x));
+    /* NB: final term accounts for phase error with large x */
+  }
+
   return GSL_SUCCESS;
 }
 
@@ -487,6 +522,7 @@ gsl_sf_bessel_J_CF1(const double nu, const double x,
                     double * ratio, double * sgn)
 {
   const double RECUR_BIG = GSL_SQRT_DBL_MAX;
+  const double RECUR_SMALL = GSL_SQRT_DBL_MIN;
   const int maxiter = 10000;
   int n = 1;
   double Anm2 = 1.0;
@@ -519,7 +555,13 @@ gsl_sf_bessel_J_CF1(const double nu, const double x,
       Anm1 /= RECUR_BIG;
       Bnm1 /= RECUR_BIG;
       Anm2 /= RECUR_BIG;
-      Bnm2 /= RECUR_BIG;
+    } else if(fabs(An) < RECUR_SMALL || fabs(Bn) < RECUR_SMALL) {
+      An /= RECUR_SMALL;
+      Bn /= RECUR_SMALL;
+      Anm1 /= RECUR_SMALL;
+      Bnm1 /= RECUR_SMALL;
+      Anm2 /= RECUR_SMALL;
+      Bnm2 /= RECUR_SMALL;
     }
 
     old_fn = fn;
@@ -531,6 +573,9 @@ gsl_sf_bessel_J_CF1(const double nu, const double x,
 
     if(fabs(del - 1.0) < 2.0*GSL_DBL_EPSILON) break;
   }
+
+  /* FIXME: we should return an error term here as well, because the
+     error from this recurrence affects the overall error estimate. */
 
   *ratio = fn;
   *sgn   = s;

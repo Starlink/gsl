@@ -34,15 +34,16 @@ computing the value of the Bessel function @math{J_0(x)} for @math{x=5},
 
 @noindent
 The output is shown below, and should be correct to double-precision
-accuracy,
+accuracy,@footnote{The last few digits may vary slightly depending on
+the compiler and platform used---this is normal.}
 
 @example
 @verbatiminclude examples/intro.out
 @end example
 
 @noindent
-The steps needed to compile this program are described in the following
-sections.
+The steps needed to compile this program are described
+in the following sections.
 
 @node Compiling and Linking
 @section Compiling and Linking
@@ -249,20 +250,26 @@ stricter autoconf test can be used, see @ref{Autoconf Macros}.
 @node Long double
 @section Long double
 @cindex long double
-The extended numerical type @code{long double} is part of the ANSI C
-standard and should be available in every modern compiler.  However, the
-precision of @code{long double} is platform dependent, and this should
-be considered when using it.  The IEEE standard only specifies the
-minimum precision of extended precision numbers, while the precision of
+In general, the algorithms in the library are written for double
+precision only.  The @code{long double} type is not supported for
+actual computation.
+
+One reason for this choice is that the precision of @code{long double}
+is platform dependent.  The IEEE standard only specifies the minimum
+precision of extended precision numbers, while the precision of
 @code{double} is the same on all platforms.
 
-In some system libraries the @code{stdio.h} formatted input/output
-functions @code{printf} and @code{scanf} are not implemented correctly
-for @code{long double}.  Undefined or incorrect results are avoided by
-testing these functions during the @code{configure} stage of library
-compilation and eliminating certain GSL functions which depend on them
-if necessary.  The corresponding line in the @code{configure} output
-looks like this,
+However, it is sometimes necessary to interact with external data in
+long-double format, so the vector and matrix datatypes include
+long-double versions.
+
+It should be noted that in some system libraries the @code{stdio.h}
+formatted input/output functions @code{printf} and @code{scanf} are
+not implemented correctly for @code{long double}.  Undefined or
+incorrect results are avoided by testing these functions during the
+@code{configure} stage of library compilation and eliminating certain
+GSL functions which depend on them if necessary.  The corresponding
+line in the @code{configure} output looks like this,
 
 @example
 checking whether printf works with long double... no
@@ -423,6 +430,7 @@ header file, or any other specific type, use its individual filename.
 @node Compatibility with C++
 @section Compatibility with C++
 @cindex C++, compatibility
+@cindex exceptions, C++
 The library header files automatically define functions to have
 @code{extern "C"} linkage when included in C++ programs.  This allows
 the functions to be called directly from C++.

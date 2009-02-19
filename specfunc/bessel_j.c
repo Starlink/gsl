@@ -196,11 +196,9 @@ gsl_sf_bessel_jl_e(const int l, const double x, gsl_sf_result * result)
     result->err = 2.0 * GSL_DBL_EPSILON * fabs(result->val) + pre * b.err;
     return status;
   }
-  else if(x > 1000.0 && x > 100.0*l*l)
+  else if(x > 1000.0 && x > l*l)
   {
-    /* We need this to avoid feeding large x to CF1; note that
-     * due to the above check, we know that n <= 50.
-     */
+    /* We need this path to avoid feeding large x to CF1 below; */
     gsl_sf_result b;
     int status = gsl_sf_bessel_Jnu_asympx_e(l + 0.5, x, &b);
     double pre = sqrt((0.5*M_PI)/x);
@@ -211,6 +209,7 @@ gsl_sf_bessel_jl_e(const int l, const double x, gsl_sf_result * result)
   else {
     double sgn;
     double ratio;
+    /* The CF1 call will hit 10000 iterations for x > 10000 + l */
     int stat_CF1 = gsl_sf_bessel_J_CF1(l+0.5, x, &ratio, &sgn);
     double jellp1 = GSL_SQRT_DBL_EPSILON * ratio;
     double jell   = GSL_SQRT_DBL_EPSILON;
@@ -228,7 +227,7 @@ gsl_sf_bessel_jl_e(const int l, const double x, gsl_sf_result * result)
       double pre   = GSL_SQRT_DBL_EPSILON / jell;
       result->val  = j0_result.val * pre;
       result->err  = j0_result.err * fabs(pre);
-      result->err += 2.0 * GSL_DBL_EPSILON * (0.5*l + 1.0) * fabs(result->val);
+      result->err += 4.0 * GSL_DBL_EPSILON * (0.5*l + 1.0) * fabs(result->val);
       return GSL_ERROR_SELECT_2(stat_j0, stat_CF1);
     }
     else {
@@ -237,7 +236,7 @@ gsl_sf_bessel_jl_e(const int l, const double x, gsl_sf_result * result)
       double pre   = GSL_SQRT_DBL_EPSILON / jellp1;
       result->val  = j1_result.val * pre;
       result->err  = j1_result.err * fabs(pre);
-      result->err += 2.0 * GSL_DBL_EPSILON * (0.5*l + 1.0) * fabs(result->val);
+      result->err += 4.0 * GSL_DBL_EPSILON * (0.5*l + 1.0) * fabs(result->val);
       return GSL_ERROR_SELECT_2(stat_j1, stat_CF1);
     }
   }

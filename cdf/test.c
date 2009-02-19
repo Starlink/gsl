@@ -210,6 +210,45 @@ test_hypergeometric_cdf_Q (unsigned int k)
   return gsl_cdf_hypergeometric_Q (k, 7, 19, 13);
 }
 
+struct range
+test_hypergeometric2_range (void)
+{
+  struct range r = {0, 13250474};
+  return r;
+}
+
+struct range
+test_hypergeometric2a_range (void)
+{
+  struct range r = {3500, 3600};
+  return r;
+}
+
+struct range
+test_hypergeometric2b_range (void)
+{
+  struct range r = {13247474, 13250474};
+  return r;
+}
+
+double
+test_hypergeometric2_pdf (unsigned int k)
+{
+  return gsl_ran_hypergeometric_pdf (k, 76200, 13174274, 678090);
+}
+
+double
+test_hypergeometric2_cdf_P (unsigned int k)
+{
+  return gsl_cdf_hypergeometric_P (k, 76200, 13174274, 678090);
+}
+
+double
+test_hypergeometric2_cdf_Q (unsigned int k)
+{
+  return gsl_cdf_hypergeometric_Q (k, 76200, 13174274, 678090);
+}
+
 #ifdef LOGARITHMIC
 struct range
 test_logarithmic_range (void)
@@ -308,6 +347,12 @@ test_discrete_cdf_PQ (double (*cdf_P)(unsigned int),
       double Qi = cdf_Q(i);
       sum = Pi + Qi;
       gsl_test_rel (sum, 1.0, tol, desc, i);
+      {
+        int s1 = (Pi<0 || Pi>1);     
+        int s2 = (Qi<0 || Qi>1);     
+        gsl_test(s1, "Pi in range [0,1] (%.18e)", Pi);
+        gsl_test(s2, "Qi in range [0,1] (%.18e)", Qi);
+      }
     }
 
 }
@@ -329,10 +374,23 @@ main (void)
   TEST_DISCRETE(negative_binomial);
   TEST_DISCRETE(pascal);
   TEST_DISCRETE(hypergeometric);
-
+#ifdef HYPERGEOMETRIC2
+  TEST_DISCRETE(hypergeometric2);
+#endif
 #ifdef LOGARITHMIC
   TEST_DISCRETE(logarithmic);
 #endif
+
+  test_discrete_cdf_PQ(&test_hypergeometric2_cdf_P, 
+                       &test_hypergeometric2_cdf_Q, 
+                       &test_hypergeometric2a_range, 
+                       "test gsl_cdf_hypergeometric_P+Q (k=%d)") ; 
+
+  test_discrete_cdf_PQ(&test_hypergeometric2_cdf_P, 
+                       &test_hypergeometric2_cdf_Q, 
+                       &test_hypergeometric2b_range, 
+                       "test gsl_cdf_hypergeometric_P+Q (k=%d)") ; 
+
 
   /* exit (gsl_test_summary ()); */
 
@@ -704,7 +762,7 @@ void test_tdist (void) {
 
   /* Tests for F distribution */
 
-  /* p(x, nu1, nu2) := betaI(1 / (1 + nu2 / nu1 * x), nu1 / 2, nu2 / 2) */
+  /* p(x, nu1, nu2) := betaI(1 / (1 + (nu2 / nu1) / x), nu1 / 2, nu2 / 2) */
 
 void test_fdist (void) {
   TEST (gsl_cdf_fdist_P, (0.0, 1.2, 1.3), 0.0, 0.0);
@@ -737,6 +795,13 @@ void test_fdist (void) {
   TEST (gsl_cdf_fdist_Q, (1000.0, 1.2, 1.3), 7.98794830588361109e-3, TEST_TOL6);
   TEST (gsl_cdf_fdist_Q, (10000.0, 1.2, 1.3), 1.7891371911574145e-3, TEST_TOL6);
 
+
+  /* computed with gp-pari */
+     
+  TEST (gsl_cdf_fdist_P, (3.479082213465832574, 1, 4040712), 0.93785072763723411967, TEST_TOL6);
+  TEST (gsl_cdf_fdist_P, (3.002774644786533109, 1, 4040712), 0.91687787379476055771, TEST_TOL6);
+  TEST (gsl_cdf_fdist_P, (3.000854441173130827, 1, 4040712), 0.91677930719813578619, TEST_TOL6);
+  TEST (gsl_cdf_fdist_P, (3.000064021622133037, 1, 4040712), 0.9167386972447996480399, TEST_TOL6);
 
   TEST (gsl_cdf_fdist_P, (0.0, 500.0, 1.3), 0.0, 0.0);
   TEST (gsl_cdf_fdist_P, (1e-100, 500.0, 1.3), 0.0, 0.0);
@@ -1145,6 +1210,10 @@ void test_gammainv (void) {
   TEST (gsl_cdf_gamma_Pinv, (9.99954600070237515e-1, 1.0, 1.0), 10.0, TEST_TOL6);
   TEST (gsl_cdf_gamma_Pinv, (9.99999997938846378e-1, 1.0, 1.0), 20.0, 100 * TEST_TOL6);
   TEST (gsl_cdf_gamma_Pinv, (1.0, 1.0, 1.0), GSL_POSINF, 0.0);
+
+  /* Test case from Benjamin Redelings <benjamin_redelings@ncsu.edu> */
+  /* fails on x86_64,  FIXME test value is from octave -- get high precision value */
+  TEST (gsl_cdf_gamma_Pinv, (0.1, 11.887411491530846,1.0), 7.73788447848618e+00, TEST_TOL1);
 
   TEST (gsl_cdf_gamma_Qinv, (0.0, 1.0, 1.0), GSL_POSINF, 0.0);
   TEST (gsl_cdf_gamma_Qinv, (2.06115362243855783e-9, 1.0, 1.0), 20.0, TEST_TOL6);

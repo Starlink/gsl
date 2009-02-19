@@ -1,5 +1,5 @@
 This is gsl-ref.info, produced by makeinfo version 4.8 from
-/home/bjg/gsl.redhat/doc/gsl-ref.texi.
+gsl-ref.texi.
 
 INFO-DIR-SECTION Scientific software
 START-INFO-DIR-ENTRY
@@ -18,8 +18,123 @@ and with the Back-Cover Text being (a) (see below).  A copy of the
 license is included in the section entitled "GNU Free Documentation
 License".
 
-   (a) The Back-Cover Text is: "You have freedom to copy and modify this
-GNU Manual, like GNU software."
+   (a) The Back-Cover Text is: "You have the freedom to copy and modify
+this GNU Manual."
+
+
+File: gsl-ref.info,  Node: Providing a function to minimize,  Next: Multimin Iteration,  Prev: Initializing the Multidimensional Minimizer,  Up: Multidimensional Minimization
+
+35.4 Providing a function to minimize
+=====================================
+
+You must provide a parametric function of n variables for the
+minimizers to operate on.  You may also need to provide a routine which
+calculates the gradient of the function and a third routine which
+calculates both the function value and the gradient together.  In order
+to allow for general parameters the functions are defined by the
+following data types:
+
+ -- Data Type: gsl_multimin_function_fdf
+     This data type defines a general function of n variables with
+     parameters and the corresponding gradient vector of derivatives,
+
+    `double (* f) (const gsl_vector * X, void * PARAMS)'
+          this function should return the result f(x,params) for
+          argument X and parameters PARAMS.  If the function cannot be
+          computed, an error value of `GSL_NAN' should be returned.
+
+    `void (* df) (const gsl_vector * X, void * PARAMS, gsl_vector * G)'
+          this function should store the N-dimensional gradient g_i = d
+          f(x,params) / d x_i in the vector G for argument X and
+          parameters PARAMS, returning an appropriate error code if the
+          function cannot be computed.
+
+    `void (* fdf) (const gsl_vector * X, void * PARAMS, double * f, gsl_vector * G)'
+          This function should set the values of the F and G as above,
+          for arguments X and parameters PARAMS.  This function
+          provides an optimization of the separate functions for f(x)
+          and g(x)--it is always faster to compute the function and its
+          derivative at the same time.
+
+    `size_t n'
+          the dimension of the system, i.e. the number of components of
+          the vectors X.
+
+    `void * params'
+          a pointer to the parameters of the function.
+
+ -- Data Type: gsl_multimin_function
+     This data type defines a general function of n variables with
+     parameters,
+
+    `double (* f) (const gsl_vector * X, void * PARAMS)'
+          this function should return the result f(x,params) for
+          argument X and parameters PARAMS.  If the function cannot be
+          computed, an error value of `GSL_NAN' should be returned.
+
+    `size_t n'
+          the dimension of the system, i.e. the number of components of
+          the vectors X.
+
+    `void * params'
+          a pointer to the parameters of the function.
+
+The following example function defines a simple two-dimensional
+paraboloid with five parameters,
+
+     /* Paraboloid centered on (p[0],p[1]), with
+        scale factors (p[2],p[3]) and minimum p[4] */
+
+     double
+     my_f (const gsl_vector *v, void *params)
+     {
+       double x, y;
+       double *p = (double *)params;
+
+       x = gsl_vector_get(v, 0);
+       y = gsl_vector_get(v, 1);
+
+       return p[2] * (x - p[0]) * (x - p[0]) +
+                p[3] * (y - p[1]) * (y - p[1]) + p[4];
+     }
+
+     /* The gradient of f, df = (df/dx, df/dy). */
+     void
+     my_df (const gsl_vector *v, void *params,
+            gsl_vector *df)
+     {
+       double x, y;
+       double *p = (double *)params;
+
+       x = gsl_vector_get(v, 0);
+       y = gsl_vector_get(v, 1);
+
+       gsl_vector_set(df, 0, 2.0 * p[2] * (x - p[0]));
+       gsl_vector_set(df, 1, 2.0 * p[3] * (y - p[1]));
+     }
+
+     /* Compute both f and df together. */
+     void
+     my_fdf (const gsl_vector *x, void *params,
+             double *f, gsl_vector *df)
+     {
+       *f = my_f(x, params);
+       my_df(x, params, df);
+     }
+
+The function can be initialized using the following code,
+
+     gsl_multimin_function_fdf my_func;
+
+     /* Paraboloid center at (1,2), scale factors (10, 20),
+        minimum value 30 */
+     double p[5] = { 1.0, 2.0, 10.0, 20.0, 30.0 };
+
+     my_func.n = 2;  /* number of function components */
+     my_func.f = &my_f;
+     my_func.df = &my_df;
+     my_func.fdf = &my_fdf;
+     my_func.params = (void *)p;
 
 
 File: gsl-ref.info,  Node: Multimin Iteration,  Next: Multimin Stopping Criteria,  Prev: Providing a function to minimize,  Up: Multidimensional Minimization
@@ -661,7 +776,10 @@ value decomposition of the matrix X.
      X.  The variance-covariance matrix of the model parameters COV is
      estimated from the scatter of the observations about the best-fit.
      The sum of squares of the residuals from the best-fit, \chi^2, is
-     returned in CHISQ.
+     returned in CHISQ. If the coefficient of determination is desired,
+     it can be computed from the expression R^2 = 1 - \chi^2 / TSS,
+     where the total sum of squares (TSS) of the observations Y may be
+     computed from `gsl_stats_tss'.
 
      The best-fit is found by singular value decomposition of the matrix
      X using the preallocated workspace provided in WORK. The modified
@@ -686,7 +804,10 @@ value decomposition of the matrix X.
      of predictor variables X.  The covariance matrix of the model
      parameters COV is computed with the given weights.  The weighted
      sum of squares of the residuals from the best-fit, \chi^2, is
-     returned in CHISQ.
+     returned in CHISQ. If the coefficient of determination is desired,
+     it can be computed from the expression R^2 = 1 - \chi^2 / WTSS,
+     where the weighted total sum of squares (WTSS) of the observations
+     Y may be computed from `gsl_stats_wtss'.
 
      The best-fit is found by singular value decomposition of the matrix
      X using the preallocated workspace provided in WORK. Any
@@ -703,6 +824,11 @@ value decomposition of the matrix X.
      C and their covariance matrix COV to compute the fitted function
      value Y and its standard deviation Y_ERR for the model y = x.c at
      the point X.
+
+ -- Function: int gsl_multifit_linear_residuals (const gsl_matrix * X,
+          const gsl_vector * Y, const gsl_vector * C, gsl_vector * R)
+     This function computes the vector of residuals r = y - X c for the
+     observations Y, coefficients C and matrix of predictor variables X.
 
 
 File: gsl-ref.info,  Node: Fitting Examples,  Next: Fitting References and Further Reading,  Prev: Multi-parameter fitting,  Up: Least-Squares Fitting
@@ -1743,10 +1869,15 @@ File: gsl-ref.info,  Node: Evaluation of B-spline basis functions,  Next: Exampl
           gsl_bspline_workspace * W)
      This function evaluates all B-spline basis functions at the
      position X and stores them in B, so that the ith element of B is
-     B_i(x). B must be of length n = nbreak + k - 2. This value is also
-     stored in `w->n'.  It is far more efficient to compute all of the
-     basis functions at once than to compute them individually, due to
-     the nature of the defining recurrence relation.
+     B_i(x). B must be of length n = nbreak + k - 2. This value may
+     also be obtained by calling `gsl_bspline_ncoeffs'.  It is far more
+     efficient to compute all of the basis functions at once than to
+     compute them individually, due to the nature of the defining
+     recurrence relation.
+
+ -- Function: size_t gsl_bspline_ncoeffs (gsl_bspline_workspace * W)
+     This function returns the number of B-spline coefficients given by
+     n = nbreak + k - 2.
 
 
 File: gsl-ref.info,  Node: Example programs for B-splines,  Next: References and Further Reading,  Prev: Evaluation of B-spline basis functions,  Up: Basis Splines
@@ -1756,7 +1887,7 @@ File: gsl-ref.info,  Node: Example programs for B-splines,  Next: References and
 
 The following program computes a linear least squares fit to data using
 cubic B-spline basis functions with uniform breakpoints. The data is
-generated from the curve y(x) = \cos(x) \exp(-0.1 x) on [0, 15] with
+generated from the curve y(x) = \cos(x) \exp(-x/10) on [0, 15] with
 gaussian noise added.
 
      #include <stdio.h>
@@ -1766,12 +1897,13 @@ gaussian noise added.
      #include <gsl/gsl_multifit.h>
      #include <gsl/gsl_rng.h>
      #include <gsl/gsl_randist.h>
+     #include <gsl/gsl_statistics.h>
 
      /* number of data points to fit */
      #define N        200
 
      /* number of fit coefficients */
-     #define NCOEFFS  8
+     #define NCOEFFS  12
 
      /* nbreak = ncoeffs + 2 - k = ncoeffs - 2 since k = 4 */
      #define NBREAK   (NCOEFFS - 2)
@@ -1792,6 +1924,8 @@ gaussian noise added.
        gsl_matrix *X, *cov;
        gsl_multifit_linear_workspace *mw;
        double chisq;
+       double Rsq;
+       double dof;
 
        gsl_rng_env_setup();
        r = gsl_rng_alloc(gsl_rng_default);
@@ -1813,16 +1947,16 @@ gaussian noise added.
        for (i = 0; i < n; ++i)
          {
            double sigma;
-           double xi = (15.0/(N-1)) * i;
+           double xi = (15.0 / (N - 1)) * i;
            double yi = cos(xi) * exp(-0.1 * xi);
 
-           sigma = 0.1;
+           sigma = 0.1 * yi;
            dy = gsl_ran_gaussian(r, sigma);
            yi += dy;
 
            gsl_vector_set(x, i, xi);
            gsl_vector_set(y, i, yi);
-           gsl_vector_set(w, i, 1.0 / (sigma*sigma));
+           gsl_vector_set(w, i, 1.0 / (sigma * sigma));
 
            printf("%f %f\n", xi, yi);
          }
@@ -1848,6 +1982,11 @@ gaussian noise added.
 
        /* do the fit */
        gsl_multifit_wlinear(X, w, y, c, cov, &chisq, mw);
+
+       dof = n - ncoeffs;
+       Rsq = 1.0 - chisq / gsl_stats_wtss(w->data, 1, y->data, 1, y->size);
+
+       fprintf(stderr, "chisq/dof = %e, Rsq = %f\n", chisq / dof, Rsq);
 
        /* output the smoothed curve */
        {
@@ -1879,6 +2018,7 @@ gaussian noise added.
    The output can be plotted with GNU `graph'.
 
      $ ./a.out > bspline.dat
+     chisq/dof = 1.118217e+00, Rsq = 0.989771
      $ graph -T ps -X x -Y y -x 0 15 -y -1 1.3 < bspline.dat > bspline.ps
 
 
@@ -3174,7 +3314,8 @@ Appendix B Contributors to GSL
      Wrote the routines for generating combinations.
 
 *Nicolas Darnis*
-     Wrote the initial routines for canonical permutations.
+     Wrote the cyclic functions and the initial functions for canonical
+     permutations.
 
 *Jason H. Stover*
      Wrote the major cumulative distribution functions.

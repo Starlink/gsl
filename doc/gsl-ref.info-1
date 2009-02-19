@@ -1,5 +1,5 @@
 This is gsl-ref.info, produced by makeinfo version 4.8 from
-/home/bjg/gsl.redhat/doc/gsl-ref.texi.
+gsl-ref.texi.
 
 INFO-DIR-SECTION Scientific software
 START-INFO-DIR-ENTRY
@@ -18,8 +18,8 @@ and with the Back-Cover Text being (a) (see below).  A copy of the
 license is included in the section entitled "GNU Free Documentation
 License".
 
-   (a) The Back-Cover Text is: "You have freedom to copy and modify this
-GNU Manual, like GNU software."
+   (a) The Back-Cover Text is: "You have the freedom to copy and modify
+this GNU Manual."
 
 
 File: gsl-ref.info,  Node: Top,  Next: Introduction,  Prev: (dir),  Up: (dir)
@@ -29,7 +29,7 @@ GSL
 
 This file documents the GNU Scientific Library (GSL), a collection of
 numerical routines for scientific computing.  It corresponds to release
-1.10 of the library.  Please report any errors in this manual to
+1.11 of the library.  Please report any errors in this manual to
 <bug-gsl@gnu.org>.
 
    More information about GSL can be found at the project homepage,
@@ -54,8 +54,8 @@ and with the Back-Cover Text being (a) (see below).  A copy of the
 license is included in the section entitled "GNU Free Documentation
 License".
 
-   (a) The Back-Cover Text is: "You have freedom to copy and modify this
-GNU Manual, like GNU software."
+   (a) The Back-Cover Text is: "You have the freedom to copy and modify
+this GNU Manual."
 
 
 * Menu:
@@ -160,7 +160,7 @@ Routines are available for the following areas,
      Root-Finding                     Discrete Hankel Transforms       
      Least-Squares Fitting            Minimization                     
      IEEE Floating-Point              Physical Constants               
-     Wavelets                                                          
+     Basis Splines                    Wavelets                         
 
 The use of these routines is described in this manual.  Each chapter
 provides detailed definitions of the functions, followed by example
@@ -389,12 +389,17 @@ computing the value of the Bessel function J_0(x) for x=5,
      }
 
 The output is shown below, and should be correct to double-precision
-accuracy,
+accuracy,(1)
 
      J0(5) = -1.775967713143382920e-01
 
 The steps needed to compile this program are described in the following
 sections.
+
+   ---------- Footnotes ----------
+
+   (1) The last few digits may vary slightly depending on the compiler
+and platform used--this is normal.
 
 
 File: gsl-ref.info,  Node: Compiling and Linking,  Next: Shared Libraries,  Prev: An Example Program,  Up: Using the library
@@ -572,19 +577,26 @@ File: gsl-ref.info,  Node: Long double,  Next: Portability functions,  Prev: Inl
 2.6 Long double
 ===============
 
-The extended numerical type `long double' is part of the ANSI C
-standard and should be available in every modern compiler.  However, the
-precision of `long double' is platform dependent, and this should be
-considered when using it.  The IEEE standard only specifies the minimum
+In general, the algorithms in the library are written for double
+precision only.  The `long double' type is not supported for actual
+computation.
+
+   One reason for this choice is that the precision of `long double' is
+platform dependent.  The IEEE standard only specifies the minimum
 precision of extended precision numbers, while the precision of
 `double' is the same on all platforms.
 
-   In some system libraries the `stdio.h' formatted input/output
-functions `printf' and `scanf' are not implemented correctly for `long
-double'.  Undefined or incorrect results are avoided by testing these
-functions during the `configure' stage of library compilation and
-eliminating certain GSL functions which depend on them if necessary.
-The corresponding line in the `configure' output looks like this,
+   However, it is sometimes necessary to interact with external data in
+long-double format, so the vector and matrix datatypes include
+long-double versions.
+
+   It should be noted that in some system libraries the `stdio.h'
+formatted input/output functions `printf' and `scanf' are not
+implemented correctly for `long double'.  Undefined or incorrect
+results are avoided by testing these functions during the `configure'
+stage of library compilation and eliminating certain GSL functions
+which depend on them if necessary.  The corresponding line in the
+`configure' output looks like this,
 
      checking whether printf works with long double... no
 
@@ -1072,7 +1084,7 @@ function where an error might be reported,
 
        gsl_set_error_handler_off();
 
-       status = gsl_fft_complex_radix2_forward (data, n);
+       status = gsl_fft_complex_radix2_forward (data, stride, n);
 
        if (status) {
          if (status == GSL_EINVAL) {
@@ -1843,12 +1855,25 @@ File: gsl-ref.info,  Node: Polynomial Evaluation,  Next: Divided Difference Repr
 6.1 Polynomial Evaluation
 =========================
 
+The functions described here evaluate the polynomial c[0] + c[1] x +
+c[2] x^2 + \dots + c[len-1] x^{len-1} using Horner's method for
+stability. Inline versions of these functions are used when
+`HAVE_INLINE' is defined.
+
  -- Function: double gsl_poly_eval (const double C[], const int LEN,
           const double X)
-     This function evaluates the polynomial c[0] + c[1] x + c[2] x^2 +
-     \dots + c[len-1] x^{len-1} using Horner's method for stability.
-     An inline version of this function is used when `HAVE_INLINE' is
-     defined.
+     This function evaluates a polynomial with real coefficients for
+     the real variable X.
+
+ -- Function: gsl_complex gsl_poly_complex_eval (const double C[],
+          const int LEN, const gsl_complex Z)
+     This function evaluates a polynomial with real coefficients for
+     the complex variable Z.
+
+ -- Function: gsl_complex gsl_complex_poly_complex_eval (const
+          gsl_complex C[], const int LEN, const gsl_complex Z)
+     This function evaluates a polynomial with complex coefficients for
+     the complex variable Z.
 
 
 File: gsl-ref.info,  Node: Divided Difference Representation of Polynomials,  Next: Quadratic Equations,  Prev: Polynomial Evaluation,  Up: Polynomials
@@ -1945,8 +1970,10 @@ File: gsl-ref.info,  Node: Cubic Equations,  Next: General Polynomial Equations,
      modified.  When three real roots are found they are stored in X0,
      X1 and X2 in ascending order.  The case of coincident roots is not
      considered special.  For example, the equation (x-1)^3=0 will have
-     three roots with exactly equal values.
-
+     three roots with exactly equal values.  As in the quadratic case,
+     finite precision may cause equal or closely-spaced real roots to
+     move off the real axis into the complex plane, leading to a
+     discrete change in the number of real roots.
 
  -- Function: int gsl_poly_complex_solve_cubic (double A, double B,
           double C, gsl_complex * Z0, gsl_complex * Z1, gsl_complex *
@@ -3143,6 +3170,8 @@ File: gsl-ref.info,  Node: Real Argument,  Next: Complex Argument,  Up: Dilogari
      = - \Re \int_0^x ds \log(1-s) / s.  Note that \Im(Li_2(x)) = 0 for
      x <= 1, and -\pi\log(x) for x > 1.
 
+     Note that Abramowitz & Stegun refer to the Spence integral
+     S(x)=Li_2(1-x) as the dilogarithm rather than Li_2(x).
 
 
 File: gsl-ref.info,  Node: Complex Argument,  Prev: Real Argument,  Up: Dilogarithm
@@ -3695,7 +3724,9 @@ File: gsl-ref.info,  Node: Complete Fermi-Dirac Integrals,  Next: Incomplete Fer
 
 The complete Fermi-Dirac integral F_j(x) is given by,
 
-     F_j(x)   := (1/r\Gamma(j+1)) \int_0^\infty dt (t^j / (\exp(t-x) + 1))
+     F_j(x)   := (1/\Gamma(j+1)) \int_0^\infty dt (t^j / (\exp(t-x) + 1))
+   Note that the Fermi-Dirac integral is sometimes defined without the
+normalisation factor in other texts.
 
  -- Function: double gsl_sf_fermi_dirac_m1 (double X)
  -- Function: int gsl_sf_fermi_dirac_m1_e (double X, gsl_sf_result *
@@ -4093,7 +4124,7 @@ Hypergeometric functions are described in Abramowitz & Stegun, Chapters
  -- Function: int gsl_sf_hyperg_2F1_e (double A, double B, double C,
           double X, gsl_sf_result * RESULT)
      These routines compute the Gauss hypergeometric function
-     2F1(a,b,c,x) for |x| < 1.
+     2F1(a,b,c,x) = F(a,b,c,x) for |x| < 1.
 
      If the arguments (a,b,c,x) are too close to a singularity then the
      function can return the error code `GSL_EMAXITER' when the series
@@ -5352,7 +5383,7 @@ functions when range checking is turned off.
      These functions return a pointer to the I-th element of a vector
      V.  If I lies outside the allowed range of 0 to N-1 then the error
      handler is invoked and a null pointer is returned.  Inline
-     versions of these function are used when `HAVE_INLINE' is defined.
+     versions of these functions are used when `HAVE_INLINE' is defined.
 
 
 File: gsl-ref.info,  Node: Initializing vector elements,  Next: Reading and writing vectors,  Prev: Accessing vector elements,  Up: Vectors
@@ -5882,7 +5913,7 @@ File: gsl-ref.info,  Node: Matrix allocation,  Next: Accessing matrix elements, 
 
 The functions for allocating memory to a matrix follow the style of
 `malloc' and `free'.  They also perform their own error checking.  If
-there is insufficient memory available to allocate a vector then the
+there is insufficient memory available to allocate a matrix then the
 functions call the GSL error handler (with an error number of
 `GSL_ENOMEM') in addition to returning a null pointer.  Thus if you use
 the library error handler to abort your program then it isn't necessary
@@ -5948,7 +5979,7 @@ where TDA is the physical row-length of the matrix.
      These functions return a pointer to the (i,j)-th element of a
      matrix M.  If I or J lie outside the allowed range of 0 to N1-1
      and 0 to N2-1 then the error handler is invoked and a null pointer
-     is returned.  Inline versions of these function are used when
+     is returned.  Inline versions of these functions are used when
      `HAVE_INLINE' is defined.
 
 
@@ -6733,7 +6764,7 @@ File: gsl-ref.info,  Node: Permutation properties,  Next: Permutation functions,
      This function returns a pointer to the array of elements in the
      permutation P.
 
- -- Function: int gsl_permutation_valid (gsl_permutation * P)
+ -- Function: int gsl_permutation_valid (const gsl_permutation * P)
      This function checks that the permutation P is valid.  The N
      elements should contain each of the numbers 0 to N-1 once and only
      once.

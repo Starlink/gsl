@@ -1,5 +1,5 @@
 This is gsl-ref.info, produced by makeinfo version 4.8 from
-/home/bjg/gsl.redhat/doc/gsl-ref.texi.
+gsl-ref.texi.
 
 INFO-DIR-SECTION Scientific software
 START-INFO-DIR-ENTRY
@@ -18,8 +18,8 @@ and with the Back-Cover Text being (a) (see below).  A copy of the
 license is included in the section entitled "GNU Free Documentation
 License".
 
-   (a) The Back-Cover Text is: "You have freedom to copy and modify this
-GNU Manual, like GNU software."
+   (a) The Back-Cover Text is: "You have the freedom to copy and modify
+this GNU Manual."
 
 
 File: gsl-ref.info,  Node: Random Number Distribution Examples,  Next: Random Number Distribution References and Further Reading,  Prev: Shuffling and Sampling,  Up: Random Number Distributions
@@ -293,6 +293,17 @@ File: gsl-ref.info,  Node: Mean and standard deviation and variance,  Next: Abso
      variance.  These functions return the square root of the
      corresponding variance functions above.
 
+ -- Function: double gsl_stats_tss (const double DATA[], size_t STRIDE,
+          size_t N)
+ -- Function: double gsl_stats_tss_m (const double DATA[], size_t
+          STRIDE, size_t N, double MEAN)
+     These functions return the total sum of squares (TSS) of DATA about
+     the mean.  For `gsl_stats_tss_m' the user-supplied value of MEAN
+     is used, and for `gsl_stats_tss' it is computed using
+     `gsl_stats_mean'.
+
+          TSS =  \sum (x_i - mean)^2
+
  -- Function: double gsl_stats_variance_with_fixed_mean (const double
           DATA[], size_t STRIDE, size_t N, double MEAN)
      This function computes an unbiased estimate of the variance of
@@ -523,6 +534,18 @@ zero corresponds to removing a sample from a dataset.
      The standard deviation is defined as the square root of the
      variance.  This function returns the square root of the
      corresponding variance function above.
+
+ -- Function: double gsl_stats_wtss (const double W[], const size_t
+          WSTRIDE, const double DATA[], size_t STRIDE, size_t N)
+ -- Function: double gsl_stats_wtss_m (const double W[], const size_t
+          WSTRIDE, const double DATA[], size_t STRIDE, size_t N, double
+          WMEAN)
+     These functions return the weighted total sum of squares (TSS) of
+     DATA about the weighted mean.  For `gsl_stats_wtss_m' the
+     user-supplied value of WMEAN is used, and for `gsl_stats_wtss' it
+     is computed using `gsl_stats_wmean'.
+
+          TSS =  \sum w_i (x_i - wmean)^2
 
  -- Function: double gsl_stats_wabsdev (const double W[], size_t
           WSTRIDE, const double DATA[], size_t STRIDE, size_t N)
@@ -2929,7 +2952,7 @@ File: gsl-ref.info,  Node: Simulated Annealing functions,  Next: Examples with S
      If the function pointer PRINT_POSITION is not null, a debugging
      log will be printed to `stdout' with the following columns:
 
-          number_of_iterations temperature x x-(*x0_p) Ef(x)
+          #-iter  #-evals  temperature  position  energy  best_energy
 
      and the output of the function PRINT_POSITION itself.  If
      PRINT_POSITION is null then no information is printed.
@@ -3180,16 +3203,16 @@ negative, since it is west and I want the plot to look like a map.
 
      # final coordinates of cities (longitude and latitude)
      ###final_city_coord: -105.95 35.68 Santa Fe
-     ###final_city_coord: -106.28 35.89 Los Alamos
-     ###final_city_coord: -106.62 35.12 Albuquerque
-     ###final_city_coord: -107.84 35.15 Grants
-     ###final_city_coord: -107.87 37.29 Durango
-     ###final_city_coord: -108.58 37.35 Cortez
-     ###final_city_coord: -108.74 35.52 Gallup
-     ###final_city_coord: -112.07 33.54 Phoenix
-     ###final_city_coord: -106.76 32.34 Las Cruces
-     ###final_city_coord: -96.77 32.79 Dallas
      ###final_city_coord: -103.2 34.41 Clovis
+     ###final_city_coord: -96.77 32.79 Dallas
+     ###final_city_coord: -106.76 32.34 Las Cruces
+     ###final_city_coord: -112.07 33.54 Phoenix
+     ###final_city_coord: -108.74 35.52 Gallup
+     ###final_city_coord: -108.58 37.35 Cortez
+     ###final_city_coord: -107.87 37.29 Durango
+     ###final_city_coord: -107.84 35.15 Grants
+     ###final_city_coord: -106.62 35.12 Albuquerque
+     ###final_city_coord: -106.28 35.89 Los Alamos
      ###final_city_coord: -105.92 35.77 Tesuque
      ###final_city_coord: -105.95 35.68 Santa Fe
 
@@ -3311,7 +3334,7 @@ resulting local error.
           printf ("step method is '%s'\n",
                    gsl_odeiv_step_name (s));
 
-     would print something like `step method is 'rk4''.
+     would print something like `step method is 'rkf45''.
 
  -- Function: unsigned int gsl_odeiv_step_order (const gsl_odeiv_step *
           S)
@@ -3352,7 +3375,9 @@ resulting local error.
      Embedded Runge-Kutta (2, 3) method.
 
  -- Step Type: gsl_odeiv_step_rk4
-     4th order (classical) Runge-Kutta.
+     4th order (classical) Runge-Kutta.  The error estimate is obtained
+     by halving the step-size.  For more efficient estimate of the
+     error, use the Runge-Kutta-Fehlberg method described below.
 
  -- Step Type: gsl_odeiv_step_rkf45
      Embedded Runge-Kutta-Fehlberg (4, 5) method.  This method is a good
@@ -3546,6 +3571,27 @@ step-size is found.
  -- Function: void gsl_odeiv_evolve_free (gsl_odeiv_evolve * E)
      This function frees all the memory associated with the evolution
      function E.
+
+   Where a system has discontinuous changes in the derivatives at known
+times it is advisable to evolve the system between each discontinuity
+in sequence.  For example, if a step-change in an external driving
+force occurs at times t_a, t_b, t_c, \dots then evolving over the
+ranges (t_0,t_a), (t_a,t_b), ..., (t_c,t_1) is more efficient than
+using the single range (t_0,t_1).
+
+   Evolving the system directly through a discontinuity with a strict
+tolerance may result in extremely small steps being taken at the edge
+of the discontinuity (e.g. down to the limit of machine precision).  In
+this case it may be necessary to impose a minimum step size `hmin'
+suitable for the problem:
+
+     while (t < t1)
+     {
+        gsl_odeiv_evolve_apply (e, c, s, &sys, &t, t1, &h, y);
+        if (h < hmin) { h = hmin; } ;
+     }
+   The value of H returned by `gsl_odeiv_evolve_apply' is always a
+suggested value and can be modified whenever needed.
 
 
 File: gsl-ref.info,  Node: ODE Example programs,  Next: ODE References and Further Reading,  Prev: Evolution,  Up: Ordinary Differential Equations
@@ -4064,8 +4110,8 @@ program,
      $ graph -T ps < interp.dat > interp.ps
 
 The result shows a smooth interpolation of the original points.  The
-interpolation method can changed simply by varying the first argument of
-`gsl_spline_alloc'.
+interpolation method can be changed simply by varying the first
+argument of `gsl_spline_alloc'.
 
    The next program demonstrates a periodic cubic spline with 4 data
 points.  Note that the first and last points must be supplied with the
@@ -6379,9 +6425,9 @@ interval is (0,6), with an initial guess for the minimum of 2.
              printf ("Converged:\n");
 
            printf ("%5d [%.7f, %.7f] "
-                   "%.7f %.7f %+.7f %.7f\n",
+                   "%.7f %+.7f %.7f\n",
                    iter, a, b,
-                   m, m_expected, m - m_expected, b - a);
+                   m, m - m_expected, b - a);
          }
        while (status == GSL_CONTINUE && iter < max_iter);
 
@@ -6547,14 +6593,13 @@ different problems.
      with an error code of `GSL_ENOMEM'.
 
  -- Function: int gsl_multiroot_fsolver_set (gsl_multiroot_fsolver * S,
-          gsl_multiroot_function * F, gsl_vector * X)
-     This function sets, or resets, an existing solver S to use the
-     function F and the initial guess X.
-
+          gsl_multiroot_function * F, const gsl_vector * X)
  -- Function: int gsl_multiroot_fdfsolver_set (gsl_multiroot_fdfsolver
-          * S, gsl_multiroot_function_fdf * FDF, gsl_vector * X)
-     This function sets, or resets, an existing solver S to use the
-     function and derivative FDF and the initial guess X.
+          * S, gsl_multiroot_function_fdf * FDF, const gsl_vector * X)
+     These functions set, or reset, an existing solver S to use the
+     function F or function and derivative FDF, and the initial guess
+     X.  Note that the initial position is copied from X, this argument
+     is not modified by subsequent iterations.
 
  -- Function: void gsl_multiroot_fsolver_free (gsl_multiroot_fsolver *
           S)
@@ -6739,29 +6784,30 @@ the code.
           the iteration is not making any progress, preventing the
           algorithm from continuing.
 
-   The solver maintains a current best estimate of the root at all
-times.  This information can be accessed with the following auxiliary
-functions,
+   The solver maintains a current best estimate of the root `s->x' and
+its function value `s->f' at all times.  This information can be
+accessed with the following auxiliary functions,
 
  -- Function: gsl_vector * gsl_multiroot_fsolver_root (const
           gsl_multiroot_fsolver * S)
  -- Function: gsl_vector * gsl_multiroot_fdfsolver_root (const
           gsl_multiroot_fdfsolver * S)
      These functions return the current estimate of the root for the
-     solver S.
+     solver S, given by `s->x'.
 
  -- Function: gsl_vector * gsl_multiroot_fsolver_f (const
           gsl_multiroot_fsolver * S)
  -- Function: gsl_vector * gsl_multiroot_fdfsolver_f (const
           gsl_multiroot_fdfsolver * S)
      These functions return the function value f(x) at the current
-     estimate of the root for the solver S.
+     estimate of the root for the solver S, given by `s->f'.
 
  -- Function: gsl_vector * gsl_multiroot_fsolver_dx (const
           gsl_multiroot_fsolver * S)
  -- Function: gsl_vector * gsl_multiroot_fdfsolver_dx (const
           gsl_multiroot_fdfsolver * S)
-     These functions return the last step dx taken by the solver S.
+     These functions return the last step dx taken by the solver S,
+     given by `s->dx'.
 
 
 File: gsl-ref.info,  Node: Search Stopping Parameters for the multidimensional solver,  Next: Algorithms using Derivatives,  Prev: Iteration of the multidimensional solver,  Up: Multidimensional Root-Finding
@@ -7423,117 +7469,4 @@ gsl_multimin_fdfminimizer_alloc (const gsl_multimin_fdfminimizer_type *
                   gsl_multimin_fdfminimizer_name (s));
 
      would print something like `s is a 'conjugate_pr' minimizer'.
-
-
-File: gsl-ref.info,  Node: Providing a function to minimize,  Next: Multimin Iteration,  Prev: Initializing the Multidimensional Minimizer,  Up: Multidimensional Minimization
-
-35.4 Providing a function to minimize
-=====================================
-
-You must provide a parametric function of n variables for the
-minimizers to operate on.  You may also need to provide a routine which
-calculates the gradient of the function and a third routine which
-calculates both the function value and the gradient together.  In order
-to allow for general parameters the functions are defined by the
-following data types:
-
- -- Data Type: gsl_multimin_function_fdf
-     This data type defines a general function of n variables with
-     parameters and the corresponding gradient vector of derivatives,
-
-    `double (* f) (const gsl_vector * X, void * PARAMS)'
-          this function should return the result f(x,params) for
-          argument X and parameters PARAMS.
-
-    `void (* df) (const gsl_vector * X, void * PARAMS, gsl_vector * G)'
-          this function should store the N-dimensional gradient g_i = d
-          f(x,params) / d x_i in the vector G for argument X and
-          parameters PARAMS, returning an appropriate error code if the
-          function cannot be computed.
-
-    `void (* fdf) (const gsl_vector * X, void * PARAMS, double * f, gsl_vector * G)'
-          This function should set the values of the F and G as above,
-          for arguments X and parameters PARAMS.  This function
-          provides an optimization of the separate functions for f(x)
-          and g(x)--it is always faster to compute the function and its
-          derivative at the same time.
-
-    `size_t n'
-          the dimension of the system, i.e. the number of components of
-          the vectors X.
-
-    `void * params'
-          a pointer to the parameters of the function.
-
- -- Data Type: gsl_multimin_function
-     This data type defines a general function of n variables with
-     parameters,
-
-    `double (* f) (const gsl_vector * X, void * PARAMS)'
-          this function should return the result f(x,params) for
-          argument X and parameters PARAMS.
-
-    `size_t n'
-          the dimension of the system, i.e. the number of components of
-          the vectors X.
-
-    `void * params'
-          a pointer to the parameters of the function.
-
-The following example function defines a simple two-dimensional
-paraboloid with five parameters,
-
-     /* Paraboloid centered on (p[0],p[1]), with
-        scale factors (p[2],p[3]) and minimum p[4] */
-
-     double
-     my_f (const gsl_vector *v, void *params)
-     {
-       double x, y;
-       double *p = (double *)params;
-
-       x = gsl_vector_get(v, 0);
-       y = gsl_vector_get(v, 1);
-
-       return p[2] * (x - p[0]) * (x - p[0]) +
-                p[3] * (y - p[1]) * (y - p[1]) + p[4];
-     }
-
-     /* The gradient of f, df = (df/dx, df/dy). */
-     void
-     my_df (const gsl_vector *v, void *params,
-            gsl_vector *df)
-     {
-       double x, y;
-       double *p = (double *)params;
-
-       x = gsl_vector_get(v, 0);
-       y = gsl_vector_get(v, 1);
-
-       gsl_vector_set(df, 0, 2.0 * p[2] * (x - p[0]));
-       gsl_vector_set(df, 1, 2.0 * p[3] * (y - p[1]));
-     }
-
-     /* Compute both f and df together. */
-     void
-     my_fdf (const gsl_vector *x, void *params,
-             double *f, gsl_vector *df)
-     {
-       *f = my_f(x, params);
-       my_df(x, params, df);
-     }
-
-The function can be initialized using the following code,
-
-     gsl_multimin_function_fdf my_func;
-
-     /* Paraboloid center at (1,2), scale factors (10, 20),
-        minimum value 30 */
-     double p[5] = { 1.0, 2.0, 10.0, 20.0, 30.0 };
-
-     my_func.n = 2;  /* number of function components */
-     my_func.f = &my_f;
-     my_func.df = &my_df;
-     my_func.fdf = &my_fdf;
-     my_func.params = (void *)p;
 

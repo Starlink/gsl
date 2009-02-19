@@ -1,5 +1,5 @@
 This is gsl-ref.info, produced by makeinfo version 4.8 from
-/home/bjg/gsl.redhat/doc/gsl-ref.texi.
+gsl-ref.texi.
 
 INFO-DIR-SECTION Scientific software
 START-INFO-DIR-ENTRY
@@ -18,8 +18,8 @@ and with the Back-Cover Text being (a) (see below).  A copy of the
 license is included in the section entitled "GNU Free Documentation
 License".
 
-   (a) The Back-Cover Text is: "You have freedom to copy and modify this
-GNU Manual, like GNU software."
+   (a) The Back-Cover Text is: "You have the freedom to copy and modify
+this GNU Manual."
 
 
 File: gsl-ref.info,  Node: Sorting vectors,  Next: Selecting the k smallest or largest elements,  Prev: Sorting objects,  Up: Sorting
@@ -1444,15 +1444,16 @@ L^T x = y), which can be solved by forward and back-substitution.
  -- Function: int gsl_linalg_cholesky_decomp (gsl_matrix * A)
  -- Function: int gsl_linalg_complex_cholesky_decomp
           (gsl_matrix_complex * A)
-     These functions factorize the positive-definite square matrix A
-     into the Cholesky decomposition A = L L^T (or A = L L^H for the
-     complex case). On input only the diagonal and lower-triangular
-     part of the matrix A are needed.  On output the diagonal and lower
-     triangular part of the input matrix A contain the matrix L. The
-     upper triangular part of the input matrix contains L^T, the
-     diagonal terms being identical for both L and L^T.  If the matrix
-     is not positive-definite then the decomposition will fail,
-     returning the error code `GSL_EDOM'.
+     These functions factorize the symmetric, positive-definite square
+     matrix A into the Cholesky decomposition A = L L^T (or A = L L^H
+     for the complex case). On input, the values from the diagonal and
+     lower-triangular part of the matrix A are used (the upper
+     triangular part is ignored).  On output the diagonal and lower
+     triangular part of the input matrix A contain the matrix L, while
+     the upper triangular part of the input matrix is overwritten with
+     L^T (the diagonal terms being identical for both L and L^T).  If
+     the matrix is not positive-definite then the decomposition will
+     fail, returning the error code `GSL_EDOM'.
 
      When testing whether a matrix is positive-definite, disable the
      error handler first to avoid triggering an error.
@@ -3725,9 +3726,15 @@ The algorithms attempt to estimate the absolute error ABSERR = |RESULT
 
      |RESULT - I| <= ABSERR <= max(epsabs, epsrel |I|)
 
-The routines will fail to converge if the error bounds are too
-stringent, but always return the best approximation obtained up to that
-stage.
+In short, the routines return the first approximation which has an
+absolute error smaller than epsabs or a relative error smaller than
+epsrel.
+
+   Note that this is an either-or constraint, not simultaneous.  To
+compute to a specified absolute error, set epsrel to zero.  To compute
+to a specified relative error, set epsabs to zero.  The routines will
+fail to converge if the error bounds are too stringent, but always
+return the best approximation obtained up to that stage.
 
    The algorithms in QUADPACK use a naming convention based on the
 following letters,
@@ -3820,8 +3827,8 @@ File: gsl-ref.info,  Node: QNG non-adaptive Gauss-Kronrod integration,  Next: QA
 ===============================================
 
 The QNG algorithm is a non-adaptive procedure which uses fixed
-Gauss-Kronrod abscissae to sample the integrand at a maximum of 87
-points.  It is provided for fast integration of smooth functions.
+Gauss-Kronrod-Patterson abscissae to sample the integrand at a maximum
+of 87 points.  It is provided for fast integration of smooth functions.
 
  -- Function: int gsl_integration_qng (const gsl_function * F, double
           A, double B, double EPSABS, double EPSREL, double * RESULT,
@@ -4492,7 +4499,7 @@ File: gsl-ref.info,  Node: Sampling from a random number generator,  Next: Auxil
 
 The following functions return uniformly distributed random numbers,
 either as integers or double precision floating point numbers.  Inline
-versions of these function are used when `HAVE_INLINE' is defined.  To
+versions of these functions are used when `HAVE_INLINE' is defined.  To
 obtain non-uniform distributions *note Random Number Distributions::.
 
  -- Function: unsigned long int gsl_rng_get (const gsl_rng * R)
@@ -5480,6 +5487,14 @@ The following quasi-random sequence algorithms are available,
      This generator uses the Sobol sequence described in Antonov,
      Saleev, `USSR Comput. Maths. Math. Phys.' 19, 252 (1980). It is
      valid up to 40 dimensions.
+
+ -- Generator: gsl_qrng_halton
+ -- Generator: gsl_qrng_reverse_halton
+     These generators use the Halton and reverse Halton sequences
+     described in J.H. Halton, `Numerische Mathematik' 2, 84-90 (1960)
+     and B. Vandewoestyne and R. Cools `Computational and Applied
+     Mathematics' 189, 1&2, 341-361 (2006).  They are valid up to 1229
+     dimensions.
 
 
 File: gsl-ref.info,  Node: Quasi-random number generator examples,  Next: Quasi-random number references,  Prev: Quasi-random number generator algorithms,  Up: Quasi-Random Sequences
