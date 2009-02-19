@@ -1,3 +1,22 @@
+/* multifit/test.c
+ * 
+ * Copyright (C) 2007 Brian Gough
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or (at
+ * your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ */
+
 /* These tests are based on the NIST Statistical Reference Datasets
    See http://www.nist.gov/itl/div898/strd/index.html for more
    information. */
@@ -149,7 +168,7 @@ test_fdf (const char * name, gsl_multifit_function_fdf * f,
 {
   const gsl_multifit_fdfsolver_type *T;
   gsl_multifit_fdfsolver *s;
-
+  
   const size_t n = f->n;
   const size_t p = f->p;
 
@@ -204,6 +223,60 @@ test_fdf (const char * name, gsl_multifit_function_fdf * f,
     }
 
     gsl_matrix_free (covar);
+  }
+
+  /* Check that there is no hidden state, restarting should 
+     produce identical results. */
+
+  {
+    int status0, status1;
+    size_t i;
+    gsl_multifit_fdfsolver *t = gsl_multifit_fdfsolver_alloc (T, n, p);
+    gsl_multifit_fdfsolver_set (t, f, &x.vector);
+
+    /* do a few extra iterations to stir things up */
+
+    gsl_multifit_fdfsolver_set (s, f, &x.vector);
+
+    for (i = 0; i < 3; i++) 
+      {
+        gsl_multifit_fdfsolver_iterate (s);
+      }
+
+    gsl_multifit_fdfsolver_set (s, f, &x.vector);
+
+    do
+      {
+        status0 = gsl_multifit_fdfsolver_iterate (s);
+        status1 = gsl_multifit_fdfsolver_iterate (t);
+
+        gsl_test_int(status0, status1, "%s, lmsder status after set iter=%u", name, iter);
+        
+        for (i = 0; i < p; i++) {
+          double sxi = gsl_vector_get(s->x,i);
+          double txi = gsl_vector_get(t->x,i);
+#ifdef DEBUG
+          printf("%d %g %g\n", i, sxi, txi);
+#endif
+          gsl_test_rel(sxi, txi, 1e-15, "%s, lmsder after set, %u/%u", name, iter, i);
+        }
+        
+#ifdef DEBUG
+        printf("iter = %d  status = %d  |f| = %.18e x = \n", 
+               iter, status, gsl_blas_dnrm2 (s->f));
+        
+        gsl_vector_fprintf(stdout, s->x, "%.8e");
+#endif       
+        status0 = gsl_multifit_test_delta (s->dx, s->x, 0.0, 1e-7);
+        status1 = gsl_multifit_test_delta (t->dx, s->x, 0.0, 1e-7);
+        
+        gsl_test_int(status0, status1, "%s, lmsder test delta status after set iter=%u", name, iter);
+
+        iter++;
+      }
+    while (status1 == GSL_CONTINUE && iter < 1000);
+
+    gsl_multifit_fdfsolver_free (t);
   }
 
   gsl_multifit_fdfsolver_free (s);

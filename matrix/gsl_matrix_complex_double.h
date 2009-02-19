@@ -1,10 +1,10 @@
 /* matrix/gsl_matrix_complex_double.h
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000 Gerard Jungman, Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Gerard Jungman, Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -114,6 +114,16 @@ gsl_matrix_complex_subdiagonal (gsl_matrix_complex * m, const size_t k);
 _gsl_vector_complex_view 
 gsl_matrix_complex_superdiagonal (gsl_matrix_complex * m, const size_t k);
 
+_gsl_vector_complex_view
+gsl_matrix_complex_subrow (gsl_matrix_complex * m,
+                                 const size_t i, const size_t offset,
+                                 const size_t n);
+
+_gsl_vector_complex_view
+gsl_matrix_complex_subcolumn (gsl_matrix_complex * m,
+                                    const size_t j, const size_t offset,
+                                    const size_t n);
+
 _gsl_matrix_complex_view
 gsl_matrix_complex_view_array (double * base,
                              const size_t n1, 
@@ -160,6 +170,16 @@ gsl_matrix_complex_const_subdiagonal (const gsl_matrix_complex * m,
 _gsl_vector_complex_const_view 
 gsl_matrix_complex_const_superdiagonal (const gsl_matrix_complex * m, 
                                       const size_t k);
+
+_gsl_vector_complex_const_view
+gsl_matrix_complex_const_subrow (const gsl_matrix_complex * m,
+                                       const size_t i, const size_t offset,
+                                       const size_t n);
+
+_gsl_vector_complex_const_view
+gsl_matrix_complex_const_subcolumn (const gsl_matrix_complex * m,
+                                          const size_t j, const size_t offset,
+                                          const size_t n);
 
 _gsl_matrix_complex_const_view
 gsl_matrix_complex_const_view_array (const double * base,

@@ -1,5 +1,5 @@
 This is gsl-ref.info, produced by makeinfo version 4.8 from
-gsl-ref.texi.
+/home/bjg/gsl.redhat/doc/gsl-ref.texi.
 
 INFO-DIR-SECTION Scientific software
 START-INFO-DIR-ENTRY
@@ -20,6 +20,57 @@ License".
 
    (a) The Back-Cover Text is: "You have freedom to copy and modify this
 GNU Manual, like GNU software."
+
+
+File: gsl-ref.info,  Node: Sorting vectors,  Next: Selecting the k smallest or largest elements,  Prev: Sorting objects,  Up: Sorting
+
+11.2 Sorting vectors
+====================
+
+The following functions will sort the elements of an array or vector,
+either directly or indirectly.  They are defined for all real and
+integer types using the normal suffix rules.  For example, the `float'
+versions of the array functions are `gsl_sort_float' and
+`gsl_sort_float_index'.  The corresponding vector functions are
+`gsl_sort_vector_float' and `gsl_sort_vector_float_index'.  The
+prototypes are available in the header files `gsl_sort_float.h'
+`gsl_sort_vector_float.h'.  The complete set of prototypes can be
+included using the header files `gsl_sort.h' and `gsl_sort_vector.h'.
+
+   There are no functions for sorting complex arrays or vectors, since
+the ordering of complex numbers is not uniquely defined.  To sort a
+complex vector by magnitude compute a real vector containing the
+magnitudes of the complex elements, and sort this vector indirectly.
+The resulting index gives the appropriate ordering of the original
+complex vector.
+
+ -- Function: void gsl_sort (double * DATA, size_t STRIDE, size_t N)
+     This function sorts the N elements of the array DATA with stride
+     STRIDE into ascending numerical order.
+
+ -- Function: void gsl_sort_vector (gsl_vector * V)
+     This function sorts the elements of the vector V into ascending
+     numerical order.
+
+ -- Function: void gsl_sort_index (size_t * P, const double * DATA,
+          size_t STRIDE, size_t N)
+     This function indirectly sorts the N elements of the array DATA
+     with stride STRIDE into ascending order, storing the resulting
+     permutation in P.  The array P must be allocated with a sufficient
+     length to store the N elements of the permutation.  The elements
+     of P give the index of the array element which would have been
+     stored in that position if the array had been sorted in place.
+     The array DATA is not changed.
+
+ -- Function: int gsl_sort_vector_index (gsl_permutation * P, const
+          gsl_vector * V)
+     This function indirectly sorts the elements of the vector V into
+     ascending order, storing the resulting permutation in P.  The
+     elements of P give the index of the vector element which would
+     have been stored in that position if the vector had been sorted in
+     place.  The first element of P gives the index of the least element
+     in V, and the last element of P gives the index of the greatest
+     element in V.  The vector V is not changed.
 
 
 File: gsl-ref.info,  Node: Selecting the k smallest or largest elements,  Next: Computing the rank,  Prev: Sorting vectors,  Up: Sorting
@@ -958,11 +1009,8 @@ File: gsl-ref.info,  Node: Linear Algebra,  Next: Eigensystems,  Prev: BLAS Supp
 This chapter describes functions for solving linear systems.  The
 library provides linear algebra operations which operate directly on
 the `gsl_vector' and `gsl_matrix' objects.  These routines use the
-standard algorithms from Golub & Van Loan's `Matrix Computations'.
-
-   When dealing with very large systems the routines found in LAPACK
-should be considered.  These support specialized data representations
-and other optimizations.
+standard algorithms from Golub & Van Loan's `Matrix Computations' with
+Level-1 and Level-2 BLAS calls for efficiency.
 
    The functions described in this chapter are declared in the header
 file `gsl_linalg.h'.
@@ -977,6 +1025,7 @@ file `gsl_linalg.h'.
 * Tridiagonal Decomposition of Real Symmetric Matrices::
 * Tridiagonal Decomposition of Hermitian Matrices::
 * Hessenberg Decomposition of Real Matrices::
+* Hessenberg-Triangular Decomposition of Real Matrices::
 * Bidiagonalization::
 * Householder Transformations::
 * Householder solver for linear systems::
@@ -1165,6 +1214,14 @@ rank.
      (QR,TAU) to the vector V, storing the result Q v in V.  The matrix
      multiplication is carried out directly using the encoding of the
      Householder vectors without needing to form the full matrix Q.
+
+ -- Function: int gsl_linalg_QR_QTmat (const gsl_matrix * QR, const
+          gsl_vector * TAU, gsl_matrix * A)
+     This function applies the matrix Q^T encoded in the decomposition
+     (QR,TAU) to the matrix A, storing the result Q^T A in A.  The
+     matrix multiplication is carried out directly using the encoding
+     of the Householder vectors without needing to form the full matrix
+     Q^T.
 
  -- Function: int gsl_linalg_QR_Rsolve (const gsl_matrix * QR, const
           gsl_vector * B, gsl_vector * X)
@@ -1385,27 +1442,40 @@ the linear system A x = b into a pair of triangular systems (L y = b,
 L^T x = y), which can be solved by forward and back-substitution.
 
  -- Function: int gsl_linalg_cholesky_decomp (gsl_matrix * A)
-     This function factorizes the positive-definite symmetric square
-     matrix A into the Cholesky decomposition A = L L^T. On input only
-     the diagonal and lower-triangular part of the matrix A are needed.
-     On output the diagonal and lower triangular part of the input
-     matrix A contain the matrix L. The upper triangular part of the
-     input matrix contains L^T, the diagonal terms being identical for
-     both L and L^T.  If the matrix is not positive-definite then the
-     decomposition will fail, returning the error code `GSL_EDOM'.
+ -- Function: int gsl_linalg_complex_cholesky_decomp
+          (gsl_matrix_complex * A)
+     These functions factorize the positive-definite square matrix A
+     into the Cholesky decomposition A = L L^T (or A = L L^H for the
+     complex case). On input only the diagonal and lower-triangular
+     part of the matrix A are needed.  On output the diagonal and lower
+     triangular part of the input matrix A contain the matrix L. The
+     upper triangular part of the input matrix contains L^T, the
+     diagonal terms being identical for both L and L^T.  If the matrix
+     is not positive-definite then the decomposition will fail,
+     returning the error code `GSL_EDOM'.
+
+     When testing whether a matrix is positive-definite, disable the
+     error handler first to avoid triggering an error.
 
  -- Function: int gsl_linalg_cholesky_solve (const gsl_matrix *
           CHOLESKY, const gsl_vector * B, gsl_vector * X)
-     This function solves the system A x = b using the Cholesky
+ -- Function: int gsl_linalg_complex_cholesky_solve (const
+          gsl_matrix_complex * CHOLESKY, const gsl_vector_complex * B,
+          gsl_vector_complex * X)
+     These functions solve the system A x = b using the Cholesky
      decomposition of A into the matrix CHOLESKY given by
-     `gsl_linalg_cholesky_decomp'.
+     `gsl_linalg_cholesky_decomp' or
+     `gsl_linalg_complex_cholesky_decomp'.
 
  -- Function: int gsl_linalg_cholesky_svx (const gsl_matrix * CHOLESKY,
           gsl_vector * X)
-     This function solves the system A x = b in-place using the
+ -- Function: int gsl_linalg_complex_cholesky_svx (const
+          gsl_matrix_complex * CHOLESKY, gsl_vector_complex * X)
+     These functions solve the system A x = b in-place using the
      Cholesky decomposition of A into the matrix CHOLESKY given by
-     `gsl_linalg_cholesky_decomp'. On input X should contain the
-     right-hand side b, which is replaced by the solution on output.
+     `gsl_linalg_cholesky_decomp' or
+     `gsl_linalg_complex_cholesky_decomp'. On input X should contain
+     the right-hand side b, which is replaced by the solution on output.
 
 
 File: gsl-ref.info,  Node: Tridiagonal Decomposition of Real Symmetric Matrices,  Next: Tridiagonal Decomposition of Hermitian Matrices,  Prev: Cholesky Decomposition,  Up: Linear Algebra
@@ -1486,12 +1556,12 @@ matrix.
      `gsl_linalg_hermtd_decomp' into the real vectors DIAG and SUBDIAG.
 
 
-File: gsl-ref.info,  Node: Hessenberg Decomposition of Real Matrices,  Next: Bidiagonalization,  Prev: Tridiagonal Decomposition of Hermitian Matrices,  Up: Linear Algebra
+File: gsl-ref.info,  Node: Hessenberg Decomposition of Real Matrices,  Next: Hessenberg-Triangular Decomposition of Real Matrices,  Prev: Tridiagonal Decomposition of Hermitian Matrices,  Up: Linear Algebra
 
 13.8 Hessenberg Decomposition of Real Matrices
 ==============================================
 
-A general matrix A can be decomposed by orthogonal similarity
+A general real matrix A can be decomposed by orthogonal similarity
 transformations into the form
 
      A = U H U^T
@@ -1501,8 +1571,8 @@ that it has zeros below the first subdiagonal. The Hessenberg reduction
 is the first step in the Schur decomposition for the nonsymmetric
 eigenvalue problem, but has applications in other areas as well.
 
- -- Function: int gsl_linalg_hessenberg (gsl_matrix * A, gsl_vector *
-          TAU)
+ -- Function: int gsl_linalg_hessenberg_decomp (gsl_matrix * A,
+          gsl_vector * TAU)
      This function computes the Hessenberg decomposition of the matrix
      A by applying the similarity transformation H = U^T A U.  On
      output, H is stored in the upper portion of A. The information
@@ -1516,7 +1586,8 @@ eigenvalue problem, but has applications in other areas as well.
           gsl_vector * TAU, gsl_matrix * U)
      This function constructs the orthogonal matrix U from the
      information stored in the Hessenberg matrix H along with the
-     vector TAU. H and TAU are outputs from `gsl_linalg_hessenberg'.
+     vector TAU. H and TAU are outputs from
+     `gsl_linalg_hessenberg_decomp'.
 
  -- Function: int gsl_linalg_hessenberg_unpack_accum (gsl_matrix * H,
           gsl_vector * TAU, gsl_matrix * V)
@@ -1527,16 +1598,41 @@ eigenvalue problem, but has applications in other areas as well.
      `gsl_linalg_hessenberg_unpack'. If H is order N, then V must have
      N columns but may have any number of rows.
 
- -- Function: void gsl_linalg_hessenberg_set_zero (gsl_matrix * H)
+ -- Function: int gsl_linalg_hessenberg_set_zero (gsl_matrix * H)
      This function sets the lower triangular portion of H, below the
      subdiagonal, to zero. It is useful for clearing out the
-     Householder vectors after calling `gsl_linalg_hessenberg'.
+     Householder vectors after calling `gsl_linalg_hessenberg_decomp'.
 
 
-File: gsl-ref.info,  Node: Bidiagonalization,  Next: Householder Transformations,  Prev: Hessenberg Decomposition of Real Matrices,  Up: Linear Algebra
+File: gsl-ref.info,  Node: Hessenberg-Triangular Decomposition of Real Matrices,  Next: Bidiagonalization,  Prev: Hessenberg Decomposition of Real Matrices,  Up: Linear Algebra
 
-13.9 Bidiagonalization
-======================
+13.9 Hessenberg-Triangular Decomposition of Real Matrices
+=========================================================
+
+A general real matrix pair (A, B) can be decomposed by orthogonal
+similarity transformations into the form
+
+     A = U H V^T
+     B = U R V^T
+
+   where U and V are orthogonal, H is an upper Hessenberg matrix, and R
+is upper triangular. The Hessenberg-Triangular reduction is the first
+step in the generalized Schur decomposition for the generalized
+eigenvalue problem.
+
+ -- Function: int gsl_linalg_hesstri_decomp (gsl_matrix * A, gsl_matrix
+          * B, gsl_matrix * U, gsl_matrix * V, gsl_vector * WORK)
+     This function computes the Hessenberg-Triangular decomposition of
+     the matrix pair (A, B). On output, H is stored in A, and R is
+     stored in B. If U and V are provided (they may be null), the
+     similarity transformations are stored in them.  Additional
+     workspace of length N is needed in WORK.
+
+
+File: gsl-ref.info,  Node: Bidiagonalization,  Next: Householder Transformations,  Prev: Hessenberg-Triangular Decomposition of Real Matrices,  Up: Linear Algebra
+
+13.10 Bidiagonalization
+=======================
 
 A general matrix A can be factorized by similarity transformations into
 the form,
@@ -1583,7 +1679,7 @@ The size of U is M-by-N and the size of V is N-by-N.
 
 File: gsl-ref.info,  Node: Householder Transformations,  Next: Householder solver for linear systems,  Prev: Bidiagonalization,  Up: Linear Algebra
 
-13.10 Householder Transformations
+13.11 Householder Transformations
 =================================
 
 A Householder transformation is a rank-1 modification of the identity
@@ -1598,6 +1694,8 @@ of the Householder matrix to create and apply Householder
 transformations efficiently.
 
  -- Function: double gsl_linalg_householder_transform (gsl_vector * V)
+ -- Function: gsl_complex gsl_linalg_complex_householder_transform
+          (gsl_vector_complex * V)
      This function prepares a Householder transformation P = I - \tau v
      v^T which can be used to zero all the elements of the input vector
      except the first.  On output the transformation is stored in the
@@ -1605,18 +1703,24 @@ transformations efficiently.
 
  -- Function: int gsl_linalg_householder_hm (double tau, const
           gsl_vector * v, gsl_matrix * A)
+ -- Function: int gsl_linalg_complex_householder_hm (gsl_complex tau,
+          const gsl_vector_complex * v, gsl_matrix_complex * A)
      This function applies the Householder matrix P defined by the
      scalar TAU and the vector V to the left-hand side of the matrix A.
      On output the result P A is stored in A.
 
  -- Function: int gsl_linalg_householder_mh (double tau, const
           gsl_vector * v, gsl_matrix * A)
+ -- Function: int gsl_linalg_complex_householder_mh (gsl_complex tau,
+          const gsl_vector_complex * v, gsl_matrix_complex * A)
      This function applies the Householder matrix P defined by the
      scalar TAU and the vector V to the right-hand side of the matrix
      A. On output the result A P is stored in A.
 
  -- Function: int gsl_linalg_householder_hv (double tau, const
           gsl_vector * v, gsl_vector * w)
+ -- Function: int gsl_linalg_complex_householder_hv (gsl_complex tau,
+          const gsl_vector_complex * v, gsl_vector_complex * w)
      This function applies the Householder transformation P defined by
      the scalar TAU and the vector V to the vector W.  On output the
      result P w is stored in W.
@@ -1624,7 +1728,7 @@ transformations efficiently.
 
 File: gsl-ref.info,  Node: Householder solver for linear systems,  Next: Tridiagonal Systems,  Prev: Householder Transformations,  Up: Linear Algebra
 
-13.11 Householder solver for linear systems
+13.12 Householder solver for linear systems
 ===========================================
 
  -- Function: int gsl_linalg_HH_solve (gsl_matrix * A, const gsl_vector
@@ -1643,8 +1747,15 @@ File: gsl-ref.info,  Node: Householder solver for linear systems,  Next: Tridiag
 
 File: gsl-ref.info,  Node: Tridiagonal Systems,  Next: Balancing,  Prev: Householder solver for linear systems,  Up: Linear Algebra
 
-13.12 Tridiagonal Systems
+13.13 Tridiagonal Systems
 =========================
+
+The functions described in this section efficiently solve symmetric,
+non-symmetric and cyclic tridiagonal systems with minimal storage.
+Note that the current implementations of these functions use a variant
+of Cholesky decomposition, so the tridiagonal matrix must be positive
+definite.  For non-positive definite matrices, the functions return the
+error code `GSL_ESING'.
 
  -- Function: int gsl_linalg_solve_tridiag (const gsl_vector * DIAG,
           const gsl_vector * E, const gsl_vector * F, const gsl_vector
@@ -1659,6 +1770,7 @@ File: gsl-ref.info,  Node: Tridiagonal Systems,  Next: Balancing,  Prev: Househo
               (  0  f_1 d_2 e_2 )
               (  0   0  f_2 d_3 )
 
+
  -- Function: int gsl_linalg_solve_symm_tridiag (const gsl_vector *
           DIAG, const gsl_vector * E, const gsl_vector * B, gsl_vector
           * X)
@@ -1671,9 +1783,6 @@ File: gsl-ref.info,  Node: Tridiagonal Systems,  Next: Balancing,  Prev: Househo
               ( e_0 d_1 e_1  0  )
               (  0  e_1 d_2 e_2 )
               (  0   0  e_2 d_3 )
-     The current implementation uses a variant of Cholesky decomposition
-     which can cause division by zero if the matrix is not positive
-     definite.
 
  -- Function: int gsl_linalg_solve_cyc_tridiag (const gsl_vector *
           DIAG, const gsl_vector * E, const gsl_vector * F, const
@@ -1705,7 +1814,7 @@ File: gsl-ref.info,  Node: Tridiagonal Systems,  Next: Balancing,  Prev: Househo
 
 File: gsl-ref.info,  Node: Balancing,  Next: Linear Algebra Examples,  Prev: Tridiagonal Systems,  Up: Linear Algebra
 
-13.13 Balancing
+13.14 Balancing
 ===============
 
 The process of balancing a matrix applies similarity transformations to
@@ -1728,7 +1837,7 @@ floating point radix.
 
 File: gsl-ref.info,  Node: Linear Algebra Examples,  Next: Linear Algebra References and Further Reading,  Prev: Balancing,  Up: Linear Algebra
 
-13.14 Examples
+13.15 Examples
 ==============
 
 The following program solves the linear system A x = b. The system to
@@ -1808,7 +1917,7 @@ with the equation A x = b.
 
 File: gsl-ref.info,  Node: Linear Algebra References and Further Reading,  Prev: Linear Algebra Examples,  Up: Linear Algebra
 
-13.15 References and Further Reading
+13.16 References and Further Reading
 ====================================
 
 Further information on the algorithms described in this section can be
@@ -1854,16 +1963,13 @@ File: gsl-ref.info,  Node: Eigensystems,  Next: Fast Fourier Transforms,  Prev: 
 
 This chapter describes functions for computing eigenvalues and
 eigenvectors of matrices.  There are routines for real symmetric, real
-nonsymmetric, and complex hermitian matrices. Eigenvalues can be
-computed with or without eigenvectors. The hermitian matrix algorithms
-used are symmetric bidiagonalization followed by QR reduction. The
-nonsymmetric algorithm is the Francis QR double-shift.
-
-   These routines are intended for "small" systems where simple
-algorithms are acceptable.  Anyone interested in finding eigenvalues
-and eigenvectors of large matrices will want to use the sophisticated
-routines found in LAPACK. The Fortran version of LAPACK is recommended
-as the standard package for large-scale linear algebra.
+nonsymmetric, complex hermitian, real generalized symmetric-definite,
+complex generalized hermitian-definite, and real generalized
+nonsymmetric eigensystems. Eigenvalues can be computed with or without
+eigenvectors.  The hermitian and real symmetric matrix algorithms are
+symmetric bidiagonalization followed by QR reduction. The nonsymmetric
+algorithm is the Francis QR double-shift.  The generalized nonsymmetric
+algorithm is the QZ method due to Moler and Stewart.
 
    The functions described in this chapter are declared in the header
 file `gsl_eigen.h'.
@@ -1873,6 +1979,9 @@ file `gsl_eigen.h'.
 * Real Symmetric Matrices::
 * Complex Hermitian Matrices::
 * Real Nonsymmetric Matrices::
+* Real Generalized Symmetric-Definite Eigensystems::
+* Complex Generalized Hermitian-Definite Eigensystems::
+* Real Generalized Nonsymmetric Eigensystems::
 * Sorting Eigenvalues and Eigenvectors::
 * Eigenvalue and Eigenvector Examples::
 * Eigenvalue and Eigenvector References::
@@ -1882,6 +1991,12 @@ File: gsl-ref.info,  Node: Real Symmetric Matrices,  Next: Complex Hermitian Mat
 
 14.1 Real Symmetric Matrices
 ============================
+
+For real symmetric matrices, the library uses the symmetric
+bidiagonalization and QR reduction method.  This is described in Golub
+& van Loan, section 8.3.  The computed eigenvalues are accurate to an
+absolute accuracy of \epsilon ||A||_2, where \epsilon is the machine
+precision.
 
  -- Function: gsl_eigen_symm_workspace * gsl_eigen_symm_alloc (const
           size_t N)
@@ -1974,7 +2089,7 @@ File: gsl-ref.info,  Node: Complex Hermitian Matrices,  Next: Real Nonsymmetric 
      normalised to unit magnitude.
 
 
-File: gsl-ref.info,  Node: Real Nonsymmetric Matrices,  Next: Sorting Eigenvalues and Eigenvectors,  Prev: Complex Hermitian Matrices,  Up: Eigensystems
+File: gsl-ref.info,  Node: Real Nonsymmetric Matrices,  Next: Real Generalized Symmetric-Definite Eigensystems,  Prev: Complex Hermitian Matrices,  Up: Eigensystems
 
 14.3 Real Nonsymmetric Matrices
 ===============================
@@ -2040,7 +2155,7 @@ shift Francis method.
      is stored in the upper portion of A on output.  Otherwise, on
      output, the diagonal of A will contain the 1-by-1 real eigenvalues
      and 2-by-2 complex conjugate eigenvalue systems, and the rest of A
-     is destroyed. In rare cases, this function will fail to find all
+     is destroyed. In rare cases, this function may fail to find all
      eigenvalues. If this happens, an error code is returned and the
      number of converged eigenvalues is stored in `w->n_evals'.  The
      converged eigenvalues are stored in the beginning of EVAL.
@@ -2070,7 +2185,7 @@ shift Francis method.
      Schur vectors. Then it finds eigenvectors of T and backtransforms
      them using the Schur vectors. The Schur vectors are destroyed in
      the process, but can be saved by using `gsl_eigen_nonsymmv_Z'. The
-     computed eigenvectors are normalized to have Euclidean norm 1. On
+     computed eigenvectors are normalized to have unit magnitude. On
      output, the upper portion of A contains the Schur form T. If
      `gsl_eigen_nonsymm' fails, no eigenvectors are computed, and an
      error code is returned.
@@ -2082,9 +2197,249 @@ shift Francis method.
      saves the Schur vectors into Z.
 
 
-File: gsl-ref.info,  Node: Sorting Eigenvalues and Eigenvectors,  Next: Eigenvalue and Eigenvector Examples,  Prev: Real Nonsymmetric Matrices,  Up: Eigensystems
+File: gsl-ref.info,  Node: Real Generalized Symmetric-Definite Eigensystems,  Next: Complex Generalized Hermitian-Definite Eigensystems,  Prev: Real Nonsymmetric Matrices,  Up: Eigensystems
 
-14.4 Sorting Eigenvalues and Eigenvectors
+14.4 Real Generalized Symmetric-Definite Eigensystems
+=====================================================
+
+The real generalized symmetric-definite eigenvalue problem is to find
+eigenvalues \lambda and eigenvectors x such that
+     A x = \lambda B x
+   where A and B are symmetric matrices, and B is positive-definite.
+This problem reduces to the standard symmetric eigenvalue problem by
+applying the Cholesky decomposition to B:
+                           A x = \lambda B x
+                           A x = \lambda L L^t x
+     ( L^{-1} A L^{-t} ) L^t x = \lambda L^t x
+   Therefore, the problem becomes C y = \lambda y where C = L^{-1} A
+L^{-t} is symmetric, and y = L^t x. The standard symmetric eigensolver
+can be applied to the matrix C.  The resulting eigenvectors are
+backtransformed to find the vectors of the original problem. The
+eigenvalues and eigenvectors of the generalized symmetric-definite
+eigenproblem are always real.
+
+ -- Function: gsl_eigen_gensymm_workspace * gsl_eigen_gensymm_alloc
+          (const size_t N)
+     This function allocates a workspace for computing eigenvalues of
+     N-by-N real generalized symmetric-definite eigensystems. The size
+     of the workspace is O(2n).
+
+ -- Function: void gsl_eigen_gensymm_free (gsl_eigen_gensymm_workspace
+          * W)
+     This function frees the memory associated with the workspace W.
+
+ -- Function: int gsl_eigen_gensymm (gsl_matrix * A, gsl_matrix * B,
+          gsl_vector * EVAL, gsl_eigen_gensymm_workspace * W)
+     This function computes the eigenvalues of the real generalized
+     symmetric-definite matrix pair (A, B), and stores them in EVAL,
+     using the method outlined above. On output, B contains its
+     Cholesky decomposition and A is destroyed.
+
+ -- Function: gsl_eigen_gensymmv_workspace * gsl_eigen_gensymmv_alloc
+          (const size_t N)
+     This function allocates a workspace for computing eigenvalues and
+     eigenvectors of N-by-N real generalized symmetric-definite
+     eigensystems. The size of the workspace is O(4n).
+
+ -- Function: void gsl_eigen_gensymmv_free
+          (gsl_eigen_gensymmv_workspace * W)
+     This function frees the memory associated with the workspace W.
+
+ -- Function: int gsl_eigen_gensymmv (gsl_matrix * A, gsl_matrix * B,
+          gsl_vector * EVAL, gsl_matrix * EVEC,
+          gsl_eigen_gensymmv_workspace * W)
+     This function computes the eigenvalues and eigenvectors of the real
+     generalized symmetric-definite matrix pair (A, B), and stores them
+     in EVAL and EVEC respectively. The computed eigenvectors are
+     normalized to have unit magnitude. On output, B contains its
+     Cholesky decomposition and A is destroyed.
+
+
+File: gsl-ref.info,  Node: Complex Generalized Hermitian-Definite Eigensystems,  Next: Real Generalized Nonsymmetric Eigensystems,  Prev: Real Generalized Symmetric-Definite Eigensystems,  Up: Eigensystems
+
+14.5 Complex Generalized Hermitian-Definite Eigensystems
+========================================================
+
+The complex generalized hermitian-definite eigenvalue problem is to find
+eigenvalues \lambda and eigenvectors x such that
+     A x = \lambda B x
+   where A and B are hermitian matrices, and B is positive-definite.
+Similarly to the real case, this can be reduced to C y = \lambda y where
+C = L^{-1} A L^{-H} is hermitian, and y = L^H x. The standard hermitian
+eigensolver can be applied to the matrix C.  The resulting eigenvectors
+are backtransformed to find the vectors of the original problem. The
+eigenvalues of the generalized hermitian-definite eigenproblem are
+always real.
+
+ -- Function: gsl_eigen_genherm_workspace * gsl_eigen_genherm_alloc
+          (const size_t N)
+     This function allocates a workspace for computing eigenvalues of
+     N-by-N complex generalized hermitian-definite eigensystems. The
+     size of the workspace is O(3n).
+
+ -- Function: void gsl_eigen_genherm_free (gsl_eigen_genherm_workspace
+          * W)
+     This function frees the memory associated with the workspace W.
+
+ -- Function: int gsl_eigen_genherm (gsl_matrix_complex * A,
+          gsl_matrix_complex * B, gsl_vector * EVAL,
+          gsl_eigen_genherm_workspace * W)
+     This function computes the eigenvalues of the complex generalized
+     hermitian-definite matrix pair (A, B), and stores them in EVAL,
+     using the method outlined above. On output, B contains its
+     Cholesky decomposition and A is destroyed.
+
+ -- Function: gsl_eigen_genhermv_workspace * gsl_eigen_genhermv_alloc
+          (const size_t N)
+     This function allocates a workspace for computing eigenvalues and
+     eigenvectors of N-by-N complex generalized hermitian-definite
+     eigensystems. The size of the workspace is O(5n).
+
+ -- Function: void gsl_eigen_genhermv_free
+          (gsl_eigen_genhermv_workspace * W)
+     This function frees the memory associated with the workspace W.
+
+ -- Function: int gsl_eigen_genhermv (gsl_matrix_complex * A,
+          gsl_matrix_complex * B, gsl_vector * EVAL, gsl_matrix_complex
+          * EVEC, gsl_eigen_genhermv_workspace * W)
+     This function computes the eigenvalues and eigenvectors of the
+     complex generalized hermitian-definite matrix pair (A, B), and
+     stores them in EVAL and EVEC respectively. The computed
+     eigenvectors are normalized to have unit magnitude. On output, B
+     contains its Cholesky decomposition and A is destroyed.
+
+
+File: gsl-ref.info,  Node: Real Generalized Nonsymmetric Eigensystems,  Next: Sorting Eigenvalues and Eigenvectors,  Prev: Complex Generalized Hermitian-Definite Eigensystems,  Up: Eigensystems
+
+14.6 Real Generalized Nonsymmetric Eigensystems
+===============================================
+
+Given two square matrices (A, B), the generalized nonsymmetric
+eigenvalue problem is to find eigenvalues \lambda and eigenvectors x
+such that
+     A x = \lambda B x
+   We may also define the problem as finding eigenvalues \mu and
+eigenvectors y such that
+     \mu A y = B y
+   Note that these two problems are equivalent (with \lambda = 1/\mu)
+if neither \lambda nor \mu is zero. If say, \lambda is zero, then it is
+still a well defined eigenproblem, but its alternate problem involving
+\mu is not. Therefore, to allow for zero (and infinite) eigenvalues,
+the problem which is actually solved is
+     \beta A x = \alpha B x
+   The eigensolver routines below will return two values \alpha and
+\beta and leave it to the user to perform the divisions \lambda =
+\alpha / \beta and \mu = \beta / \alpha.
+
+   If the determinant of the matrix pencil A - \lambda B is zero for
+all \lambda, the problem is said to be singular; otherwise it is called
+regular.  Singularity normally leads to some \alpha = \beta = 0 which
+means the eigenproblem is ill-conditioned and generally does not have
+well defined eigenvalue solutions. The routines below are intended for
+regular matrix pencils and could yield unpredictable results when
+applied to singular pencils.
+
+   The solution of the real generalized nonsymmetric eigensystem
+problem for a matrix pair (A, B) involves computing the generalized
+Schur decomposition
+     A = Q S Z^T
+     B = Q T Z^T
+   where Q and Z are orthogonal matrices of left and right Schur
+vectors respectively, and (S, T) is the generalized Schur form whose
+diagonal elements give the \alpha and \beta values. The algorithm used
+is the QZ method due to Moler and Stewart (see references).
+
+ -- Function: gsl_eigen_gen_workspace * gsl_eigen_gen_alloc (const
+          size_t N)
+     This function allocates a workspace for computing eigenvalues of
+     N-by-N real generalized nonsymmetric eigensystems. The size of the
+     workspace is O(n).
+
+ -- Function: void gsl_eigen_gen_free (gsl_eigen_gen_workspace * W)
+     This function frees the memory associated with the workspace W.
+
+ -- Function: void gsl_eigen_gen_params (const int COMPUTE_S, const int
+          COMPUTE_T, const int BALANCE, gsl_eigen_gen_workspace * W)
+     This function sets some parameters which determine how the
+     eigenvalue problem is solved in subsequent calls to
+     `gsl_eigen_gen'.
+
+     If COMPUTE_S is set to 1, the full Schur form S will be computed
+     by `gsl_eigen_gen'. If it is set to 0, S will not be computed
+     (this is the default setting). S is a quasi upper triangular
+     matrix with 1-by-1 and 2-by-2 blocks on its diagonal. 1-by-1
+     blocks correspond to real eigenvalues, and 2-by-2 blocks
+     correspond to complex eigenvalues.
+
+     If COMPUTE_T is set to 1, the full Schur form T will be computed
+     by `gsl_eigen_gen'. If it is set to 0, T will not be computed
+     (this is the default setting). T is an upper triangular matrix
+     with non-negative elements on its diagonal.  Any 2-by-2 blocks in
+     S will correspond to a 2-by-2 diagonal block in T.
+
+     The BALANCE parameter is currently ignored, since generalized
+     balancing is not yet implemented.
+
+ -- Function: int gsl_eigen_gen (gsl_matrix * A, gsl_matrix * B,
+          gsl_vector_complex * ALPHA, gsl_vector * BETA,
+          gsl_eigen_gen_workspace * W)
+     This function computes the eigenvalues of the real generalized
+     nonsymmetric matrix pair (A, B), and stores them as pairs in
+     (ALPHA, BETA), where ALPHA is complex and BETA is real. If \beta_i
+     is non-zero, then \lambda = \alpha_i / \beta_i is an eigenvalue.
+     Likewise, if \alpha_i is non-zero, then \mu = \beta_i / \alpha_i
+     is an eigenvalue of the alternate problem \mu A y = B y. The
+     elements of BETA are normalized to be non-negative.
+
+     If S is desired, it is stored in A on output. If T is desired, it
+     is stored in B on output. The ordering of eigenvalues in (ALPHA,
+     BETA) follows the ordering of the diagonal blocks in the Schur
+     forms S and T. In rare cases, this function may fail to find all
+     eigenvalues. If this occurs, an error code is returned.
+
+ -- Function: int gsl_eigen_gen_QZ (gsl_matrix * A, gsl_matrix * B,
+          gsl_vector_complex * ALPHA, gsl_vector * BETA, gsl_matrix *
+          Q, gsl_matrix * Z, gsl_eigen_gen_workspace * W)
+     This function is identical to `gsl_eigen_gen' except it also
+     computes the left and right Schur vectors and stores them into Q
+     and Z respectively.
+
+ -- Function: gsl_eigen_genv_workspace * gsl_eigen_genv_alloc (const
+          size_t N)
+     This function allocates a workspace for computing eigenvalues and
+     eigenvectors of N-by-N real generalized nonsymmetric eigensystems.
+     The size of the workspace is O(7n).
+
+ -- Function: void gsl_eigen_genv_free (gsl_eigen_genv_workspace * W)
+     This function frees the memory associated with the workspace W.
+
+ -- Function: int gsl_eigen_genv (gsl_matrix * A, gsl_matrix * B,
+          gsl_vector_complex * ALPHA, gsl_vector * BETA,
+          gsl_matrix_complex * EVEC, gsl_eigen_genv_workspace * W)
+     This function computes eigenvalues and right eigenvectors of the
+     N-by-N real generalized nonsymmetric matrix pair (A, B). The
+     eigenvalues are stored in (ALPHA, BETA) and the eigenvectors are
+     stored in EVEC. It first calls `gsl_eigen_gen' to compute the
+     eigenvalues, Schur forms, and Schur vectors. Then it finds
+     eigenvectors of the Schur forms and backtransforms them using the
+     Schur vectors. The Schur vectors are destroyed in the process, but
+     can be saved by using `gsl_eigen_genv_QZ'. The computed
+     eigenvectors are normalized to have unit magnitude. On output, (A,
+     B) contains the generalized Schur form (S, T). If `gsl_eigen_gen'
+     fails, no eigenvectors are computed, and an error code is returned.
+
+ -- Function: int gsl_eigen_genv_QZ (gsl_matrix * A, gsl_matrix * B,
+          gsl_vector_complex * ALPHA, gsl_vector * BETA,
+          gsl_matrix_complex * EVEC, gsl_matrix * Q, gsl_matrix * Z,
+          gsl_eigen_genv_workspace * W)
+     This function is identical to `gsl_eigen_genv' except it also
+     computes the left and right Schur vectors and stores them into Q
+     and Z respectively.
+
+
+File: gsl-ref.info,  Node: Sorting Eigenvalues and Eigenvectors,  Next: Eigenvalue and Eigenvector Examples,  Prev: Real Generalized Nonsymmetric Eigensystems,  Up: Eigensystems
+
+14.7 Sorting Eigenvalues and Eigenvectors
 =========================================
 
  -- Function: int gsl_eigen_symmv_sort (gsl_vector * EVAL, gsl_matrix *
@@ -2120,13 +2475,38 @@ File: gsl-ref.info,  Node: Sorting Eigenvalues and Eigenvectors,  Next: Eigenval
      vector EVAL and the corresponding complex eigenvectors stored in
      the columns of the matrix EVEC into ascending or descending order
      according to the value of the parameter SORT_TYPE as shown above.
-     Only GSL_EIGEN_SORT_ABS_ASC and GSL_EIGEN_SORT_ABS_DESC are
+     Only `GSL_EIGEN_SORT_ABS_ASC' and `GSL_EIGEN_SORT_ABS_DESC' are
      supported due to the eigenvalues being complex.
+
+ -- Function: int gsl_eigen_gensymmv_sort (gsl_vector * EVAL,
+          gsl_matrix * EVEC, gsl_eigen_sort_t SORT_TYPE)
+     This function simultaneously sorts the eigenvalues stored in the
+     vector EVAL and the corresponding real eigenvectors stored in the
+     columns of the matrix EVEC into ascending or descending order
+     according to the value of the parameter SORT_TYPE as shown above.
+
+ -- Function: int gsl_eigen_genhermv_sort (gsl_vector * EVAL,
+          gsl_matrix_complex * EVEC, gsl_eigen_sort_t SORT_TYPE)
+     This function simultaneously sorts the eigenvalues stored in the
+     vector EVAL and the corresponding complex eigenvectors stored in
+     the columns of the matrix EVEC into ascending or descending order
+     according to the value of the parameter SORT_TYPE as shown above.
+
+ -- Function: int gsl_eigen_genv_sort (gsl_vector_complex * ALPHA,
+          gsl_vector * BETA, gsl_matrix_complex * EVEC,
+          gsl_eigen_sort_t SORT_TYPE)
+     This function simultaneously sorts the eigenvalues stored in the
+     vectors (ALPHA, BETA) and the corresponding complex eigenvectors
+     stored in the columns of the matrix EVEC into ascending or
+     descending order according to the value of the parameter SORT_TYPE
+     as shown above. Only `GSL_EIGEN_SORT_ABS_ASC' and
+     `GSL_EIGEN_SORT_ABS_DESC' are supported due to the eigenvalues
+     being complex.
 
 
 File: gsl-ref.info,  Node: Eigenvalue and Eigenvector Examples,  Next: Eigenvalue and Eigenvector References,  Prev: Sorting Eigenvalues and Eigenvectors,  Up: Eigensystems
 
-14.5 Examples
+14.8 Examples
 =============
 
 The following program computes the eigenvalues and eigenvectors of the
@@ -2218,7 +2598,7 @@ sign of an eigenvector is arbitrary.
 
    The following program illustrates the use of the nonsymmetric
 eigensolver, by computing the eigenvalues and eigenvectors of the
-Vandermonde matrix V(x;i,j) = x_i^n - j with x = (-1,-2,3,4).
+Vandermonde matrix V(x;i,j) = x_i^{n - j} with x = (-1,-2,3,4).
 
      #include <stdio.h>
      #include <gsl/gsl_math.h>
@@ -2326,7 +2706,7 @@ multiplicative constant 0.9999984 + 0.0017674i which has magnitude 1.
 
 File: gsl-ref.info,  Node: Eigenvalue and Eigenvector References,  Prev: Eigenvalue and Eigenvector Examples,  Up: Eigensystems
 
-14.6 References and Further Reading
+14.9 References and Further Reading
 ===================================
 
 Further information on the algorithms described in this section can be
@@ -2335,7 +2715,14 @@ found in the following book,
      G. H. Golub, C. F. Van Loan, `Matrix Computations' (3rd Ed, 1996),
      Johns Hopkins University Press, ISBN 0-8018-5414-8.
 
-The LAPACK library is described in,
+Further information on the generalized eigensystems QZ algorithm can be
+found in this paper,
+
+     C. Moler, G. Stewart, "An Algorithm for Generalized Matrix
+     Eigenvalue Problems," SIAM J. Numer. Anal., Vol 10, No 2, 1973.
+
+Eigensystem routines for very large matrices can be found in the
+Fortran library LAPACK. The LAPACK library is described in,
 
      `LAPACK Users' Guide' (Third Edition, 1999), Published by SIAM,
      ISBN 0-89871-447-8.
@@ -3612,7 +3999,7 @@ File: gsl-ref.info,  Node: QAGI adaptive integration on infinite intervals,  Nex
      the semi-open interval (0,1] using the transformation x = b -
      (1-t)/t,
 
-          \int_{+\infty}^{b} dx f(x) =
+          \int_{-\infty}^{b} dx f(x) =
                \int_0^1 dt f(b - (1-t)/t)/t^2
 
      and then integrated using the QAGS algorithm.
@@ -4104,7 +4491,8 @@ File: gsl-ref.info,  Node: Sampling from a random number generator,  Next: Auxil
 ============================================
 
 The following functions return uniformly distributed random numbers,
-either as integers or double precision floating point numbers.  To
+either as integers or double precision floating point numbers.  Inline
+versions of these function are used when `HAVE_INLINE' is defined.  To
 obtain non-uniform distributions *note Random Number Distributions::.
 
  -- Function: unsigned long int gsl_rng_get (const gsl_rng * R)
@@ -5036,7 +5424,8 @@ File: gsl-ref.info,  Node: Sampling from a quasi-random number generator,  Next:
      This function stores the next point from the sequence generator Q
      in the array X.  The space available for X must match the
      dimension of the generator.  The point X will lie in the range 0 <
-     x_i < 1 for each x_i.
+     x_i < 1 for each x_i.  An inline version of this function is used
+     when `HAVE_INLINE' is defined.
 
 
 File: gsl-ref.info,  Node: Auxiliary quasi-random number generator functions,  Next: Saving and resorting quasi-random number generator state,  Prev: Sampling from a quasi-random number generator,  Up: Quasi-Random Sequences
@@ -6544,528 +6933,4 @@ short period.  For more information see Knuth, v2, 3rd ed, Section
      the original array of N items SRC with replacement, so the same
      object can appear more than once in the output sequence DEST.
      There is no requirement that K be less than N in this case.
-
-
-File: gsl-ref.info,  Node: Random Number Distribution Examples,  Next: Random Number Distribution References and Further Reading,  Prev: Shuffling and Sampling,  Up: Random Number Distributions
-
-19.39 Examples
-==============
-
-The following program demonstrates the use of a random number generator
-to produce variates from a distribution.  It prints 10 samples from the
-Poisson distribution with a mean of 3.
-
-     #include <stdio.h>
-     #include <gsl/gsl_rng.h>
-     #include <gsl/gsl_randist.h>
-
-     int
-     main (void)
-     {
-       const gsl_rng_type * T;
-       gsl_rng * r;
-
-       int i, n = 10;
-       double mu = 3.0;
-
-       /* create a generator chosen by the
-          environment variable GSL_RNG_TYPE */
-
-       gsl_rng_env_setup();
-
-       T = gsl_rng_default;
-       r = gsl_rng_alloc (T);
-
-       /* print n random variates chosen from
-          the poisson distribution with mean
-          parameter mu */
-
-       for (i = 0; i < n; i++)
-         {
-           unsigned int k = gsl_ran_poisson (r, mu);
-           printf (" %u", k);
-         }
-
-       printf ("\n");
-       gsl_rng_free (r);
-       return 0;
-     }
-
-If the library and header files are installed under `/usr/local' (the
-default location) then the program can be compiled with these options,
-
-     $ gcc -Wall demo.c -lgsl -lgslcblas -lm
-
-Here is the output of the program,
-
-     $ ./a.out
-      2 5 5 2 1 0 3 4 1 1
-
-The variates depend on the seed used by the generator.  The seed for the
-default generator type `gsl_rng_default' can be changed with the
-`GSL_RNG_SEED' environment variable to produce a different stream of
-variates,
-
-     $ GSL_RNG_SEED=123 ./a.out
-     GSL_RNG_SEED=123
-      4 5 6 3 3 1 4 2 5 5
-
-The following program generates a random walk in two dimensions.
-
-     #include <stdio.h>
-     #include <gsl/gsl_rng.h>
-     #include <gsl/gsl_randist.h>
-
-     int
-     main (void)
-     {
-       int i;
-       double x = 0, y = 0, dx, dy;
-
-       const gsl_rng_type * T;
-       gsl_rng * r;
-
-       gsl_rng_env_setup();
-       T = gsl_rng_default;
-       r = gsl_rng_alloc (T);
-
-       printf ("%g %g\n", x, y);
-
-       for (i = 0; i < 10; i++)
-         {
-           gsl_ran_dir_2d (r, &dx, &dy);
-           x += dx; y += dy;
-           printf ("%g %g\n", x, y);
-         }
-
-       gsl_rng_free (r);
-       return 0;
-     }
-
-Here is the output from the program, three 10-step random walks from
-the origin,
-
-   The following program computes the upper and lower cumulative
-distribution functions for the standard normal distribution at x=2.
-
-     #include <stdio.h>
-     #include <gsl/gsl_cdf.h>
-
-     int
-     main (void)
-     {
-       double P, Q;
-       double x = 2.0;
-
-       P = gsl_cdf_ugaussian_P (x);
-       printf ("prob(x < %f) = %f\n", x, P);
-
-       Q = gsl_cdf_ugaussian_Q (x);
-       printf ("prob(x > %f) = %f\n", x, Q);
-
-       x = gsl_cdf_ugaussian_Pinv (P);
-       printf ("Pinv(%f) = %f\n", P, x);
-
-       x = gsl_cdf_ugaussian_Qinv (Q);
-       printf ("Qinv(%f) = %f\n", Q, x);
-
-       return 0;
-     }
-
-Here is the output of the program,
-
-     prob(x < 2.000000) = 0.977250
-     prob(x > 2.000000) = 0.022750
-     Pinv(0.977250) = 2.000000
-     Qinv(0.022750) = 2.000000
-
-
-File: gsl-ref.info,  Node: Random Number Distribution References and Further Reading,  Prev: Random Number Distribution Examples,  Up: Random Number Distributions
-
-19.40 References and Further Reading
-====================================
-
-For an encyclopaedic coverage of the subject readers are advised to
-consult the book `Non-Uniform Random Variate Generation' by Luc
-Devroye.  It covers every imaginable distribution and provides hundreds
-of algorithms.
-
-     Luc Devroye, `Non-Uniform Random Variate Generation',
-     Springer-Verlag, ISBN 0-387-96305-7.
-
-The subject of random variate generation is also reviewed by Knuth, who
-describes algorithms for all the major distributions.
-
-     Donald E. Knuth, `The Art of Computer Programming: Seminumerical
-     Algorithms' (Vol 2, 3rd Ed, 1997), Addison-Wesley, ISBN 0201896842.
-
-The Particle Data Group provides a short review of techniques for
-generating distributions of random numbers in the "Monte Carlo" section
-of its Annual Review of Particle Physics.
-
-     `Review of Particle Properties' R.M. Barnett et al., Physical
-     Review D54, 1 (1996) `http://pdg.lbl.gov/'.
-
-The Review of Particle Physics is available online in postscript and pdf
-format.
-
-An overview of methods used to compute cumulative distribution functions
-can be found in `Statistical Computing' by W.J. Kennedy and J.E.
-Gentle. Another general reference is `Elements of Statistical
-Computing' by R.A. Thisted.
-
-     William E. Kennedy and James E. Gentle, `Statistical Computing'
-     (1980), Marcel Dekker, ISBN 0-8247-6898-1.
-
-     Ronald A. Thisted, `Elements of Statistical Computing' (1988),
-     Chapman & Hall, ISBN 0-412-01371-1.
-
-The cumulative distribution functions for the Gaussian distribution are
-based on the following papers,
-
-     `Rational Chebyshev Approximations Using Linear Equations', W.J.
-     Cody, W. Fraser, J.F. Hart. Numerische Mathematik 12, 242-251
-     (1968).
-
-     `Rational Chebyshev Approximations for the Error Function', W.J.
-     Cody. Mathematics of Computation 23, n107, 631-637 (July 1969).
-
-
-File: gsl-ref.info,  Node: Statistics,  Next: Histograms,  Prev: Random Number Distributions,  Up: Top
-
-20 Statistics
-*************
-
-This chapter describes the statistical functions in the library.  The
-basic statistical functions include routines to compute the mean,
-variance and standard deviation.  More advanced functions allow you to
-calculate absolute deviations, skewness, and kurtosis as well as the
-median and arbitrary percentiles.  The algorithms use recurrence
-relations to compute average quantities in a stable way, without large
-intermediate values that might overflow.
-
-   The functions are available in versions for datasets in the standard
-floating-point and integer types.  The versions for double precision
-floating-point data have the prefix `gsl_stats' and are declared in the
-header file `gsl_statistics_double.h'.  The versions for integer data
-have the prefix `gsl_stats_int' and are declared in the header file
-`gsl_statistics_int.h'.
-
-* Menu:
-
-* Mean and standard deviation and variance::
-* Absolute deviation::
-* Higher moments (skewness and kurtosis)::
-* Autocorrelation::
-* Covariance::
-* Weighted Samples::
-* Maximum and Minimum values::
-* Median and Percentiles::
-* Example statistical programs::
-* Statistics References and Further Reading::
-
-
-File: gsl-ref.info,  Node: Mean and standard deviation and variance,  Next: Absolute deviation,  Up: Statistics
-
-20.1 Mean, Standard Deviation and Variance
-==========================================
-
- -- Function: double gsl_stats_mean (const double DATA[], size_t
-          STRIDE, size_t N)
-     This function returns the arithmetic mean of DATA, a dataset of
-     length N with stride STRIDE.  The arithmetic mean, or "sample
-     mean", is denoted by \Hat\mu and defined as,
-
-          \Hat\mu = (1/N) \sum x_i
-
-     where x_i are the elements of the dataset DATA.  For samples drawn
-     from a gaussian distribution the variance of \Hat\mu is \sigma^2 /
-     N.
-
- -- Function: double gsl_stats_variance (const double DATA[], size_t
-          STRIDE, size_t N)
-     This function returns the estimated, or "sample", variance of
-     DATA, a dataset of length N with stride STRIDE.  The estimated
-     variance is denoted by \Hat\sigma^2 and is defined by,
-
-          \Hat\sigma^2 = (1/(N-1)) \sum (x_i - \Hat\mu)^2
-
-     where x_i are the elements of the dataset DATA.  Note that the
-     normalization factor of 1/(N-1) results from the derivation of
-     \Hat\sigma^2 as an unbiased estimator of the population variance
-     \sigma^2.  For samples drawn from a gaussian distribution the
-     variance of \Hat\sigma^2 itself is 2 \sigma^4 / N.
-
-     This function computes the mean via a call to `gsl_stats_mean'.  If
-     you have already computed the mean then you can pass it directly to
-     `gsl_stats_variance_m'.
-
- -- Function: double gsl_stats_variance_m (const double DATA[], size_t
-          STRIDE, size_t N, double MEAN)
-     This function returns the sample variance of DATA relative to the
-     given value of MEAN.  The function is computed with \Hat\mu
-     replaced by the value of MEAN that you supply,
-
-          \Hat\sigma^2 = (1/(N-1)) \sum (x_i - mean)^2
-
- -- Function: double gsl_stats_sd (const double DATA[], size_t STRIDE,
-          size_t N)
- -- Function: double gsl_stats_sd_m (const double DATA[], size_t
-          STRIDE, size_t N, double MEAN)
-     The standard deviation is defined as the square root of the
-     variance.  These functions return the square root of the
-     corresponding variance functions above.
-
- -- Function: double gsl_stats_variance_with_fixed_mean (const double
-          DATA[], size_t STRIDE, size_t N, double MEAN)
-     This function computes an unbiased estimate of the variance of
-     DATA when the population mean MEAN of the underlying distribution
-     is known _a priori_.  In this case the estimator for the variance
-     uses the factor 1/N and the sample mean \Hat\mu is replaced by the
-     known population mean \mu,
-
-          \Hat\sigma^2 = (1/N) \sum (x_i - \mu)^2
-
- -- Function: double gsl_stats_sd_with_fixed_mean (const double DATA[],
-          size_t STRIDE, size_t N, double MEAN)
-     This function calculates the standard deviation of DATA for a
-     fixed population mean MEAN.  The result is the square root of the
-     corresponding variance function.
-
-
-File: gsl-ref.info,  Node: Absolute deviation,  Next: Higher moments (skewness and kurtosis),  Prev: Mean and standard deviation and variance,  Up: Statistics
-
-20.2 Absolute deviation
-=======================
-
- -- Function: double gsl_stats_absdev (const double DATA[], size_t
-          STRIDE, size_t N)
-     This function computes the absolute deviation from the mean of
-     DATA, a dataset of length N with stride STRIDE.  The absolute
-     deviation from the mean is defined as,
-
-          absdev  = (1/N) \sum |x_i - \Hat\mu|
-
-     where x_i are the elements of the dataset DATA.  The absolute
-     deviation from the mean provides a more robust measure of the
-     width of a distribution than the variance.  This function computes
-     the mean of DATA via a call to `gsl_stats_mean'.
-
- -- Function: double gsl_stats_absdev_m (const double DATA[], size_t
-          STRIDE, size_t N, double MEAN)
-     This function computes the absolute deviation of the dataset DATA
-     relative to the given value of MEAN,
-
-          absdev  = (1/N) \sum |x_i - mean|
-
-     This function is useful if you have already computed the mean of
-     DATA (and want to avoid recomputing it), or wish to calculate the
-     absolute deviation relative to another value (such as zero, or the
-     median).
-
-
-File: gsl-ref.info,  Node: Higher moments (skewness and kurtosis),  Next: Autocorrelation,  Prev: Absolute deviation,  Up: Statistics
-
-20.3 Higher moments (skewness and kurtosis)
-===========================================
-
- -- Function: double gsl_stats_skew (const double DATA[], size_t
-          STRIDE, size_t N)
-     This function computes the skewness of DATA, a dataset of length N
-     with stride STRIDE.  The skewness is defined as,
-
-          skew = (1/N) \sum ((x_i - \Hat\mu)/\Hat\sigma)^3
-
-     where x_i are the elements of the dataset DATA.  The skewness
-     measures the asymmetry of the tails of a distribution.
-
-     The function computes the mean and estimated standard deviation of
-     DATA via calls to `gsl_stats_mean' and `gsl_stats_sd'.
-
- -- Function: double gsl_stats_skew_m_sd (const double DATA[], size_t
-          STRIDE, size_t N, double MEAN, double SD)
-     This function computes the skewness of the dataset DATA using the
-     given values of the mean MEAN and standard deviation SD,
-
-          skew = (1/N) \sum ((x_i - mean)/sd)^3
-
-     These functions are useful if you have already computed the mean
-     and standard deviation of DATA and want to avoid recomputing them.
-
- -- Function: double gsl_stats_kurtosis (const double DATA[], size_t
-          STRIDE, size_t N)
-     This function computes the kurtosis of DATA, a dataset of length N
-     with stride STRIDE.  The kurtosis is defined as,
-
-          kurtosis = ((1/N) \sum ((x_i - \Hat\mu)/\Hat\sigma)^4)  - 3
-
-     The kurtosis measures how sharply peaked a distribution is,
-     relative to its width.  The kurtosis is normalized to zero for a
-     gaussian distribution.
-
- -- Function: double gsl_stats_kurtosis_m_sd (const double DATA[],
-          size_t STRIDE, size_t N, double MEAN, double SD)
-     This function computes the kurtosis of the dataset DATA using the
-     given values of the mean MEAN and standard deviation SD,
-
-          kurtosis = ((1/N) \sum ((x_i - mean)/sd)^4) - 3
-
-     This function is useful if you have already computed the mean and
-     standard deviation of DATA and want to avoid recomputing them.
-
-
-File: gsl-ref.info,  Node: Autocorrelation,  Next: Covariance,  Prev: Higher moments (skewness and kurtosis),  Up: Statistics
-
-20.4 Autocorrelation
-====================
-
- -- Function: double gsl_stats_lag1_autocorrelation (const double
-          DATA[], const size_t STRIDE, const size_t N)
-     This function computes the lag-1 autocorrelation of the dataset
-     DATA.
-
-          a_1 = {\sum_{i = 1}^{n} (x_{i} - \Hat\mu) (x_{i-1} - \Hat\mu)
-                 \over
-                 \sum_{i = 1}^{n} (x_{i} - \Hat\mu) (x_{i} - \Hat\mu)}
-
- -- Function: double gsl_stats_lag1_autocorrelation_m (const double
-          DATA[], const size_t STRIDE, const size_t N, const double
-          MEAN)
-     This function computes the lag-1 autocorrelation of the dataset
-     DATA using the given value of the mean MEAN.
-
-
-
-File: gsl-ref.info,  Node: Covariance,  Next: Weighted Samples,  Prev: Autocorrelation,  Up: Statistics
-
-20.5 Covariance
-===============
-
- -- Function: double gsl_stats_covariance (const double DATA1[], const
-          size_t STRIDE1, const double DATA2[], const size_t STRIDE2,
-          const size_t N)
-     This function computes the covariance of the datasets DATA1 and
-     DATA2 which must both be of the same length N.
-
-          covar = (1/(n - 1)) \sum_{i = 1}^{n} (x_i - \Hat x) (y_i - \Hat y)
-
- -- Function: double gsl_stats_covariance_m (const double DATA1[],
-          const size_t STRIDE1, const double DATA2[], const size_t
-          STRIDE2, const size_t N, const double MEAN1, const double
-          MEAN2)
-     This function computes the covariance of the datasets DATA1 and
-     DATA2 using the given values of the means, MEAN1 and MEAN2.  This
-     is useful if you have already computed the means of DATA1 and
-     DATA2 and want to avoid recomputing them.
-
-
-File: gsl-ref.info,  Node: Weighted Samples,  Next: Maximum and Minimum values,  Prev: Covariance,  Up: Statistics
-
-20.6 Weighted Samples
-=====================
-
-The functions described in this section allow the computation of
-statistics for weighted samples.  The functions accept an array of
-samples, x_i, with associated weights, w_i.  Each sample x_i is
-considered as having been drawn from a Gaussian distribution with
-variance \sigma_i^2.  The sample weight w_i is defined as the
-reciprocal of this variance, w_i = 1/\sigma_i^2.  Setting a weight to
-zero corresponds to removing a sample from a dataset.
-
- -- Function: double gsl_stats_wmean (const double W[], size_t WSTRIDE,
-          const double DATA[], size_t STRIDE, size_t N)
-     This function returns the weighted mean of the dataset DATA with
-     stride STRIDE and length N, using the set of weights W with stride
-     WSTRIDE and length N.  The weighted mean is defined as,
-
-          \Hat\mu = (\sum w_i x_i) / (\sum w_i)
-
- -- Function: double gsl_stats_wvariance (const double W[], size_t
-          WSTRIDE, const double DATA[], size_t STRIDE, size_t N)
-     This function returns the estimated variance of the dataset DATA
-     with stride STRIDE and length N, using the set of weights W with
-     stride WSTRIDE and length N.  The estimated variance of a weighted
-     dataset is defined as,
-
-          \Hat\sigma^2 = ((\sum w_i)/((\sum w_i)^2 - \sum (w_i^2)))
-                          \sum w_i (x_i - \Hat\mu)^2
-
-     Note that this expression reduces to an unweighted variance with
-     the familiar 1/(N-1) factor when there are N equal non-zero
-     weights.
-
- -- Function: double gsl_stats_wvariance_m (const double W[], size_t
-          WSTRIDE, const double DATA[], size_t STRIDE, size_t N, double
-          WMEAN)
-     This function returns the estimated variance of the weighted
-     dataset DATA using the given weighted mean WMEAN.
-
- -- Function: double gsl_stats_wsd (const double W[], size_t WSTRIDE,
-          const double DATA[], size_t STRIDE, size_t N)
-     The standard deviation is defined as the square root of the
-     variance.  This function returns the square root of the
-     corresponding variance function `gsl_stats_wvariance' above.
-
- -- Function: double gsl_stats_wsd_m (const double W[], size_t WSTRIDE,
-          const double DATA[], size_t STRIDE, size_t N, double WMEAN)
-     This function returns the square root of the corresponding variance
-     function `gsl_stats_wvariance_m' above.
-
- -- Function: double gsl_stats_wvariance_with_fixed_mean (const double
-          W[], size_t WSTRIDE, const double DATA[], size_t STRIDE,
-          size_t N, const double MEAN)
-     This function computes an unbiased estimate of the variance of
-     weighted dataset DATA when the population mean MEAN of the
-     underlying distribution is known _a priori_.  In this case the
-     estimator for the variance replaces the sample mean \Hat\mu by the
-     known population mean \mu,
-
-          \Hat\sigma^2 = (\sum w_i (x_i - \mu)^2) / (\sum w_i)
-
- -- Function: double gsl_stats_wsd_with_fixed_mean (const double W[],
-          size_t WSTRIDE, const double DATA[], size_t STRIDE, size_t N,
-          const double MEAN)
-     The standard deviation is defined as the square root of the
-     variance.  This function returns the square root of the
-     corresponding variance function above.
-
- -- Function: double gsl_stats_wabsdev (const double W[], size_t
-          WSTRIDE, const double DATA[], size_t STRIDE, size_t N)
-     This function computes the weighted absolute deviation from the
-     weighted mean of DATA.  The absolute deviation from the mean is
-     defined as,
-
-          absdev = (\sum w_i |x_i - \Hat\mu|) / (\sum w_i)
-
- -- Function: double gsl_stats_wabsdev_m (const double W[], size_t
-          WSTRIDE, const double DATA[], size_t STRIDE, size_t N, double
-          WMEAN)
-     This function computes the absolute deviation of the weighted
-     dataset DATA about the given weighted mean WMEAN.
-
- -- Function: double gsl_stats_wskew (const double W[], size_t WSTRIDE,
-          const double DATA[], size_t STRIDE, size_t N)
-     This function computes the weighted skewness of the dataset DATA.
-
-          skew = (\sum w_i ((x_i - xbar)/\sigma)^3) / (\sum w_i)
-
- -- Function: double gsl_stats_wskew_m_sd (const double W[], size_t
-          WSTRIDE, const double DATA[], size_t STRIDE, size_t N, double
-          WMEAN, double WSD)
-     This function computes the weighted skewness of the dataset DATA
-     using the given values of the weighted mean and weighted standard
-     deviation, WMEAN and WSD.
-
- -- Function: double gsl_stats_wkurtosis (const double W[], size_t
-          WSTRIDE, const double DATA[], size_t STRIDE, size_t N)
-     This function computes the weighted kurtosis of the dataset DATA.
-
-          kurtosis = ((\sum w_i ((x_i - xbar)/sigma)^4) / (\sum w_i)) - 3
-
- -- Function: double gsl_stats_wkurtosis_m_sd (const double W[], size_t
-          WSTRIDE, const double DATA[], size_t STRIDE, size_t N, double
-          WMEAN, double WSD)
-     This function computes the weighted kurtosis of the dataset DATA
-     using the given values of the weighted mean and weighted standard
-     deviation, WMEAN and WSD.
 

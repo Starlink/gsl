@@ -1,10 +1,10 @@
 /* cdf/gammainv.c
  * 
- * Copyright (C) 2003 Brian Gough
+ * Copyright (C) 2003, 2007 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -99,10 +99,14 @@ gsl_cdf_gamma_Pinv (const double P, const double a, const double b)
         goto start;
     }
 
+  end:
+    if (fabs(dP) > GSL_SQRT_DBL_EPSILON * P)
+      {
+        GSL_ERROR_VAL("inverse failed to converge", GSL_EFAILED, GSL_NAN);
+      }
+    
+    return b * x;
   }
-
-end:
-  return b * x;
 }
 
 double

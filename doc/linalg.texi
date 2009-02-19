@@ -7,12 +7,7 @@ This chapter describes functions for solving linear systems.  The
 library provides linear algebra operations which operate directly on
 the @code{gsl_vector} and @code{gsl_matrix} objects.  These routines
 use the standard algorithms from Golub & Van Loan's @cite{Matrix
-Computations}.
-
-@cindex LAPACK, recommended for linear algebra
-When dealing with very large systems the routines found in @sc{lapack}
-should be considered.  These support specialized data representations
-and other optimizations.
+Computations} with Level-1 and Level-2 BLAS calls for efficiency.
 
 The functions described in this chapter are declared in the header file
 @file{gsl_linalg.h}.
@@ -27,6 +22,7 @@ The functions described in this chapter are declared in the header file
 * Tridiagonal Decomposition of Real Symmetric Matrices::  
 * Tridiagonal Decomposition of Hermitian Matrices::  
 * Hessenberg Decomposition of Real Matrices::
+* Hessenberg-Triangular Decomposition of Real Matrices::
 * Bidiagonalization::           
 * Householder Transformations::  
 * Householder solver for linear systems::  
@@ -239,6 +235,14 @@ This function applies the matrix @math{Q} encoded in the decomposition
 v} in @var{v}.  The matrix multiplication is carried out directly using
 the encoding of the Householder vectors without needing to form the full
 matrix @math{Q}.
+@end deftypefun
+
+@deftypefun int gsl_linalg_QR_QTmat (const gsl_matrix * @var{QR}, const gsl_vector * @var{tau}, gsl_matrix * @var{A})
+This function applies the matrix @math{Q^T} encoded in the decomposition
+(@var{QR},@var{tau}) to the matrix @var{A}, storing the result @math{Q^T
+A} in @var{A}.  The matrix multiplication is carried out directly using
+the encoding of the Householder vectors without needing to form the full
+matrix @math{Q^T}.
 @end deftypefun
 
 @deftypefun int gsl_linalg_QR_Rsolve (const gsl_matrix * @var{QR}, const gsl_vector * @var{b}, gsl_vector * @var{x})
@@ -507,27 +511,38 @@ the linear system @math{A x = b} into a pair of triangular systems
 back-substitution.
 
 @deftypefun int gsl_linalg_cholesky_decomp (gsl_matrix * @var{A})
-This function factorizes the positive-definite symmetric square matrix
-@var{A} into the Cholesky decomposition @math{A = L L^T}. On input
+@deftypefunx int gsl_linalg_complex_cholesky_decomp (gsl_matrix_complex * @var{A})
+These functions factorize the positive-definite square matrix
+@var{A} into the Cholesky decomposition @math{A = L L^T} (or
+@c{$A = L L^{\dagger}$}
+@math{A = L L^H}
+for the complex case). On input
 only the diagonal and lower-triangular part of the matrix @var{A} are
 needed.  On output the diagonal and lower triangular part of the input
 matrix @var{A} contain the matrix @math{L}. The upper triangular part
 of the input matrix contains @math{L^T}, the diagonal terms being
 identical for both @math{L} and @math{L^T}.  If the matrix is not
 positive-definite then the decomposition will fail, returning the
-error code @code{GSL_EDOM}.
+error code @code{GSL_EDOM}.  
+
+When testing whether a matrix is positive-definite, disable the error
+handler first to avoid triggering an error.
 @end deftypefun
 
 @deftypefun int gsl_linalg_cholesky_solve (const gsl_matrix * @var{cholesky}, const gsl_vector * @var{b}, gsl_vector * @var{x})
-This function solves the system @math{A x = b} using the Cholesky
+@deftypefunx int gsl_linalg_complex_cholesky_solve (const gsl_matrix_complex * @var{cholesky}, const gsl_vector_complex * @var{b}, gsl_vector_complex * @var{x})
+These functions solve the system @math{A x = b} using the Cholesky
 decomposition of @math{A} into the matrix @var{cholesky} given by
-@code{gsl_linalg_cholesky_decomp}.
+@code{gsl_linalg_cholesky_decomp} or
+@code{gsl_linalg_complex_cholesky_decomp}.
 @end deftypefun
 
 @deftypefun int gsl_linalg_cholesky_svx (const gsl_matrix * @var{cholesky}, gsl_vector * @var{x})
-This function solves the system @math{A x = b} in-place using the
+@deftypefunx int gsl_linalg_complex_cholesky_svx (const gsl_matrix_complex * @var{cholesky}, gsl_vector_complex * @var{x})
+These functions solve the system @math{A x = b} in-place using the
 Cholesky decomposition of @math{A} into the matrix @var{cholesky} given
-by @code{gsl_linalg_cholesky_decomp}. On input @var{x} should contain
+by @code{gsl_linalg_cholesky_decomp} or
+@code{gsl_linalg_complex_cholesky_decomp}. On input @var{x} should contain
 the right-hand side @math{b}, which is replaced by the solution on
 output.
 @end deftypefun
@@ -635,7 +650,7 @@ tridiagonal decomposition (@var{A}, @var{tau}) obtained from the
 @section Hessenberg Decomposition of Real Matrices
 @cindex hessenberg decomposition
 
-A general matrix @math{A} can be decomposed by orthogonal
+A general real matrix @math{A} can be decomposed by orthogonal
 similarity transformations into the form
 @tex
 \beforedisplay
@@ -657,7 +672,7 @@ Hessenberg reduction is the first step in the Schur decomposition
 for the nonsymmetric eigenvalue problem, but has applications in
 other areas as well.
 
-@deftypefun int gsl_linalg_hessenberg (gsl_matrix * @var{A}, gsl_vector * @var{tau})
+@deftypefun int gsl_linalg_hessenberg_decomp (gsl_matrix * @var{A}, gsl_vector * @var{tau})
 This function computes the Hessenberg decomposition of the matrix
 @var{A} by applying the similarity transformation @math{H = U^T A U}.
 On output, @math{H} is stored in the upper portion of @var{A}. The
@@ -673,7 +688,7 @@ and the Householder coefficients are stored in the vector @var{tau}.
 This function constructs the orthogonal matrix @math{U} from the
 information stored in the Hessenberg matrix @var{H} along with the
 vector @var{tau}. @var{H} and @var{tau} are outputs from
-@code{gsl_linalg_hessenberg}.
+@code{gsl_linalg_hessenberg_decomp}.
 @end deftypefun
 
 @deftypefun int gsl_linalg_hessenberg_unpack_accum (gsl_matrix * @var{H}, gsl_vector * @var{tau}, gsl_matrix * @var{V})
@@ -685,10 +700,47 @@ Setting @var{V} to the identity matrix provides the same result as
 @var{V} must have @var{N} columns but may have any number of rows.
 @end deftypefun
 
-@deftypefun void gsl_linalg_hessenberg_set_zero (gsl_matrix * @var{H})
+@deftypefun int gsl_linalg_hessenberg_set_zero (gsl_matrix * @var{H})
 This function sets the lower triangular portion of @var{H}, below
 the subdiagonal, to zero. It is useful for clearing out the
-Householder vectors after calling @code{gsl_linalg_hessenberg}.
+Householder vectors after calling @code{gsl_linalg_hessenberg_decomp}.
+@end deftypefun
+
+@node Hessenberg-Triangular Decomposition of Real Matrices
+@section Hessenberg-Triangular Decomposition of Real Matrices
+@cindex hessenberg triangular decomposition
+
+A general real matrix pair (@math{A}, @math{B}) can be decomposed by
+orthogonal similarity transformations into the form
+@tex
+\beforedisplay
+$$
+A = U H V^T
+$$
+$$
+B = U R V^T
+$$
+\afterdisplay
+@end tex
+@ifinfo
+
+@example
+A = U H V^T
+B = U R V^T
+@end example
+
+@end ifinfo
+where @math{U} and @math{V} are orthogonal, @math{H} is an upper
+Hessenberg matrix, and @math{R} is upper triangular. The
+Hessenberg-Triangular reduction is the first step in the generalized
+Schur decomposition for the generalized eigenvalue problem.
+
+@deftypefun int gsl_linalg_hesstri_decomp (gsl_matrix * @var{A}, gsl_matrix * @var{B}, gsl_matrix * @var{U}, gsl_matrix * @var{V}, gsl_vector * @var{work})
+This function computes the Hessenberg-Triangular decomposition of the
+matrix pair (@var{A}, @var{B}). On output, @math{H} is stored in @var{A},
+and @math{R} is stored in @var{B}. If @var{U} and @var{V} are provided
+(they may be null), the similarity transformations are stored in them.
+Additional workspace of length @math{N} is needed in @var{work}.
 @end deftypefun
 
 @node Bidiagonalization
@@ -782,6 +834,7 @@ rank-1 structure of the Householder matrix to create and apply
 Householder transformations efficiently.
 
 @deftypefun double gsl_linalg_householder_transform (gsl_vector * @var{v})
+@deftypefunx gsl_complex gsl_linalg_complex_householder_transform (gsl_vector_complex * @var{v})
 This function prepares a Householder transformation @math{P = I - \tau v
 v^T} which can be used to zero all the elements of the input vector except
 the first.  On output the transformation is stored in the vector @var{v}
@@ -789,18 +842,21 @@ and the scalar @math{\tau} is returned.
 @end deftypefun
 
 @deftypefun int gsl_linalg_householder_hm (double tau, const gsl_vector * v, gsl_matrix * A)
+@deftypefunx int gsl_linalg_complex_householder_hm (gsl_complex tau, const gsl_vector_complex * v, gsl_matrix_complex * A)
 This function applies the Householder matrix @math{P} defined by the
 scalar @var{tau} and the vector @var{v} to the left-hand side of the
 matrix @var{A}. On output the result @math{P A} is stored in @var{A}.
 @end deftypefun
 
 @deftypefun int gsl_linalg_householder_mh (double tau, const gsl_vector * v, gsl_matrix * A)
+@deftypefunx int gsl_linalg_complex_householder_mh (gsl_complex tau, const gsl_vector_complex * v, gsl_matrix_complex * A)
 This function applies the Householder matrix @math{P} defined by the
 scalar @var{tau} and the vector @var{v} to the right-hand side of the
 matrix @var{A}. On output the result @math{A P} is stored in @var{A}.
 @end deftypefun
 
 @deftypefun int gsl_linalg_householder_hv (double tau, const gsl_vector * v, gsl_vector * w)
+@deftypefunx int gsl_linalg_complex_householder_hv (gsl_complex tau, const gsl_vector_complex * v, gsl_vector_complex * w)
 This function applies the Householder transformation @math{P} defined by
 the scalar @var{tau} and the vector @var{v} to the vector @var{w}.  On
 output the result @math{P w} is stored in @var{w}.
@@ -835,6 +891,13 @@ matrix @var{A} is destroyed by the Householder transformations.
 @section Tridiagonal Systems
 @cindex tridiagonal systems
 
+The functions described in this section efficiently solve symmetric,
+non-symmetric and cyclic tridiagonal systems with minimal storage.
+Note that the current implementations of these functions use a variant
+of Cholesky decomposition, so the tridiagonal matrix must be positive
+definite.  For non-positive definite matrices, the functions return
+the error code @code{GSL_ESING}.
+
 @deftypefun int gsl_linalg_solve_tridiag (const gsl_vector * @var{diag}, const gsl_vector * @var{e}, const gsl_vector * @var{f}, const gsl_vector * @var{b}, gsl_vector * @var{x})
 This function solves the general @math{N}-by-@math{N} system @math{A x =
 b} where @var{A} is tridiagonal (@c{$N\geq 2$}
@@ -861,6 +924,7 @@ A = ( d_0 e_0  0   0  )
     (  0   0  f_2 d_3 )
 @end example
 @end ifinfo
+@noindent
 @end deftypefun
 
 @deftypefun int gsl_linalg_solve_symm_tridiag (const gsl_vector * @var{diag}, const gsl_vector * @var{e}, const gsl_vector * @var{b}, gsl_vector * @var{x})
@@ -888,8 +952,6 @@ A = ( d_0 e_0  0   0  )
     (  0   0  e_2 d_3 )
 @end example
 @end ifinfo
-The current implementation uses a variant of Cholesky decomposition
-which can cause division by zero if the matrix is not positive definite.
 @end deftypefun
 
 @deftypefun int gsl_linalg_solve_cyc_tridiag (const gsl_vector * @var{diag}, const gsl_vector * @var{e}, const gsl_vector * @var{f}, const gsl_vector * @var{b}, gsl_vector * @var{x})

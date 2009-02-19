@@ -1,10 +1,10 @@
 /* matrix/gsl_matrix_char.h
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000 Gerard Jungman, Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Gerard Jungman, Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -116,6 +116,14 @@ gsl_matrix_char_subdiagonal (gsl_matrix_char * m, const size_t k);
 _gsl_vector_char_view 
 gsl_matrix_char_superdiagonal (gsl_matrix_char * m, const size_t k);
 
+_gsl_vector_char_view
+gsl_matrix_char_subrow (gsl_matrix_char * m, const size_t i,
+                         const size_t offset, const size_t n);
+
+_gsl_vector_char_view
+gsl_matrix_char_subcolumn (gsl_matrix_char * m, const size_t j,
+                            const size_t offset, const size_t n);
+
 _gsl_matrix_char_view
 gsl_matrix_char_view_array (char * base,
                              const size_t n1, 
@@ -163,6 +171,14 @@ gsl_matrix_char_const_subdiagonal (const gsl_matrix_char * m,
 _gsl_vector_char_const_view 
 gsl_matrix_char_const_superdiagonal (const gsl_matrix_char * m, 
                                       const size_t k);
+
+_gsl_vector_char_const_view
+gsl_matrix_char_const_subrow (const gsl_matrix_char * m, const size_t i,
+                               const size_t offset, const size_t n);
+
+_gsl_vector_char_const_view
+gsl_matrix_char_const_subcolumn (const gsl_matrix_char * m, const size_t j,
+                                  const size_t offset, const size_t n);
 
 _gsl_matrix_char_const_view
 gsl_matrix_char_const_view_array (const char * base,
@@ -223,6 +239,7 @@ void gsl_matrix_char_minmax_index (const gsl_matrix_char * m, size_t * imin, siz
 int gsl_matrix_char_isnull (const gsl_matrix_char * m);
 int gsl_matrix_char_ispos (const gsl_matrix_char * m);
 int gsl_matrix_char_isneg (const gsl_matrix_char * m);
+int gsl_matrix_char_isnonneg (const gsl_matrix_char * m);
 
 int gsl_matrix_char_add (gsl_matrix_char * a, const gsl_matrix_char * b);
 int gsl_matrix_char_sub (gsl_matrix_char * a, const gsl_matrix_char * b);

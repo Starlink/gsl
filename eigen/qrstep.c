@@ -1,7 +1,26 @@
+/* eigen/qrstep.c
+ * 
+ * Copyright (C) 2007 Brian Gough
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or (at
+ * your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ */
+
 /* remove off-diagonal elements which are neglegible compared with the
    neighboring diagonal elements */
 
-inline static void
+static void
 chop_small_elements (const size_t N, const double d[], double sd[])
 {
   double d_i = d[0];
@@ -60,13 +79,17 @@ trailing_eigenvalue (const size_t n, const double d[], const double sd[])
 
   double mu;
 
-  if (dt >= 0)
+  if (dt > 0)
     {
-      mu = tb - (tab * tab) / (dt + hypot (dt, tab));
+      mu = tb - tab * (tab / (dt + hypot (dt, tab)));
+    }
+  else if (dt == 0) 
+    {
+      mu = tb - fabs(tab);
     }
   else
     {
-      mu = tb + (tab * tab) / ((-dt) + hypot (dt, tab));
+      mu = tb + tab * (tab / ((-dt) + hypot (dt, tab)));
     }
 
   return mu;

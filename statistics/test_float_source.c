@@ -1,10 +1,10 @@
 /* statistics/test_float_source.c
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000 Jim Davies, Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Jim Davies, Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -164,6 +164,11 @@ FUNCTION (test, func) (const size_t stridea, const size_t strideb)
     gsl_test_rel (c, expected, rel, NAME(gsl_stats) "_covariance");
   }
 
+  {
+    double r = FUNCTION(gsl_stats,correlation) (groupa, stridea, groupb, strideb, nb);
+    double expected = -0.112322712666074171;
+    gsl_test_rel (r, expected, rel, NAME(gsl_stats) "_correlation");
+  }
 
   {
     double pv = FUNCTION(gsl_stats,pvariance) (groupa, stridea, na, groupb, strideb, nb);

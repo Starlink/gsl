@@ -1,10 +1,10 @@
 /* eigen/francis.c
  * 
- * Copyright (C) 2006 Patrick Alken
+ * Copyright (C) 2006, 2007 Patrick Alken
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -28,8 +28,8 @@
 #include <gsl/gsl_vector_complex.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_cblas.h>
-
-#include "schur.h"
+#include <gsl/gsl_complex.h>
+#include <gsl/gsl_complex_math.h>
 
 /*
  * This module computes the eigenvalues of a real upper hessenberg
@@ -55,9 +55,8 @@ static inline void francis_schur_standardize(gsl_matrix *A,
                                              gsl_complex *eval1,
                                              gsl_complex *eval2,
                                              gsl_eigen_francis_workspace *w);
-static inline void francis_get_submatrix(gsl_matrix *A, gsl_matrix *B,
-                                         size_t *top);
-
+static inline size_t francis_get_submatrix(gsl_matrix *A, gsl_matrix *B);
+static void francis_standard_form(gsl_matrix *A, double *cs, double *sn);
 
 /*
 gsl_eigen_francis_alloc()
@@ -76,7 +75,7 @@ gsl_eigen_francis_alloc(void)
   gsl_eigen_francis_workspace *w;
 
   w = (gsl_eigen_francis_workspace *)
-      malloc (sizeof (gsl_eigen_francis_workspace));
+      calloc (1, sizeof (gsl_eigen_francis_workspace));
 
   if (w == 0)
     {
@@ -94,14 +93,6 @@ gsl_eigen_francis_alloc(void)
   w->Z = NULL;
   w->H = NULL;
 
-  w->hv2 = gsl_vector_alloc(2);
-  w->hv3 = gsl_vector_alloc(3);
-
-  if ((w->hv2 == 0) || (w->hv3 == 0))
-    {
-      GSL_ERROR_NULL ("failed to allocate space for householder vectors", GSL_ENOMEM);
-    }
-
   return (w);
 } /* gsl_eigen_francis_alloc() */
 
@@ -113,9 +104,6 @@ gsl_eigen_francis_free()
 void
 gsl_eigen_francis_free (gsl_eigen_francis_workspace *w)
 {
-  gsl_vector_free(w->hv2);
-  gsl_vector_free(w->hv3);
-
   free(w);
 } /* gsl_eigen_francis_free() */
 
@@ -308,25 +296,6 @@ francis_schur_decomp(gsl_matrix * H, gsl_vector_complex * eval,
               lambda2;
 
   N = H->size1;
-
-  if (N == 1)
-    {
-      GSL_SET_COMPLEX(&lambda1, gsl_matrix_get(H, 0, 0), 0.0);
-      gsl_vector_complex_set(eval, w->n_evals, lambda1);
-      w->n_evals += 1;
-      w->n_iter = 0;
-      return;
-    }
-  else if (N == 2)
-    {
-      francis_schur_standardize(H, &lambda1, &lambda2, w);
-      gsl_vector_complex_set(eval, w->n_evals, lambda1);
-      gsl_vector_complex_set(eval, w->n_evals + 1, lambda2);
-      w->n_evals += 2;
-      w->n_iter = 0;
-      return;
-    }
-
   m = gsl_matrix_submatrix(H, 0, 0, N, N);
 
   while ((N > 2) && ((w->n_iter)++ < w->max_iterations))
@@ -435,6 +404,8 @@ francis_schur_decomp(gsl_matrix * H, gsl_vector_complex * eval,
         }
     }
 
+  /* handle special cases of N = 1 or 2 */
+
   if (N == 1)
     {
       GSL_SET_COMPLEX(&lambda1, gsl_matrix_get(&m.matrix, 0, 0), 0.0);
@@ -475,13 +446,14 @@ static inline int
 francis_qrstep(gsl_matrix * H, gsl_eigen_francis_workspace * w)
 {
   const size_t N = H->size1;
-  double x, y, z;  /* householder vector elements */
-  double scale;    /* scale factor to avoid overflow */
   size_t i;        /* looping */
   gsl_matrix_view m;
   double tau_i;    /* householder coefficient */
+  double dat[3];   /* householder vector */
+  double scale;    /* scale factor to avoid overflow */
+  gsl_vector_view v2, v3;
   size_t q, r;
-  size_t top;      /* location of H in original matrix */
+  size_t top = 0;  /* location of H in original matrix */
   double s,
          disc;
   double h_nn,     /* H(n,n) */
@@ -490,13 +462,15 @@ francis_qrstep(gsl_matrix * H, gsl_eigen_francis_workspace * w)
          h_tmp1,
          h_tmp2;
 
-  if ((w->n_iter == 10) || (w->n_iter == 20))
+  v2 = gsl_vector_view_array(dat, 2);
+  v3 = gsl_vector_view_array(dat, 3);
+
+  if ((w->n_iter % 10) == 0)
     {
       /*
-       * exceptional shifts: we have gone 10 or 20 iterations
+       * exceptional shifts: we have gone 10 iterations
        * without finding a new eigenvalue, try a new choice of shifts.
-       * See Numerical Recipes in C, eq 11.6.27 and LAPACK routine
-       * DLAHQR
+       * See LAPACK routine DLAHQR
        */
       s = fabs(gsl_matrix_get(H, N - 1, N - 2)) +
           fabs(gsl_matrix_get(H, N - 2, N - 3));
@@ -550,18 +524,19 @@ francis_qrstep(gsl_matrix * H, gsl_eigen_francis_workspace * w)
    * are small
    */
 
-  x = (h_tmp1*h_tmp2 - h_cross) / gsl_matrix_get(H, 1, 0) +
-      gsl_matrix_get(H, 0, 1);
-  y = gsl_matrix_get(H, 1, 1) - gsl_matrix_get(H, 0, 0) - h_tmp1 - h_tmp2;
-  z = gsl_matrix_get(H, 2, 1);
+  dat[0] = (h_tmp1*h_tmp2 - h_cross) / gsl_matrix_get(H, 1, 0) +
+           gsl_matrix_get(H, 0, 1);
+  dat[1] = gsl_matrix_get(H, 1, 1) - gsl_matrix_get(H, 0, 0) - h_tmp1 -
+           h_tmp2;
+  dat[2] = gsl_matrix_get(H, 2, 1);
 
-  scale = fabs(x) + fabs(y) + fabs(z);
+  scale = fabs(dat[0]) + fabs(dat[1]) + fabs(dat[2]);
   if (scale != 0.0)
     {
       /* scale to prevent overflow or underflow */
-      x /= scale;
-      y /= scale;
-      z /= scale;
+      dat[0] /= scale;
+      dat[1] /= scale;
+      dat[2] /= scale;
     }
 
   if (w->Z || w->compute_t)
@@ -570,15 +545,12 @@ francis_qrstep(gsl_matrix * H, gsl_eigen_francis_workspace * w)
        * get absolute indices of this (sub)matrix relative to the
        * original Hessenberg matrix
        */
-      francis_get_submatrix(w->H, H, &top);
+      top = francis_get_submatrix(w->H, H);
     }
 
   for (i = 0; i < N - 2; ++i)
     {
-      gsl_vector_set(w->hv3, 0, x);
-      gsl_vector_set(w->hv3, 1, y);
-      gsl_vector_set(w->hv3, 2, z);
-      tau_i = gsl_linalg_householder_transform(w->hv3);
+      tau_i = gsl_linalg_householder_transform(&v3.vector);
 
       if (tau_i != 0.0)
         {
@@ -605,7 +577,7 @@ francis_qrstep(gsl_matrix * H, gsl_eigen_francis_workspace * w)
                                        top + q,
                                        3,
                                        w->size - top - q);
-              gsl_linalg_householder_hm(tau_i, w->hv3, &m.matrix);
+              gsl_linalg_householder_hm(tau_i, &v3.vector, &m.matrix);
 
               /* apply right householder matrix (I - tau_i v v') to H */
               m = gsl_matrix_submatrix(w->H,
@@ -613,7 +585,7 @@ francis_qrstep(gsl_matrix * H, gsl_eigen_francis_workspace * w)
                                        top + i,
                                        top + r + 1,
                                        3);
-              gsl_linalg_householder_mh(tau_i, w->hv3, &m.matrix);
+              gsl_linalg_householder_mh(tau_i, &v3.vector, &m.matrix);
             }
           else
             {
@@ -624,41 +596,47 @@ francis_qrstep(gsl_matrix * H, gsl_eigen_francis_workspace * w)
 
               /* apply left householder matrix (I - tau_i v v') to H */
               m = gsl_matrix_submatrix(H, i, q, 3, N - q);
-              gsl_linalg_householder_hm(tau_i, w->hv3, &m.matrix);
+              gsl_linalg_householder_hm(tau_i, &v3.vector, &m.matrix);
 
               /* apply right householder matrix (I - tau_i v v') to H */
               m = gsl_matrix_submatrix(H, 0, i, r + 1, 3);
-              gsl_linalg_householder_mh(tau_i, w->hv3, &m.matrix);
+              gsl_linalg_householder_mh(tau_i, &v3.vector, &m.matrix);
             }
 
           if (w->Z)
             {
               /* accumulate the similarity transformation into Z */
               m = gsl_matrix_submatrix(w->Z, 0, top + i, w->size, 3);
-              gsl_linalg_householder_mh(tau_i, w->hv3, &m.matrix);
+              gsl_linalg_householder_mh(tau_i, &v3.vector, &m.matrix);
             }
         } /* if (tau_i != 0.0) */
 
-      x = gsl_matrix_get(H, i + 1, i);
-      y = gsl_matrix_get(H, i + 2, i);
+      dat[0] = gsl_matrix_get(H, i + 1, i);
+      dat[1] = gsl_matrix_get(H, i + 2, i);
       if (i < (N - 3))
         {
-          z = gsl_matrix_get(H, i + 3, i);
+          dat[2] = gsl_matrix_get(H, i + 3, i);
         }
 
-      scale = fabs(x) + fabs(y) + fabs(z);
+      scale = fabs(dat[0]) + fabs(dat[1]) + fabs(dat[2]);
       if (scale != 0.0)
         {
           /* scale to prevent overflow or underflow */
-          x /= scale;
-          y /= scale;
-          z /= scale;
+          dat[0] /= scale;
+          dat[1] /= scale;
+          dat[2] /= scale;
         }
     } /* for (i = 0; i < N - 2; ++i) */
 
-  gsl_vector_set(w->hv2, 0, x);
-  gsl_vector_set(w->hv2, 1, y);
-  tau_i = gsl_linalg_householder_transform(w->hv2);
+  scale = fabs(dat[0]) + fabs(dat[1]);
+  if (scale != 0.0)
+    {
+      /* scale to prevent overflow or underflow */
+      dat[0] /= scale;
+      dat[1] /= scale;
+    }
+
+  tau_i = gsl_linalg_householder_transform(&v2.vector);
 
   if (w->compute_t)
     {
@@ -667,29 +645,29 @@ francis_qrstep(gsl_matrix * H, gsl_eigen_francis_workspace * w)
                                top + N - 3,
                                2,
                                w->size - top - N + 3);
-      gsl_linalg_householder_hm(tau_i, w->hv2, &m.matrix);
+      gsl_linalg_householder_hm(tau_i, &v2.vector, &m.matrix);
 
       m = gsl_matrix_submatrix(w->H,
                                0,
                                top + N - 2,
                                top + N,
                                2);
-      gsl_linalg_householder_mh(tau_i, w->hv2, &m.matrix);
+      gsl_linalg_householder_mh(tau_i, &v2.vector, &m.matrix);
     }
   else
     {
       m = gsl_matrix_submatrix(H, N - 2, N - 3, 2, 3);
-      gsl_linalg_householder_hm(tau_i, w->hv2, &m.matrix);
+      gsl_linalg_householder_hm(tau_i, &v2.vector, &m.matrix);
 
       m = gsl_matrix_submatrix(H, 0, N - 2, N, 2);
-      gsl_linalg_householder_mh(tau_i, w->hv2, &m.matrix);
+      gsl_linalg_householder_mh(tau_i, &v2.vector, &m.matrix);
     }
 
   if (w->Z)
     {
       /* accumulate transformation into Z */
       m = gsl_matrix_submatrix(w->Z, 0, top + N - 2, w->size, 2);
-      gsl_linalg_householder_mh(tau_i, w->hv2, &m.matrix);
+      gsl_linalg_householder_mh(tau_i, &v2.vector, &m.matrix);
     }
 
   return GSL_SUCCESS;
@@ -751,16 +729,128 @@ francis_schur_standardize(gsl_matrix *A, gsl_complex *eval1,
                           gsl_complex *eval2,
                           gsl_eigen_francis_workspace *w)
 {
+  const size_t N = w->size;
+  double cs, sn;
   size_t top;
 
   /*
    * figure out where the submatrix A resides in the
    * original matrix H
    */
-  francis_get_submatrix(w->H, A, &top);
+  top = francis_get_submatrix(w->H, A);
 
-  /* convert A to standard form and store eigenvalues */
-  gsl_schur_standardize(w->H, top, eval1, eval2, w->compute_t, w->Z);
+  /* convert 2-by-2 block to standard form */
+  francis_standard_form(A, &cs, &sn);
+
+  /* set eigenvalues */
+
+  GSL_SET_REAL(eval1, gsl_matrix_get(A, 0, 0));
+  GSL_SET_REAL(eval2, gsl_matrix_get(A, 1, 1));
+  if (gsl_matrix_get(A, 1, 0) == 0.0)
+    {
+      GSL_SET_IMAG(eval1, 0.0);
+      GSL_SET_IMAG(eval2, 0.0);
+    }
+  else
+    {
+      double tmp = sqrt(fabs(gsl_matrix_get(A, 0, 1)) *
+                        fabs(gsl_matrix_get(A, 1, 0)));
+      GSL_SET_IMAG(eval1, tmp);
+      GSL_SET_IMAG(eval2, -tmp);
+    }
+
+  if (w->compute_t)
+    {
+      gsl_vector_view xv, yv;
+
+      /*
+       * The above call to francis_standard_form transformed a 2-by-2 block
+       * of T into upper triangular form via the transformation
+       *
+       * U = [ CS -SN ]
+       *     [ SN  CS ]
+       *
+       * The original matrix T was
+       *
+       * T = [ T_{11} | T_{12} | T_{13} ]
+       *     [   0*   |   A    | T_{23} ]
+       *     [   0    |   0*   | T_{33} ]
+       *
+       * where 0* indicates all zeros except for possibly
+       * one subdiagonal element next to A.
+       *
+       * After francis_standard_form, T looks like this:
+       *
+       * T = [ T_{11} | T_{12}  | T_{13} ]
+       *     [   0*   | U^t A U | T_{23} ]
+       *     [   0    |    0*   | T_{33} ]
+       *
+       * since only the 2-by-2 block of A was changed. However,
+       * in order to be able to back transform T at the end,
+       * we need to apply the U transformation to the rest
+       * of the matrix T since there is no way to apply a
+       * similarity transformation to T and change only the
+       * middle 2-by-2 block. In other words, let
+       *
+       * M = [ I 0 0 ]
+       *     [ 0 U 0 ]
+       *     [ 0 0 I ]
+       *
+       * and compute
+       *
+       * M^t T M = [ T_{11} | T_{12} U |   T_{13}   ]
+       *           [ U^t 0* | U^t A U  | U^t T_{23} ]
+       *           [   0    |   0* U   |   T_{33}   ]
+       *
+       * So basically we need to apply the transformation U
+       * to the i x 2 matrix T_{12} and the 2 x (n - i + 2)
+       * matrix T_{23}, where i is the index of the top of A
+       * in T.
+       *
+       * The BLAS routine drot() is suited for this.
+       */
+
+      if (top < (N - 2))
+        {
+          /* transform the 2 rows of T_{23} */
+
+          xv = gsl_matrix_subrow(w->H, top, top + 2, N - top - 2);
+          yv = gsl_matrix_subrow(w->H, top + 1, top + 2, N - top - 2);
+          gsl_blas_drot(&xv.vector, &yv.vector, cs, sn);
+        }
+
+      if (top > 0)
+        {
+          /* transform the 2 columns of T_{12} */
+
+          xv = gsl_matrix_subcolumn(w->H, top, 0, top);
+          yv = gsl_matrix_subcolumn(w->H, top + 1, 0, top);
+          gsl_blas_drot(&xv.vector, &yv.vector, cs, sn);
+        }
+    } /* if (w->compute_t) */
+
+  if (w->Z)
+    {
+      gsl_vector_view xv, yv;
+
+      /*
+       * Accumulate the transformation in Z. Here, Z -> Z * M
+       *
+       * So:
+       *
+       * Z -> [ Z_{11} | Z_{12} U | Z_{13} ]
+       *      [ Z_{21} | Z_{22} U | Z_{23} ]
+       *      [ Z_{31} | Z_{32} U | Z_{33} ]
+       *
+       * So we just need to apply drot() to the 2 columns
+       * starting at index 'top'
+       */
+
+      xv = gsl_matrix_column(w->Z, top);
+      yv = gsl_matrix_column(w->Z, top + 1);
+
+      gsl_blas_drot(&xv.vector, &yv.vector, cs, sn);
+    } /* if (w->Z) */
 } /* francis_schur_standardize() */
 
 /*
@@ -769,15 +859,188 @@ francis_get_submatrix()
 compute the indices in A of where the matrix B resides
 */
 
-static inline void
-francis_get_submatrix(gsl_matrix *A, gsl_matrix *B, size_t *top)
+static inline size_t
+francis_get_submatrix(gsl_matrix *A, gsl_matrix *B)
 {
   size_t diff;
   double ratio;
+  size_t top;
 
   diff = (size_t) (B->data - A->data);
 
   ratio = (double)diff / ((double) (A->tda + 1));
 
-  *top = (size_t) floor(ratio);
+  top = (size_t) floor(ratio);
+
+  return top;
 } /* francis_get_submatrix() */
+
+/*
+francis_standard_form()
+  Compute the Schur factorization of a real 2-by-2 matrix in
+standard form:
+
+[ A B ] = [ CS -SN ] [ T11 T12 ] [ CS SN ]
+[ C D ]   [ SN  CS ] [ T21 T22 ] [-SN CS ]
+
+where either:
+1) T21 = 0 so that T11 and T22 are real eigenvalues of the matrix, or
+2) T11 = T22 and T21*T12 < 0, so that T11 +/- sqrt(|T21*T12|) are
+   complex conjugate eigenvalues
+
+Inputs: A  - 2-by-2 matrix
+        cs - where to store cosine parameter of rotation matrix
+        sn - where to store sine parameter of rotation matrix
+
+Notes: 1) based on LAPACK routine DLANV2
+       2) On output, A is modified to contain the matrix in standard form
+*/
+
+static void
+francis_standard_form(gsl_matrix *A, double *cs, double *sn)
+{
+  double a, b, c, d; /* input matrix values */
+  double tmp;
+  double p, z;
+  double bcmax, bcmis, scale;
+  double tau, sigma;
+  double cs1, sn1;
+  double aa, bb, cc, dd;
+  double sab, sac;
+
+  a = gsl_matrix_get(A, 0, 0);
+  b = gsl_matrix_get(A, 0, 1);
+  c = gsl_matrix_get(A, 1, 0);
+  d = gsl_matrix_get(A, 1, 1);
+
+  if (c == 0.0)
+    {
+      /*
+       * matrix is already upper triangular - set rotation matrix
+       * to the identity
+       */
+      *cs = 1.0;
+      *sn = 0.0;
+    }
+  else if (b == 0.0)
+    {
+      /* swap rows and columns to make it upper triangular */
+
+      *cs = 0.0;
+      *sn = 1.0;
+
+      tmp = d;
+      d = a;
+      a = tmp;
+      b = -c;
+      c = 0.0;
+    }
+  else if (((a - d) == 0.0) && (GSL_SIGN(b) != GSL_SIGN(c)))
+    {
+      /* the matrix has complex eigenvalues with a == d */
+      *cs = 1.0;
+      *sn = 0.0;
+    }
+  else
+    {
+      tmp = a - d;
+      p = 0.5 * tmp;
+      bcmax = GSL_MAX(fabs(b), fabs(c));
+      bcmis = GSL_MIN(fabs(b), fabs(c)) * GSL_SIGN(b) * GSL_SIGN(c);
+      scale = GSL_MAX(fabs(p), bcmax);
+      z = (p / scale) * p + (bcmax / scale) * bcmis;
+
+      if (z >= 4.0 * GSL_DBL_EPSILON)
+        {
+          /* real eigenvalues, compute a and d */
+
+          z = p + GSL_SIGN(p) * fabs(sqrt(scale) * sqrt(z));
+          a = d + z;
+          d -= (bcmax / z) * bcmis;
+
+          /* compute b and the rotation matrix */
+
+          tau = gsl_hypot(c, z);
+          *cs = z / tau;
+          *sn = c / tau;
+          b -= c;
+          c = 0.0;
+        }
+      else
+        {
+          /*
+           * complex eigenvalues, or real (almost) equal eigenvalues -
+           * make diagonal elements equal
+           */
+
+          sigma = b + c;
+          tau = gsl_hypot(sigma, tmp);
+          *cs = sqrt(0.5 * (1.0 + fabs(sigma) / tau));
+          *sn = -(p / (tau * (*cs))) * GSL_SIGN(sigma);
+
+          /*
+           * Compute [ AA BB ] = [ A B ] [ CS -SN ]
+           *         [ CC DD ]   [ C D ] [ SN  CS ]
+           */
+          aa = a * (*cs) + b * (*sn);
+          bb = -a * (*sn) + b * (*cs);
+          cc = c * (*cs) + d * (*sn);
+          dd = -c * (*sn) + d * (*cs);
+
+          /*
+           * Compute [ A B ] = [ CS SN ] [ AA BB ]
+           *         [ C D ]   [-SN CS ] [ CC DD ]
+           */
+          a = aa * (*cs) + cc * (*sn);
+          b = bb * (*cs) + dd * (*sn);
+          c = -aa * (*sn) + cc * (*cs);
+          d = -bb * (*sn) + dd * (*cs);
+
+          tmp = 0.5 * (a + d);
+          a = d = tmp;
+
+          if (c != 0.0)
+            {
+              if (b != 0.0)
+                {
+                  if (GSL_SIGN(b) == GSL_SIGN(c))
+                    {
+                      /*
+                       * real eigenvalues: reduce to upper triangular
+                       * form
+                       */
+                      sab = sqrt(fabs(b));
+                      sac = sqrt(fabs(c));
+                      p = GSL_SIGN(c) * fabs(sab * sac);
+                      tau = 1.0 / sqrt(fabs(b + c));
+                      a = tmp + p;
+                      d = tmp - p;
+                      b -= c;
+                      c = 0.0;
+
+                      cs1 = sab * tau;
+                      sn1 = sac * tau;
+                      tmp = (*cs) * cs1 - (*sn) * sn1;
+                      *sn = (*cs) * sn1 + (*sn) * cs1;
+                      *cs = tmp;
+                    }
+                }
+              else
+                {
+                  b = -c;
+                  c = 0.0;
+                  tmp = *cs;
+                  *cs = -(*sn);
+                  *sn = tmp;
+                }
+            }
+        }
+    }
+
+  /* set new matrix elements */
+
+  gsl_matrix_set(A, 0, 0, a);
+  gsl_matrix_set(A, 0, 1, b);
+  gsl_matrix_set(A, 1, 0, c);
+  gsl_matrix_set(A, 1, 1, d);
+} /* francis_standard_form() */

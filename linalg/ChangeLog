@@ -1,3 +1,18 @@
+2007-08-27  Brian Gough  <bjg@network-theory.co.uk>
+
+	* tridiag.c: use GSL_ERROR for failed allocation, signal
+	 GSL_EZERODIV if matrix is not positive definite
+
+2007-08-17  Brian Gough  <bjg@network-theory.co.uk>
+
+	* svd.c (gsl_linalg_SV_decomp): bail out if number of iterations
+	exceeds 100*N
+
+2007-08-16  Brian Gough  <bjg@network-theory.co.uk>
+
+	* test.c (main): add some svd tests with small values that will
+	cause underflow in intermediate steps of SVD iteration
+
 2006-08-14  Brian Gough  <bjg@network-theory.co.uk>
 
 	* balancemat.c: balance a general matrix D^-1 A D for rows and

@@ -4,7 +4,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -23,7 +23,7 @@
 #include <gsl/gsl_vector.h>
 
 /*
-gsl_linalg_hessenberg()
+gsl_linalg_hessenberg_decomp()
   Compute the Householder reduction to Hessenberg form of a
 square N-by-N matrix A.
 
@@ -64,7 +64,7 @@ column i of A beneath the subdiagonal.
 */
 
 int
-gsl_linalg_hessenberg(gsl_matrix *A, gsl_vector *tau)
+gsl_linalg_hessenberg_decomp(gsl_matrix *A, gsl_vector *tau)
 {
   const size_t N = A->size1;
 
@@ -97,8 +97,7 @@ gsl_linalg_hessenberg(gsl_matrix *A, gsl_vector *tau)
            * of 'tau' that we haven't stored coefficients in yet
            */
 
-          c = gsl_matrix_column(A, i);
-          c = gsl_vector_subvector(&c.vector, i + 1, N - (i + 1));
+          c = gsl_matrix_subcolumn(A, i, i + 1, N - i - 1);
 
           hv = gsl_vector_subvector(tau, i + 1, N - (i + 1));
           gsl_vector_memcpy(&hv.vector, &c.vector);
@@ -129,7 +128,7 @@ gsl_linalg_hessenberg(gsl_matrix *A, gsl_vector *tau)
 
       return GSL_SUCCESS;
     }
-} /* gsl_linalg_hessenberg() */
+} /* gsl_linalg_hessenberg_decomp() */
 
 /*
 gsl_linalg_hessenberg_unpack()
@@ -276,11 +275,14 @@ This is useful when Householder vectors may be stored in the lower
 part of H, but eigenvalue solvers need some scratch space with zeros.
 */
 
-void
+int
 gsl_linalg_hessenberg_set_zero(gsl_matrix * H)
 {
-  const int N = (int) H->size1;
-  int i, j;
+  const size_t N = H->size1;
+  size_t i, j;
+
+  if (N < 3)
+    return GSL_SUCCESS;
 
   for (j = 0; j < N - 2; ++j)
     {
@@ -289,6 +291,8 @@ gsl_linalg_hessenberg_set_zero(gsl_matrix * H)
           gsl_matrix_set(H, i, j, 0.0);
         }
     }
+
+  return GSL_SUCCESS;
 } /* gsl_linalg_hessenberg_set_zero() */
 
 /*
@@ -379,8 +383,7 @@ gsl_linalg_hessenberg_submatrix(gsl_matrix *M, gsl_matrix *A, size_t top,
            * of 'tau' that we haven't stored coefficients in yet
            */
 
-          c = gsl_matrix_column(A, i);
-          c = gsl_vector_subvector(&c.vector, i + 1, N - (i + 1));
+          c = gsl_matrix_subcolumn(A, i, i + 1, N - i - 1);
 
           hv = gsl_vector_subvector(tau, i + 1, N - (i + 1));
           gsl_vector_memcpy(&hv.vector, &c.vector);

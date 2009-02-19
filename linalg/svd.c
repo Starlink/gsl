@@ -1,10 +1,10 @@
 /* linalg/svd.c
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2004 Gerard Jungman, Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2004, 2007 Gerard Jungman, Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -50,7 +50,7 @@ int
 gsl_linalg_SV_decomp (gsl_matrix * A, gsl_matrix * V, gsl_vector * S, 
                       gsl_vector * work)
 {
-  size_t a, b, i, j;
+  size_t a, b, i, j, iter;
 
   const size_t M = A->size1;
   const size_t N = A->size2;
@@ -113,7 +113,8 @@ gsl_linalg_SV_decomp (gsl_matrix * A, gsl_matrix * V, gsl_vector * S,
     /* Progressively reduce the matrix until it is diagonal */
     
     b = N - 1;
-    
+    iter = 0;
+
     while (b > 0)
       {
         double fbm1 = gsl_vector_get (&f.vector, b - 1);
@@ -140,6 +141,14 @@ gsl_linalg_SV_decomp (gsl_matrix * A, gsl_matrix * V, gsl_vector * S,
             
             a--;
           }
+
+        iter++;
+        
+        if (iter > 100 * N) 
+          {
+            GSL_ERROR("SVD decomposition failed to converge", GSL_EMAXITER);
+          }
+
         
         {
           const size_t n_block = b - a + 1;

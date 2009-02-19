@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([gsl],[1.9])
+AC_INIT([gsl],[1.10])
 AC_CONFIG_SRCDIR(gsl_math.h)
 
 AM_INIT_AUTOMAKE([gnu no-dependencies])
@@ -29,13 +29,11 @@ AC_SUBST(GSL_LT_CBLAS_VERSION)
 
 case "$VERSION" in
     *+)
-        AC_DEFINE(RELEASED,0)
         ;;
     *)
-        AC_DEFINE(RELEASED,1)
+        AC_DEFINE(RELEASED,[],[Defined if this is an official release])
         ;;
 esac
-AC_SUBST(RELEASED)      
 
 dnl things required by automake
 dnl AC_ARG_PROGRAM
@@ -62,6 +60,7 @@ AC_TYPE_SIZE_T
 dnl AC_C_CONST
 AC_C_VOLATILE
 AC_C_INLINE
+AC_C_CHAR_UNSIGNED
 
 GSL_CFLAGS="-I$includedir"
 GSL_LIBS="-L$libdir -lgsl"
@@ -80,14 +79,21 @@ double foo (double x) { return x + 1.0 ; };]], [[  foo(1.0)  ]])],[ac_cv_c_exter
 ])
 
 if test "$ac_cv_c_extern_inline" != no ; then
-  AC_DEFINE(HAVE_INLINE,1)
-  AC_SUBST(HAVE_INLINE)
+   AC_DEFINE(HAVE_INLINE,[],[Define if you have inline])
 fi
 
 dnl Checks for header files.
 AC_CHECK_HEADERS(ieeefp.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
+
+case "$host_os" in
+     *mingw*)
+	MINGW=true
+	;;
+esac
+
+AM_CONDITIONAL(MINGW32_HOST, test "$MINGW" = "true")
 
 dnl Checks for library functions.
 
@@ -115,7 +121,7 @@ ac_cv_decl_exit_success_and_failure=no)
 )
 
 if test "$ac_cv_decl_exit_success_and_failure" = yes ; then
-  AC_DEFINE(HAVE_EXIT_SUCCESS_AND_FAILURE)
+  AC_DEFINE(HAVE_EXIT_SUCCESS_AND_FAILURE,1,[Defined if you have ansi EXIT_SUCCESS and EXIT_FAILURE in stdlib.h])
 fi ;
 
 dnl Use alternate libm if specified by user
@@ -160,15 +166,14 @@ AC_CACHE_CHECK([for long double stdio], ac_cv_func_printf_longdouble,
 #include <stdio.h>
 int main (void) 
 { 
-const char * s = "5678"; long double x = 1.234 ; 
+const char * s = "5678.25"; long double x = 1.234 ; 
 fprintf(stderr,"%Lg\n",x) ; 
 sscanf(s, "%Lg", &x);
-if (x == 5678) {exit (0);} else {exit(1); };
+if (x == 5678.25) {exit (0);} else {exit(1); };
 }]])],[ac_cv_func_printf_longdouble="yes"],[ac_cv_func_printf_longdouble="no"],[ac_cv_func_printf_longdouble="no"])])
 
 if test "$ac_cv_func_printf_longdouble" != no; then
-  AC_DEFINE(HAVE_PRINTF_LONGDOUBLE,1)
-  AC_SUBST(HAVE_PRINTF_LONGDOUBLE)
+  AC_DEFINE(HAVE_PRINTF_LONGDOUBLE,1,[Define this if printf can handle %Lf for long double])
 fi
 
 AC_CACHE_CHECK([for extended floating point registers],ac_cv_c_extended_fp,
@@ -201,8 +206,7 @@ esac
 ])
 
 if test $ac_cv_c_extended_fp != "no" ; then
-    AC_DEFINE(HAVE_EXTENDED_PRECISION_REGISTERS,1)
-    AC_SUBST(HAVE_EXTENDED_PRECISION_REGISTERS)
+    AC_DEFINE(HAVE_EXTENDED_PRECISION_REGISTERS,1,[Defined on architectures with excess floating-point precision])
 fi
 
 AC_CACHE_CHECK([for IEEE arithmetic interface type], ac_cv_c_ieee_interface,
@@ -276,6 +280,20 @@ if test "$ac_cv_c_ieee_interface" = "gnux86" ; then
     ])
 fi
 
+if test "$ac_cv_c_ieee_interface" = "gnux86" ; then
+    AC_CACHE_CHECK([for SSE extensions], ac_cv_c_fpu_sse,
+    [ac_cv_c_fpu_sse=no
+    AC_RUN_IFELSE([AC_LANG_PROGRAM([[
+#include <stdlib.h>
+#define _FPU_SETMXCSR(cw_sse) asm volatile ("ldmxcsr %0" : : "m" (*&cw_sse))
+]], [[ unsigned int mode = 0x1f80 ; _FPU_SETMXCSR(mode); exit(0); ]])],[ac_cv_c_fpu_sse="yes"])
+    ])
+    if test $ac_cv_c_fpu_sse = yes; then
+        AC_DEFINE([HAVE_FPU_X86_SSE], 1,
+                  [Define if x86 processor has sse extensions.])
+   fi
+fi
+
 ac_tr_ieee_interface=HAVE_`echo $ac_cv_c_ieee_interface | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`_IEEE_INTERFACE
 AC_DEFINE_UNQUOTED($ac_tr_ieee_interface,1,[IEEE Interface Type])
 
@@ -341,8 +359,7 @@ int main (void)
 ])
 
 if test "$ac_cv_c_ieee_comparisons" != no ; then
-  AC_DEFINE(HAVE_IEEE_COMPARISONS,1)
-  AC_SUBST(HAVE_IEEE_COMPARISONS)
+  AC_DEFINE(HAVE_IEEE_COMPARISONS,1,[Define this if IEEE comparisons work correctly (e.g. NaN != NaN)])
 fi
 
 dnl Check for IEEE denormalized arithmetic
@@ -362,8 +379,7 @@ int main (void)
 ])
 
 if test "$ac_cv_c_ieee_denormals" != no ; then
-  AC_DEFINE(HAVE_IEEE_DENORMALS,1)
-  AC_SUBST(HAVE_IEEE_DENORMALS)
+  AC_DEFINE(HAVE_IEEE_DENORMALS,1,[Define this if IEEE denormalized numbers are available])
 fi
 
 dnl

@@ -4,7 +4,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -245,7 +245,10 @@ int test_legendre(void)
 
   TEST_SF(s, gsl_sf_legendre_sphPlm_e, (200, 1, -0.5, &r), 0.3302975570099492931418227583, TEST_TOL2, GSL_SUCCESS);
   TEST_SF(s, gsl_sf_legendre_sphPlm_e, (140,135,1,&r), 0.0, TEST_TOL2, GSL_SUCCESS);
+
+#ifdef EXTENDED
   TEST_SF(s, gsl_sf_legendre_sphPlm_e, (140,135,0.99998689456491752,&r), -6.54265253269093276310395668335e-305, TEST_TOL6, GSL_SUCCESS);
+#endif
 
   sa = 0;
   gsl_sf_legendre_sphPlm_array(100, 5, 0.5, L);

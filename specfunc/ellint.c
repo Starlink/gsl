@@ -4,7 +4,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -407,6 +407,8 @@ gsl_sf_ellint_P_e(double phi, double k, double n, gsl_mode_t mode, gsl_sf_result
     const int rjstatus = gsl_sf_ellint_RJ_e(x, y, 1.0, 1.0 + n*sin2_phi, mode, &rj);
     result->val  = sin_phi * rf.val - n/3.0*sin3_phi * rj.val;
     result->err  = GSL_DBL_EPSILON * fabs(sin_phi * rf.val);
+    result->err += fabs(sin_phi * rf.err);
+    result->err += n/3.0 * GSL_DBL_EPSILON * fabs(sin3_phi*rj.val);
     result->err += n/3.0 * fabs(sin3_phi*rj.err);
     if (nc == 0) {
       return GSL_ERROR_SELECT_2(rfstatus, rjstatus);
@@ -538,11 +540,11 @@ gsl_sf_ellint_Ecomp_e(double k, gsl_mode_t mode, gsl_sf_result * result)
   }
 }
 
-/* [Carlson, Numer. Math. 33 (1979) 1, (4.6)] */
+/* [Carlson, Numer. Math. 33 (1979) 1, (4.3) phi=pi/2] */
 int
 gsl_sf_ellint_Pcomp_e(double k, double n, gsl_mode_t mode, gsl_sf_result * result)
 {
-  if(k*k >= 1.0 || n >= 1.0) {
+  if(k*k >= 1.0) {
     DOMAIN_ERROR(result);
   }
   /* FIXME: need to handle k ~=~ 1  cancellations */

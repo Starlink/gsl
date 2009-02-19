@@ -1,3 +1,37 @@
+2007-09-13  Brian Gough  <bjg@network-theory.co.uk>
+
+	* ellint.c (gsl_sf_ellint_Pcomp_e): remove test for n <1, no
+	restriction needed
+
+2007-09-10  Brian Gough  <bjg@network-theory.co.uk>
+
+	* expint.c (gsl_sf_expint_En_e): added for support En(x)
+	(gsl_sf_expint_En_scaled_e): added for support En(x) scaled
+
+	* gamma_inc.c (gamma_inc_CF): include finite precision of log term
+
+2007-08-30  Brian Gough  <bjg@network-theory.co.uk>
+
+	* psi.c (psi_complex_rhp): accumulate error, to allow for
+	cancellation effects
+
+	* beta.c (gsl_sf_lnbeta_sgn_e): added missing factor of 2 for
+	error.
+
+2007-08-27  Brian Gough  <bjg@network-theory.co.uk>
+
+	* beta_inc.c (gsl_sf_beta_inc_e): handle cases where a<=0 or b<=0
+
+2007-04-27  Brian Gough  <bjg@network-theory.co.uk>
+
+	* lambert.c (halley_iteration): increase tolerance to prevent
+	exceeding max iters due to finite precision
+
+2007-04-04  Brian Gough  <bjg@network-theory.co.uk>
+
+	* laguerre.c (gsl_sf_laguerre_n_e): use recursion for a=0 in
+	addition to a>0
+	
 2007-02-17  Brian Gough  <bjg@network-theory.co.uk>
 
 	* log.c (gsl_sf_log_e): removed HIDE_INLINE_STATIC

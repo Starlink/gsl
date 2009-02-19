@@ -1,10 +1,11 @@
 /* specfunc/test_gamma.c
  * 
+ * Copyright (C) 2007 Brian Gough
  * Copyright (C) 1996, 1997, 1998, 1999, 2000 Gerard Jungman
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -304,13 +305,13 @@ int test_gamma(void)
   TEST_SF(s,  gsl_sf_beta_e, (2.5, -1.1, &r), 14.555179906328753255202, TEST_TOL2, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_beta_e, (-0.25, -0.1, &r), -13.238937960945229110, TEST_TOL2, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_beta_e, (-1.25, -0.1, &r), -14.298052997820847439, TEST_TOL2, GSL_SUCCESS);
-  TEST_SF(s,  gsl_sf_beta_e, (-100.1, -99.1, &r), -1.005181917797644630375787297e60, TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s,  gsl_sf_beta_e, (-100.1, -99.1, &r), -1.005181917797644630375787297e60, TEST_TOL3, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_beta_e, (-100.1, 99.3, &r), 0.0004474258199579694011200969001, TEST_TOL2, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_beta_e, (100.1, -99.3, &r), 1.328660939628876472028853747, TEST_TOL2, GSL_SUCCESS);
-  TEST_SF(s,  gsl_sf_beta_e, (-100.1, 1.2, &r), 0.00365530364287960795444856281, TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s,  gsl_sf_beta_e, (-100.1, 1.2, &r), 0.00365530364287960795444856281, TEST_TOL3, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_beta_e, (100.1, -1.2, &r), 1203.895236907821059270698160, TEST_TOL2, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_beta_e, (-100.1, -1.2, &r), -3236.073671884748847700283841, TEST_TOL2, GSL_SUCCESS);
-  TEST_SF(s,  gsl_sf_beta_e, (-100.001, 0.0099, &r), -853.946649365611147996495177, TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s,  gsl_sf_beta_e, (-100.001, 0.0099, &r), -853.946649365611147996495177, TEST_TOL4, GSL_SUCCESS);
   
 
   /* Other test cases */
@@ -338,6 +339,21 @@ int test_gamma(void)
   TEST_SF(s,  gsl_sf_beta_inc_e, (5000.0, 5000.0, 0.4, &r), 4.518543727260666383e-91, TEST_TOL5, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_beta_inc_e, (5000.0, 5000.0, 0.6, &r), 1.0, TEST_TOL2, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_beta_inc_e, (5000.0, 2000.0, 0.6, &r), 8.445388773903332659e-89, TEST_TOL5, GSL_SUCCESS);
+
+  TEST_SF(s,  gsl_sf_beta_inc_e, (-0.1, -0.1, 1.0, &r), 1.0, TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s,  gsl_sf_beta_inc_e, (-0.1, -0.2, 1.0, &r), 1.0, TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s,  gsl_sf_beta_inc_e, (-0.2, -0.1, 1.0, &r), 1.0, TEST_TOL2, GSL_SUCCESS);
+
+  TEST_SF(s,  gsl_sf_beta_inc_e, (-0.1, -0.2, 0.5, &r), 0.675252001958389971991335, TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s,  gsl_sf_beta_inc_e, (-0.2, -0.1, 0.5, &r), 0.324747998041610028008665, TEST_TOL2, GSL_SUCCESS);
+
+  TEST_SF(s,  gsl_sf_beta_inc_e, (-0.1, -0.1, 0.0, &r), 0.0, TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s,  gsl_sf_beta_inc_e, (-0.1, -0.2, 0.0, &r), 0.0, TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s,  gsl_sf_beta_inc_e, (-0.2, -0.1, 0.0, &r), 0.0, TEST_TOL2, GSL_SUCCESS);
+
+  TEST_SF(s,  gsl_sf_beta_inc_e, (-0.1, -0.2, 0.3, &r), 0.7469186777964287252, TEST_TOL2, GSL_SUCCESS);
+  TEST_SF(s,  gsl_sf_beta_inc_e, (-0.2, -0.1, 0.3, &r), 0.3995299653262016818, TEST_TOL2, GSL_SUCCESS);
+
 
   return s;
 }

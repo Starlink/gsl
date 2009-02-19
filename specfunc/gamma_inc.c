@@ -1,10 +1,11 @@
 /* specfunc/gamma_inc.c
  *
+ * Copyright (C) 2007 Brian Gough
  * Copyright (C) 1996, 1997, 1998, 1999, 2000 Gerard Jungman
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
@@ -429,12 +430,13 @@ gamma_inc_CF(double a, double x, gsl_sf_result * result)
 {
   gsl_sf_result F;
   gsl_sf_result pre;
+  const double am1lgx = (a-1.0)*log(x);
   const int stat_F = gamma_inc_F_CF(a, x, &F);
-  const int stat_E = gsl_sf_exp_e((a-1.0)*log(x) - x, &pre);
+  const int stat_E = gsl_sf_exp_err_e(am1lgx - x, GSL_DBL_EPSILON*fabs(am1lgx), &pre);
 
   result->val = F.val * pre.val;
   result->err = fabs(F.err * pre.val) + fabs(F.val * pre.err);
-  result->err += (2.0 + fabs(a)) * GSL_DBL_EPSILON * fabs(result->val);
+  result->err += 2.0 * GSL_DBL_EPSILON * fabs(result->val);
 
   return GSL_ERROR_SELECT_2(stat_F, stat_E);
 }

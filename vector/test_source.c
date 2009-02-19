@@ -1,10 +1,10 @@
 /* vector/test_source.c
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000 Gerard Jungman, Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Gerard Jungman, Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -62,6 +62,10 @@ FUNCTION (test, func) (size_t stride, size_t N)
 
         status = (FUNCTION(gsl_vector,isneg)(v) != 0);
         TEST (status, "_isneg" DESC " on calloc vector");
+
+        status = (FUNCTION(gsl_vector,isnonneg)(v) != 1);
+        TEST (status, "_isnonneg" DESC " on calloc vector");
+
       }
 
       FUNCTION (gsl_vector, free) (v);      /* free whatever is in v */
@@ -169,6 +173,10 @@ FUNCTION (test, func) (size_t stride, size_t N)
 
     status = (FUNCTION(gsl_vector,isneg)(v) != 0);
     TEST (status, "_isneg" DESC " on null vector") ;
+
+    status = (FUNCTION(gsl_vector,isnonneg)(v) != 1);
+    TEST (status, "_isnonneg" DESC " on null vector") ;
+
   }
 
   {
@@ -187,6 +195,9 @@ FUNCTION (test, func) (size_t stride, size_t N)
 
     status = (FUNCTION(gsl_vector,isneg)(v) != 0);
     TEST (status, "_isneg" DESC " on non-negative vector") ;
+
+    status = (FUNCTION(gsl_vector,isnonneg)(v) != 1);
+    TEST (status, "_isnonneg" DESC " on non-negative vector") ;
   }
 
 
@@ -196,7 +207,8 @@ FUNCTION (test, func) (size_t stride, size_t N)
 
     for (i = 0; i < N; i++)
       {
-        FUNCTION (gsl_vector, set) (v, i, (ATOMIC) ((i % 10) - 5));
+        ATOMIC vi = (i % 10) - (ATOMIC) 5;
+        FUNCTION (gsl_vector, set) (v, i, vi);
       }
     
     status = (FUNCTION(gsl_vector,isnull)(v) != 0);
@@ -207,6 +219,9 @@ FUNCTION (test, func) (size_t stride, size_t N)
 
     status = (FUNCTION(gsl_vector,isneg)(v) != 0);
     TEST (status, "_isneg" DESC " on mixed vector") ;
+
+    status = (FUNCTION(gsl_vector,isnonneg)(v) != 0);
+    TEST (status, "_isnonneg" DESC " on mixed vector") ;
   }
 
   {
@@ -225,6 +240,9 @@ FUNCTION (test, func) (size_t stride, size_t N)
 
     status = (FUNCTION(gsl_vector,isneg)(v) != 0);
     TEST (status, "_isneg" DESC " on non-positive non-null vector") ;
+
+    status = (FUNCTION(gsl_vector,isnonneg)(v) != 0);
+    TEST (status, "_isnonneg" DESC " on non-positive non-null vector") ;
   }
 #endif
 
@@ -244,6 +262,9 @@ FUNCTION (test, func) (size_t stride, size_t N)
 
     status = (FUNCTION(gsl_vector,isneg)(v) != 0);
     TEST (status, "_isneg" DESC " on positive vector") ;
+
+    status = (FUNCTION(gsl_vector,isnonneg)(v) != 1);
+    TEST (status, "_isnonneg" DESC " on positive vector") ;
   }
 
 
@@ -264,6 +285,9 @@ FUNCTION (test, func) (size_t stride, size_t N)
 
     status = (FUNCTION(gsl_vector,isneg)(v) != 1);
     TEST (status, "_isneg" DESC " on negative vector") ;
+
+    status = (FUNCTION(gsl_vector,isnonneg)(v) != 0);
+    TEST (status, "_isnonneg" DESC " on negative vector") ;
   }
 #endif
 

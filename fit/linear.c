@@ -1,10 +1,10 @@
 /* fit/linear.c
  * 
- * Copyright (C) 2000 Brian Gough
+ * Copyright (C) 2000, 2007 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -196,11 +196,11 @@ gsl_fit_wlinear (const double *x, const size_t xstride,
 int
 gsl_fit_linear_est (const double x,
                     const double c0, const double c1,
-                    const double c00, const double c01, const double c11,
+                    const double cov00, const double cov01, const double cov11,
                     double *y, double *y_err)
 {
   *y = c0 + c1 * x;
-  *y_err = sqrt (c00 + x * (2 * c01 + c11 * x));
+  *y_err = sqrt (cov00 + x * (2 * cov01 + cov11 * x));
   return GSL_SUCCESS;
 }
 
@@ -337,10 +337,10 @@ gsl_fit_wmul (const double *x, const size_t xstride,
 
 int
 gsl_fit_mul_est (const double x, 
-                 const double c1, const double c11, 
+                 const double c1, const double cov11, 
                  double *y, double *y_err)
 {
   *y = c1 * x;
-  *y_err = sqrt (c11) * fabs (x);
+  *y_err = sqrt (cov11) * fabs (x);
   return GSL_SUCCESS;
 }
