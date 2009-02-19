@@ -1,5 +1,5 @@
 This is gsl-ref.info, produced by makeinfo version 4.8 from
-gsl-ref.texi.
+/home/bjg/gsl.redhat/doc/gsl-ref.texi.
 
 INFO-DIR-SECTION Scientific software
 START-INFO-DIR-ENTRY
@@ -29,7 +29,7 @@ GSL
 
 This file documents the GNU Scientific Library (GSL), a collection of
 numerical routines for scientific computing.  It corresponds to release
-1.9 of the library.  Please report any errors in this manual to
+1.10 of the library.  Please report any errors in this manual to
 <bug-gsl@gnu.org>.
 
    More information about GSL can be found at the project homepage,
@@ -968,7 +968,7 @@ function `gsl_set_error_handler' which is also declared in
 `gsl_errno.h',
 
  -- Function: gsl_error_handler_t * gsl_set_error_handler
-          (gsl_error_handler_t NEW_HANDLER)
+          (gsl_error_handler_t * NEW_HANDLER)
      This function sets a new error handler, NEW_HANDLER, for the GSL
      library routines.  The previous handler is returned (so that you
      can restore it later).  Note that the pointer to a user defined
@@ -1235,6 +1235,11 @@ be made automatically if you use `autoconf' to compile your application
      avoids overflow. It provides an alternative to the BSD math
      function `hypot(x,y)'.
 
+ -- Function: double gsl_hypot3 (const double X, const double Y, const
+          double Z)
+     This function computes the value of \sqrt{x^2 + y^2 + z^2} in a
+     way that avoids overflow.
+
  -- Function: double gsl_acosh (const double X)
      This function computes the value of \arccosh(x). It provides an
      alternative to the standard math function `acosh(x)'.
@@ -1285,9 +1290,10 @@ functions do not check for overflow or underflow conditions.
  -- Function: double gsl_pow_8 (const double X)
  -- Function: double gsl_pow_9 (const double X)
      These functions can be used to compute small integer powers x^2,
-     x^3, etc. efficiently. The functions will be inlined when possible
-     so that use of these functions should be as efficient as
-     explicitly writing the corresponding product expression.
+     x^3, etc. efficiently. The functions will be inlined when
+     `HAVE_INLINE' is defined, so that use of these functions should be
+     as efficient as explicitly writing the corresponding product
+     expression.
 
      #include <gsl/gsl_math.h>
      double y = gsl_pow_4 (3.141)  /* compute 3.141**4 */
@@ -1386,6 +1392,10 @@ Algorithms' (3rd edition).
      approximately equal and the function returns 0. Otherwise if x <
      y, the function returns -1, or if x > y, the function returns +1.
 
+     Note that x and y are compared to relative accuracy, so this
+     function is not suitable for testing whether a value is
+     approximately zero.
+
      The implementation is based on the package `fcmp' by T.C. Belding.
 
 
@@ -1452,7 +1462,8 @@ mapped correctly onto packed complex arrays.
 
  -- Function: gsl_complex gsl_complex_rect (double X, double Y)
      This function uses the rectangular cartesian components (X,Y) to
-     return the complex number z = x + i y.
+     return the complex number z = x + i y.  An inline version of this
+     function is used when `HAVE_INLINE' is defined.
 
  -- Function: gsl_complex gsl_complex_polar (double R, double THETA)
      This function returns the complex number z = r \exp(i \theta) = r
@@ -1836,7 +1847,8 @@ File: gsl-ref.info,  Node: Polynomial Evaluation,  Next: Divided Difference Repr
           const double X)
      This function evaluates the polynomial c[0] + c[1] x + c[2] x^2 +
      \dots + c[len-1] x^{len-1} using Horner's method for stability.
-     The function is inlined when possible.
+     An inline version of this function is used when `HAVE_INLINE' is
+     defined.
 
 
 File: gsl-ref.info,  Node: Divided Difference Representation of Polynomials,  Next: Quadratic Equations,  Prev: Polynomial Evaluation,  Up: Polynomials
@@ -1860,7 +1872,8 @@ described in Abramowitz & Stegun sections 25.1.4 and 25.2.26.
           XA[], const size_t SIZE, const double X)
      This function evaluates the polynomial stored in
      divided-difference form in the arrays DD and XA of length SIZE at
-     the point X.
+     the point X.  An inline version of this function is used when
+     `HAVE_INLINE' is defined.
 
  -- Function: int gsl_poly_dd_taylor (double C[], double XP, const
           double DD[], const double XA[], size_t SIZE, double W[])
@@ -3582,6 +3595,15 @@ File: gsl-ref.info,  Node: Exponential Integral,  Next: Ei(x),  Up: Exponential 
 
 
 
+ -- Function: double gsl_sf_expint_En (int N, double X)
+ -- Function: int gsl_sf_expint_En_e (int N, double X, gsl_sf_result *
+          RESULT)
+     These routines compute the exponential integral E_n(x) of order n,
+
+          E_n(x) := \Re \int_1^\infty dt \exp(-xt)/t^n.
+
+
+
 
 File: gsl-ref.info,  Node: Ei(x),  Next: Hyperbolic Integrals,  Prev: Exponential Integral,  Up: Exponential Integrals
 
@@ -3974,7 +3996,10 @@ File: gsl-ref.info,  Node: Incomplete Beta Function,  Prev: Beta Functions,  Up:
           gsl_sf_result * RESULT)
      These routines compute the normalized incomplete Beta function
      I_x(a,b)=B_x(a,b)/B(a,b) where B_x(a,b) = \int_0^x t^{a-1}
-     (1-t)^{b-1} dt for a > 0, b > 0, and 0 <= x <= 1.
+     (1-t)^{b-1} dt for 0 <= x <= 1.   For a > 0, b > 0 the value is
+     computed using a continued fraction expansion.  For all other
+     values it is computed using the relation I_x(a,b,x) = (1/a) x^a
+     2F1(a,1-b,a+1,x)/B(a,b).
 
 
 File: gsl-ref.info,  Node: Gegenbauer Functions,  Next: Hypergeometric Functions,  Prev: Gamma and Beta Functions,  Up: Special Functions
@@ -4284,7 +4309,8 @@ uses a similar recursion, but with the normalized functions.
  -- Function: int gsl_sf_legendre_array_size (const int LMAX, const int
           M)
      This function returns the size of RESULT_ARRAY[] needed for the
-     array versions of P_l^m(x), LMAX - M + 1.
+     array versions of P_l^m(x), LMAX - M + 1.  An inline version of
+     this function is used when `HAVE_INLINE' is defined.
 
 
 File: gsl-ref.info,  Node: Conical Functions,  Next: Radial Functions for Hyperbolic Space,  Prev: Associated Legendre Polynomials and Spherical Harmonics,  Up: Legendre Functions and Spherical Harmonics
@@ -5311,19 +5337,22 @@ functions when range checking is turned off.
  -- Function: double gsl_vector_get (const gsl_vector * V, size_t I)
      This function returns the I-th element of a vector V.  If I lies
      outside the allowed range of 0 to N-1 then the error handler is
-     invoked and 0 is returned.
+     invoked and 0 is returned.  An inline version of this function is
+     used when `HAVE_INLINE' is defined.
 
  -- Function: void gsl_vector_set (gsl_vector * V, size_t I, double X)
      This function sets the value of the I-th element of a vector V to
      X.  If I lies outside the allowed range of 0 to N-1 then the error
-     handler is invoked.
+     handler is invoked.  An inline version of this function is used
+     when `HAVE_INLINE' is defined.
 
  -- Function: double * gsl_vector_ptr (gsl_vector * V, size_t I)
  -- Function: const double * gsl_vector_const_ptr (const gsl_vector *
           V, size_t I)
      These functions return a pointer to the I-th element of a vector
      V.  If I lies outside the allowed range of 0 to N-1 then the error
-     handler is invoked and a null pointer is returned.
+     handler is invoked and a null pointer is returned.  Inline
+     versions of these function are used when `HAVE_INLINE' is defined.
 
 
 File: gsl-ref.info,  Node: Initializing vector elements,  Next: Reading and writing vectors,  Prev: Accessing vector elements,  Up: Vectors
@@ -5666,10 +5695,10 @@ File: gsl-ref.info,  Node: Vector properties,  Next: Example programs for vector
  -- Function: int gsl_vector_isnull (const gsl_vector * V)
  -- Function: int gsl_vector_ispos (const gsl_vector * V)
  -- Function: int gsl_vector_isneg (const gsl_vector * V)
+ -- Function: int gsl_vector_isnonneg (const gsl_vector * V)
      These functions return 1 if all the elements of the vector V are
-     zero, strictly positive, or strictly negative respectively, and 0
-     otherwise.  To test for a non-negative vector, use the expression
-     `!gsl_vector_isneg(v)'.
+     zero, strictly positive, strictly negative, or non-negative
+     respectively, and 0 otherwise.
 
 
 File: gsl-ref.info,  Node: Example programs for vectors,  Prev: Vector properties,  Up: Vectors
@@ -5902,13 +5931,15 @@ where TDA is the physical row-length of the matrix.
           size_t J)
      This function returns the (i,j)-th element of a matrix M.  If I or
      J lie outside the allowed range of 0 to N1-1 and 0 to N2-1 then
-     the error handler is invoked and 0 is returned.
+     the error handler is invoked and 0 is returned.  An inline version
+     of this function is used when `HAVE_INLINE' is defined.
 
  -- Function: void gsl_matrix_set (gsl_matrix * M, size_t I, size_t J,
           double X)
      This function sets the value of the (i,j)-th element of a matrix M
      to X.  If I or J lies outside the allowed range of 0 to N1-1 and 0
-     to N2-1 then the error handler is invoked.
+     to N2-1 then the error handler is invoked.  An inline version of
+     this function is used when `HAVE_INLINE' is defined.
 
  -- Function: double * gsl_matrix_ptr (gsl_matrix * M, size_t I, size_t
           J)
@@ -5917,7 +5948,8 @@ where TDA is the physical row-length of the matrix.
      These functions return a pointer to the (i,j)-th element of a
      matrix M.  If I or J lie outside the allowed range of 0 to N1-1
      and 0 to N2-1 then the error handler is invoked and a null pointer
-     is returned.
+     is returned.  Inline versions of these function are used when
+     `HAVE_INLINE' is defined.
 
 
 File: gsl-ref.info,  Node: Initializing matrix elements,  Next: Reading and writing matrices,  Prev: Accessing matrix elements,  Up: Matrices
@@ -6166,6 +6198,32 @@ block.
      `gsl_matrix_column' but can be used for matrices which are declared
      `const'.
 
+ -- Function: gsl_vector_view gsl_matrix_subrow (gsl_matrix * M, size_t
+          I, size_t OFFSET, size_t N)
+ -- Function: gsl_vector_const_view gsl_matrix_const_subrow (const
+          gsl_matrix * M, size_t I, size_t OFFSET, size_t N)
+     These functions return a vector view of the I-th row of the matrix
+     M beginning at OFFSET elements past the first column and
+     containing N elements. The `data' pointer of the new vector is set
+     to null if I, OFFSET, or N are out of range.
+
+     The function `gsl_vector_const_subrow' is equivalent to
+     `gsl_matrix_subrow' but can be used for matrices which are declared
+     `const'.
+
+ -- Function: gsl_vector_view gsl_matrix_subcolumn (gsl_matrix * M,
+          size_t J, size_t OFFSET, size_t N)
+ -- Function: gsl_vector_const_view gsl_matrix_const_subcolumn (const
+          gsl_matrix * M, size_t J, size_t OFFSET, size_t N)
+     These functions return a vector view of the J-th column of the
+     matrix M beginning at OFFSET elements past the first row and
+     containing N elements. The `data' pointer of the new vector is set
+     to null if J, OFFSET, or N are out of range.
+
+     The function `gsl_vector_const_subcolumn' is equivalent to
+     `gsl_matrix_subcolumn' but can be used for matrices which are
+     declared `const'.
+
  -- Function: gsl_vector_view gsl_matrix_diagonal (gsl_matrix * M)
  -- Function: gsl_vector_const_view gsl_matrix_const_diagonal (const
           gsl_matrix * M)
@@ -6380,10 +6438,10 @@ File: gsl-ref.info,  Node: Matrix properties,  Next: Example programs for matric
  -- Function: int gsl_matrix_isnull (const gsl_matrix * M)
  -- Function: int gsl_matrix_ispos (const gsl_matrix * M)
  -- Function: int gsl_matrix_isneg (const gsl_matrix * M)
+ -- Function: int gsl_matrix_isnonneg (const gsl_matrix * M)
      These functions return 1 if all the elements of the matrix M are
-     zero, strictly positive, or strictly negative respectively, and 0
-     otherwise. To test for a non-negative matrix, use the expression
-     `!gsl_matrix_isneg(m)'.  To test whether a matrix is
+     zero, strictly positive, strictly negative, or non-negative
+     respectively, and 0 otherwise. To test whether a matrix is
      positive-definite, use the Cholesky decomposition (*note Cholesky
      Decomposition::).
 
@@ -6654,7 +6712,8 @@ permutations.
           const size_t I)
      This function returns the value of the I-th element of the
      permutation P.  If I lies outside the allowed range of 0 to N-1
-     then the error handler is invoked and 0 is returned.
+     then the error handler is invoked and 0 is returned.  An inline
+     version of this function is used when `HAVE_INLINE' is defined.
 
  -- Function: int gsl_permutation_swap (gsl_permutation * P, const
           size_t I, const size_t J)
@@ -6779,9 +6838,9 @@ file as binary data or formatted text.
           gsl_permutation * P, const char * FORMAT)
      This function writes the elements of the permutation P
      line-by-line to the stream STREAM using the format specifier
-     FORMAT, which should be suitable for a type of SIZE_T.  On a GNU
-     system the type modifier `Z' represents `size_t', so `"%Zu\n"' is
-     a suitable format.  The function returns `GSL_EFAILED' if there
+     FORMAT, which should be suitable for a type of SIZE_T.  In ISO C99
+     the type modifier `z' represents `size_t', so `"%zu\n"' is a
+     suitable format.(1) The function returns `GSL_EFAILED' if there
      was a problem writing to the file.
 
  -- Function: int gsl_permutation_fscanf (FILE * STREAM,
@@ -6791,6 +6850,11 @@ file as binary data or formatted text.
      correct length since the function uses the size of P to determine
      how many numbers to read.  The function returns `GSL_EFAILED' if
      there was a problem reading from the file.
+
+   ---------- Footnotes ----------
+
+   (1) In versions of the GNU C library prior to the ISO C99 standard,
+the type modifier `Z' was used instead.
 
 
 File: gsl-ref.info,  Node: Permutations in cyclic form,  Next: Permutation Examples,  Prev: Reading and writing permutations,  Up: Permutations
@@ -7083,7 +7147,8 @@ combination.
           const size_t I)
      This function returns the value of the I-th element of the
      combination C.  If I lies outside the allowed range of 0 to K-1
-     then the error handler is invoked and 0 is returned.
+     then the error handler is invoked and 0 is returned.  An inline
+     version of this function is used when `HAVE_INLINE' is defined.
 
 
 File: gsl-ref.info,  Node: Combination properties,  Next: Combination functions,  Prev: Accessing combination elements,  Up: Combinations
@@ -7158,9 +7223,9 @@ file as binary data or formatted text.
           gsl_combination * C, const char * FORMAT)
      This function writes the elements of the combination C
      line-by-line to the stream STREAM using the format specifier
-     FORMAT, which should be suitable for a type of SIZE_T.  On a GNU
-     system the type modifier `Z' represents `size_t', so `"%Zu\n"' is
-     a suitable format.  The function returns `GSL_EFAILED' if there
+     FORMAT, which should be suitable for a type of SIZE_T.  In ISO C99
+     the type modifier `z' represents `size_t', so `"%zu\n"' is a
+     suitable format.(1)  The function returns `GSL_EFAILED' if there
      was a problem writing to the file.
 
  -- Function: int gsl_combination_fscanf (FILE * STREAM,
@@ -7170,6 +7235,11 @@ file as binary data or formatted text.
      correct values of n and k since the function uses the size of C to
      determine how many numbers to read.  The function returns
      `GSL_EFAILED' if there was a problem reading from the file.
+
+   ---------- Footnotes ----------
+
+   (1) In versions of the GNU C library prior to the ISO C99 standard,
+the type modifier `Z' was used instead.
 
 
 File: gsl-ref.info,  Node: Combination Examples,  Next: Combination References and Further Reading,  Prev: Reading and writing combinations,  Up: Combinations
@@ -7338,55 +7408,4 @@ file `gsl_heapsort.h'.
      the index of the least element in ARRAY, and the last element of P
      gives the index of the greatest element in ARRAY.  The array
      itself is not changed.
-
-
-File: gsl-ref.info,  Node: Sorting vectors,  Next: Selecting the k smallest or largest elements,  Prev: Sorting objects,  Up: Sorting
-
-11.2 Sorting vectors
-====================
-
-The following functions will sort the elements of an array or vector,
-either directly or indirectly.  They are defined for all real and
-integer types using the normal suffix rules.  For example, the `float'
-versions of the array functions are `gsl_sort_float' and
-`gsl_sort_float_index'.  The corresponding vector functions are
-`gsl_sort_vector_float' and `gsl_sort_vector_float_index'.  The
-prototypes are available in the header files `gsl_sort_float.h'
-`gsl_sort_vector_float.h'.  The complete set of prototypes can be
-included using the header files `gsl_sort.h' and `gsl_sort_vector.h'.
-
-   There are no functions for sorting complex arrays or vectors, since
-the ordering of complex numbers is not uniquely defined.  To sort a
-complex vector by magnitude compute a real vector containing the
-magnitudes of the complex elements, and sort this vector indirectly.
-The resulting index gives the appropriate ordering of the original
-complex vector.
-
- -- Function: void gsl_sort (double * DATA, size_t STRIDE, size_t N)
-     This function sorts the N elements of the array DATA with stride
-     STRIDE into ascending numerical order.
-
- -- Function: void gsl_sort_vector (gsl_vector * V)
-     This function sorts the elements of the vector V into ascending
-     numerical order.
-
- -- Function: void gsl_sort_index (size_t * P, const double * DATA,
-          size_t STRIDE, size_t N)
-     This function indirectly sorts the N elements of the array DATA
-     with stride STRIDE into ascending order, storing the resulting
-     permutation in P.  The array P must be allocated with a sufficient
-     length to store the N elements of the permutation.  The elements
-     of P give the index of the array element which would have been
-     stored in that position if the array had been sorted in place.
-     The array DATA is not changed.
-
- -- Function: int gsl_sort_vector_index (gsl_permutation * P, const
-          gsl_vector * V)
-     This function indirectly sorts the elements of the vector V into
-     ascending order, storing the resulting permutation in P.  The
-     elements of P give the index of the vector element which would
-     have been stored in that position if the vector had been sorted in
-     place.  The first element of P gives the index of the least element
-     in V, and the last element of P gives the index of the greatest
-     element in V.  The vector V is not changed.
 

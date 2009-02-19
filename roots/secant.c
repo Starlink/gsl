@@ -1,10 +1,10 @@
 /* roots/secant.c
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000 Reid Priedhorsky, Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Reid Priedhorsky, Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -94,12 +94,12 @@ secant_iterate (void * vstate, gsl_function_fdf * fdf, double * root)
   state->f = f_new ;
   state->df = df_new ;
 
-  if (!finite (f_new))
+  if (!gsl_finite (f_new))
     {
       GSL_ERROR ("function value is not finite", GSL_EBADFUNC);
     }
 
-  if (!finite (df_new))
+  if (!gsl_finite (df_new))
     {
       GSL_ERROR ("derivative value is not finite", GSL_EBADFUNC);
     }

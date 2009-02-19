@@ -305,20 +305,20 @@ turned off.
 @deftypefun double gsl_vector_get (const gsl_vector * @var{v}, size_t @var{i})
 This function returns the @var{i}-th element of a vector @var{v}.  If
 @var{i} lies outside the allowed range of 0 to @math{@var{n}-1} then the error
-handler is invoked and 0 is returned.
+handler is invoked and 0 is returned.  @inlinefn{}
 @end deftypefun
 
 @deftypefun void gsl_vector_set (gsl_vector * @var{v}, size_t @var{i}, double @var{x})
 This function sets the value of the @var{i}-th element of a vector
 @var{v} to @var{x}.  If @var{i} lies outside the allowed range of 0 to
-@math{@var{n}-1} then the error handler is invoked.
+@math{@var{n}-1} then the error handler is invoked.  @inlinefn{}
 @end deftypefun
 
 @deftypefun {double *} gsl_vector_ptr (gsl_vector * @var{v}, size_t @var{i})
 @deftypefunx {const double *} gsl_vector_const_ptr (const gsl_vector * @var{v}, size_t @var{i})
 These functions return a pointer to the @var{i}-th element of a vector
 @var{v}.  If @var{i} lies outside the allowed range of 0 to @math{@var{n}-1}
-then the error handler is invoked and a null pointer is returned.
+then the error handler is invoked and a null pointer is returned.  @inlinefns{}
 @end deftypefun
 
 @node Initializing vector elements
@@ -741,10 +741,10 @@ indices are returned.
 @deftypefun int gsl_vector_isnull (const gsl_vector * @var{v})
 @deftypefunx int gsl_vector_ispos (const gsl_vector * @var{v})
 @deftypefunx int gsl_vector_isneg (const gsl_vector * @var{v})
-These functions return 1 if all the elements of the vector @var{v}
-are zero, strictly positive, or strictly negative respectively, and 0
-otherwise.  To test for a non-negative vector, use the expression
-@code{!gsl_vector_isneg(v)}.
+@deftypefunx int gsl_vector_isnonneg (const gsl_vector * @var{v})
+These functions return 1 if all the elements of the vector @var{v} are
+zero, strictly positive, strictly negative, or non-negative
+respectively, and 0 otherwise.
 @end deftypefun
 
 @node Example programs for vectors
@@ -940,14 +940,14 @@ where @var{tda} is the physical row-length of the matrix.
 This function returns the @math{(i,j)}-th element of a matrix
 @var{m}.  If @var{i} or @var{j} lie outside the allowed range of 0 to
 @math{@var{n1}-1} and 0 to @math{@var{n2}-1} then the error handler is invoked and 0
-is returned.
+is returned.  @inlinefn{}
 @end deftypefun
 
 @deftypefun void gsl_matrix_set (gsl_matrix * @var{m}, size_t @var{i}, size_t @var{j}, double @var{x})
 This function sets the value of the @math{(i,j)}-th element of a
 matrix @var{m} to @var{x}.  If @var{i} or @var{j} lies outside the
 allowed range of 0 to @math{@var{n1}-1} and 0 to @math{@var{n2}-1} then the error
-handler is invoked.
+handler is invoked.  @inlinefn{}
 @end deftypefun
 
 @deftypefun {double *} gsl_matrix_ptr (gsl_matrix * @var{m}, size_t @var{i}, size_t @var{j})
@@ -955,7 +955,7 @@ handler is invoked.
 These functions return a pointer to the @math{(i,j)}-th element of a
 matrix @var{m}.  If @var{i} or @var{j} lie outside the allowed range of
 0 to @math{@var{n1}-1} and 0 to @math{@var{n2}-1} then the error handler is invoked
-and a null pointer is returned.
+and a null pointer is returned.  @inlinefns{}
 @end deftypefun
 
 @node Initializing matrix elements
@@ -1299,6 +1299,30 @@ The function @code{gsl_vector_const_column} is equivalent to
 @code{const}.
 @end deftypefun
 
+@deftypefun gsl_vector_view gsl_matrix_subrow (gsl_matrix * @var{m}, size_t @var{i}, size_t @var{offset}, size_t @var{n})
+@deftypefunx {gsl_vector_const_view} gsl_matrix_const_subrow (const gsl_matrix * @var{m}, size_t @var{i}, size_t @var{offset}, size_t @var{n})
+These functions return a vector view of the @var{i}-th row of the matrix
+@var{m} beginning at @var{offset} elements past the first column and
+containing @var{n} elements. The @code{data} pointer of the new vector
+is set to null if @var{i}, @var{offset}, or @var{n} are out of range.
+
+The function @code{gsl_vector_const_subrow} is equivalent to
+@code{gsl_matrix_subrow} but can be used for matrices which are declared
+@code{const}.
+@end deftypefun
+
+@deftypefun gsl_vector_view gsl_matrix_subcolumn (gsl_matrix * @var{m}, size_t @var{j}, size_t @var{offset}, size_t @var{n})
+@deftypefunx {gsl_vector_const_view} gsl_matrix_const_subcolumn (const gsl_matrix * @var{m}, size_t @var{j}, size_t @var{offset}, size_t @var{n})
+These functions return a vector view of the @var{j}-th column of the matrix
+@var{m} beginning at @var{offset} elements past the first row and
+containing @var{n} elements. The @code{data} pointer of the new vector
+is set to null if @var{j}, @var{offset}, or @var{n} are out of range.
+
+The function @code{gsl_vector_const_subcolumn} is equivalent to
+@code{gsl_matrix_subcolumn} but can be used for matrices which are declared
+@code{const}.
+@end deftypefun
+
 @cindex matrix diagonal
 @cindex diagonal, of a matrix
 @deftypefun gsl_vector_view gsl_matrix_diagonal (gsl_matrix * @var{m})
@@ -1516,11 +1540,12 @@ row-major order.
 @deftypefun int gsl_matrix_isnull (const gsl_matrix * @var{m})
 @deftypefunx int gsl_matrix_ispos (const gsl_matrix * @var{m})
 @deftypefunx int gsl_matrix_isneg (const gsl_matrix * @var{m})
+@deftypefunx int gsl_matrix_isnonneg (const gsl_matrix * @var{m})
 These functions return 1 if all the elements of the matrix @var{m} are
-zero, strictly positive, or strictly negative respectively, and 0
-otherwise. To test for a non-negative matrix, use the expression
-@code{!gsl_matrix_isneg(m)}.  To test whether a matrix is
-positive-definite, use the Cholesky decomposition (@pxref{Cholesky Decomposition}).
+zero, strictly positive, strictly negative, or non-negative
+respectively, and 0 otherwise. To test whether a matrix is
+positive-definite, use the Cholesky decomposition (@pxref{Cholesky
+Decomposition}).
 @end deftypefun
 
 @node Example programs for matrices

@@ -1,10 +1,10 @@
 /* sys/test.c
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000 Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -114,6 +114,43 @@ main (void)
   y_expected = 1.414213562373095048801688e307;
   gsl_test_rel (y, y_expected, 1e-15, "gsl_hypot(1e307, 1e307)");
 
+  /* Test for gsl_hypot3 */
+
+  y = gsl_hypot3 (0.0, 0.0, 0.0);
+  y_expected = 0.0;
+  gsl_test_rel (y, y_expected, 1e-15, "gsl_hypot3(0.0, 0.0, 0.0)");
+
+  y = gsl_hypot3 (1e-10, 1e-10, 1e-10);
+  y_expected = 1.732050807568877293527446e-10;
+  gsl_test_rel (y, y_expected, 1e-15, "gsl_hypot3(1e-10, 1e-10, 1e-10)");
+
+  y = gsl_hypot3 (1e-38, 1e-38, 1e-38);
+  y_expected = 1.732050807568877293527446e-38;
+  gsl_test_rel (y, y_expected, 1e-15, "gsl_hypot3(1e-38, 1e-38, 1e-38)");
+
+  y = gsl_hypot3 (1e-10, 1e-10, -1.0);
+  y_expected = 1.000000000000000000099;
+  gsl_test_rel (y, y_expected, 1e-15, "gsl_hypot3(1e-10, 1e-10, -1)");
+
+  y = gsl_hypot3 (1e-10, -1.0, 1e-10);
+  y_expected = 1.000000000000000000099;
+  gsl_test_rel (y, y_expected, 1e-15, "gsl_hypot3(1e-10, -1, 1e-10)");
+
+  y = gsl_hypot3 (-1.0, 1e-10, 1e-10);
+  y_expected = 1.000000000000000000099;
+  gsl_test_rel (y, y_expected, 1e-15, "gsl_hypot3(-1, 1e-10, 1e-10)");
+
+  y = gsl_hypot3 (1e307, 1e301, 1e301);
+  y_expected = 1.0000000000009999999999995e307;
+  gsl_test_rel (y, y_expected, 1e-15, "gsl_hypot3(1e307, 1e301, 1e301)");
+
+  y = gsl_hypot3 (1e307, 1e307, 1e307);
+  y_expected = 1.732050807568877293527446e307;
+  gsl_test_rel (y, y_expected, 1e-15, "gsl_hypot3(1e307, 1e307, 1e307)");
+
+  y = gsl_hypot3 (1e307, 1e-307, 1e-307);
+  y_expected = 1.0e307;
+  gsl_test_rel (y, y_expected, 1e-15, "gsl_hypot3(1e307, 1e-307, 1e-307)");
 
   /* Test for acosh */
 
@@ -341,8 +378,12 @@ main (void)
     s = gsl_isinf (inf);
     gsl_test_int (s, 1, "gsl_isinf(inf)");
 
-    s = gsl_isinf (-inf);
-    gsl_test_int (s, -1, "gsl_isinf(-inf)");
+    /* isinf(3): In glibc 2.01 and earlier, isinf() returns a
+       non-zero value (actually: 1) if x is an infinity (positive or
+       negative).  (This is all that C99 requires.) */
+
+    s = gsl_isinf (-inf);  
+    gsl_test (s == 0, "gsl_isinf(-inf) is non-zero");
 
     s = gsl_isinf (nan);
     gsl_test_int (s, 0, "gsl_isinf(nan)");
@@ -357,6 +398,9 @@ main (void)
     s = gsl_isnan (inf);
     gsl_test_int (s, 0, "gsl_isnan(inf)");
 
+    s = gsl_isnan (-inf);
+    gsl_test_int (s, 0, "gsl_isnan(-inf)");
+
     s = gsl_isnan (nan);
     gsl_test_int (s, 1, "gsl_isnan(nan)");
 
@@ -369,6 +413,9 @@ main (void)
 
     s = gsl_finite (inf);
     gsl_test_int (s, 0, "gsl_finite(inf)");
+
+    s = gsl_finite (-inf);
+    gsl_test_int (s, 0, "gsl_finite(-inf)");
 
     s = gsl_finite (nan);
     gsl_test_int (s, 0, "gsl_finite(nan)");

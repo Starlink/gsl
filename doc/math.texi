@@ -162,6 +162,14 @@ This function computes the value of
 alternative to the BSD math function @code{hypot(x,y)}.
 @end deftypefun
 
+@deftypefun double gsl_hypot3 (const double @var{x}, const double @var{y}, const double @var{z})
+@cindex euclidean distance function, hypot
+@cindex length, computed accurately using hypot
+This function computes the value of
+@c{$\sqrt{x^2 + y^2 + z^2}$}
+@math{\sqrt@{x^2 + y^2 + z^2@}} in a way that avoids overflow.
+@end deftypefun
+
 @deftypefun double gsl_acosh (const double @var{x})
 @cindex acosh
 @cindex hyperbolic cosine, inverse
@@ -229,9 +237,10 @@ available as @code{gsl_sf_pow_int_e}.
 @deftypefunx double gsl_pow_8 (const double @var{x})
 @deftypefunx double gsl_pow_9 (const double @var{x})
 These functions can be used to compute small integer powers @math{x^2},
-@math{x^3}, etc. efficiently. The functions will be inlined when
-possible so that use of these functions should be as efficient as
-explicitly writing the corresponding product expression.
+@math{x^3}, etc. efficiently. The functions will be inlined when 
+@code{HAVE_INLINE} is defined, so that use of these functions 
+should be as efficient as explicitly writing the corresponding 
+product expression.
 @end deftypefun
 
 @example
@@ -334,6 +343,10 @@ If @math{x} and @math{y} lie within this interval, they are considered
 approximately equal and the function returns 0. Otherwise if @math{x <
 y}, the function returns @math{-1}, or if @math{x > y}, the function returns
 @math{+1}.
+
+Note that @math{x} and @math{y} are compared to relative accuracy, so
+this function is not suitable for testing whether a value is
+approximately zero. 
 
 The implementation is based on the package @code{fcmp} by T.C. Belding.
 @end deftypefun

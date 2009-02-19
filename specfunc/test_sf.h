@@ -4,7 +4,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -39,7 +39,7 @@ int test_sf_check_result_relax(char * message_buff, gsl_sf_result r, double val,
 
 
 #ifndef TEST_FACTOR
-#if RELEASED
+#ifdef RELEASED
 #define TEST_FACTOR 100.0  
 #else
 #define TEST_FACTOR 1.0
@@ -47,7 +47,7 @@ int test_sf_check_result_relax(char * message_buff, gsl_sf_result r, double val,
 #endif
 
 #ifndef TEST_SIGMA
-#if RELEASED
+#ifdef RELEASED
 #define TEST_SIGMA 1.5  
 #else
 #define TEST_SIGMA 1.0

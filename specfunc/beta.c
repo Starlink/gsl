@@ -4,7 +4,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -107,7 +107,7 @@ gsl_sf_lnbeta_sgn_e(const double x, const double y, gsl_sf_result * result, doub
     *sgn = sgx * sgy * sgxy;
     result->val  = lgx.val + lgy.val - lgxy.val;
     result->err  = lgx.err + lgy.err + lgxy.err;
-    result->err += GSL_DBL_EPSILON * (fabs(lgx.val) + fabs(lgy.val) + fabs(lgxy.val));
+    result->err += 2.0 * GSL_DBL_EPSILON * (fabs(lgx.val) + fabs(lgy.val) + fabs(lgxy.val));
     result->err += 2.0 * GSL_DBL_EPSILON * fabs(result->val);
     return GSL_ERROR_SELECT_3(stat_gx, stat_gy, stat_gxy);
   }

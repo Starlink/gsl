@@ -1,5 +1,5 @@
 This is gsl-ref.info, produced by makeinfo version 4.8 from
-gsl-ref.texi.
+/home/bjg/gsl.redhat/doc/gsl-ref.texi.
 
 INFO-DIR-SECTION Scientific software
 START-INFO-DIR-ENTRY
@@ -22,9 +22,552 @@ License".
 GNU Manual, like GNU software."
 
 
+File: gsl-ref.info,  Node: Random Number Distribution Examples,  Next: Random Number Distribution References and Further Reading,  Prev: Shuffling and Sampling,  Up: Random Number Distributions
+
+19.39 Examples
+==============
+
+The following program demonstrates the use of a random number generator
+to produce variates from a distribution.  It prints 10 samples from the
+Poisson distribution with a mean of 3.
+
+     #include <stdio.h>
+     #include <gsl/gsl_rng.h>
+     #include <gsl/gsl_randist.h>
+
+     int
+     main (void)
+     {
+       const gsl_rng_type * T;
+       gsl_rng * r;
+
+       int i, n = 10;
+       double mu = 3.0;
+
+       /* create a generator chosen by the
+          environment variable GSL_RNG_TYPE */
+
+       gsl_rng_env_setup();
+
+       T = gsl_rng_default;
+       r = gsl_rng_alloc (T);
+
+       /* print n random variates chosen from
+          the poisson distribution with mean
+          parameter mu */
+
+       for (i = 0; i < n; i++)
+         {
+           unsigned int k = gsl_ran_poisson (r, mu);
+           printf (" %u", k);
+         }
+
+       printf ("\n");
+       gsl_rng_free (r);
+       return 0;
+     }
+
+If the library and header files are installed under `/usr/local' (the
+default location) then the program can be compiled with these options,
+
+     $ gcc -Wall demo.c -lgsl -lgslcblas -lm
+
+Here is the output of the program,
+
+     $ ./a.out
+      2 5 5 2 1 0 3 4 1 1
+
+The variates depend on the seed used by the generator.  The seed for the
+default generator type `gsl_rng_default' can be changed with the
+`GSL_RNG_SEED' environment variable to produce a different stream of
+variates,
+
+     $ GSL_RNG_SEED=123 ./a.out
+     GSL_RNG_SEED=123
+      4 5 6 3 3 1 4 2 5 5
+
+The following program generates a random walk in two dimensions.
+
+     #include <stdio.h>
+     #include <gsl/gsl_rng.h>
+     #include <gsl/gsl_randist.h>
+
+     int
+     main (void)
+     {
+       int i;
+       double x = 0, y = 0, dx, dy;
+
+       const gsl_rng_type * T;
+       gsl_rng * r;
+
+       gsl_rng_env_setup();
+       T = gsl_rng_default;
+       r = gsl_rng_alloc (T);
+
+       printf ("%g %g\n", x, y);
+
+       for (i = 0; i < 10; i++)
+         {
+           gsl_ran_dir_2d (r, &dx, &dy);
+           x += dx; y += dy;
+           printf ("%g %g\n", x, y);
+         }
+
+       gsl_rng_free (r);
+       return 0;
+     }
+
+Here is the output from the program, three 10-step random walks from
+the origin,
+
+   The following program computes the upper and lower cumulative
+distribution functions for the standard normal distribution at x=2.
+
+     #include <stdio.h>
+     #include <gsl/gsl_cdf.h>
+
+     int
+     main (void)
+     {
+       double P, Q;
+       double x = 2.0;
+
+       P = gsl_cdf_ugaussian_P (x);
+       printf ("prob(x < %f) = %f\n", x, P);
+
+       Q = gsl_cdf_ugaussian_Q (x);
+       printf ("prob(x > %f) = %f\n", x, Q);
+
+       x = gsl_cdf_ugaussian_Pinv (P);
+       printf ("Pinv(%f) = %f\n", P, x);
+
+       x = gsl_cdf_ugaussian_Qinv (Q);
+       printf ("Qinv(%f) = %f\n", Q, x);
+
+       return 0;
+     }
+
+Here is the output of the program,
+
+     prob(x < 2.000000) = 0.977250
+     prob(x > 2.000000) = 0.022750
+     Pinv(0.977250) = 2.000000
+     Qinv(0.022750) = 2.000000
+
+
+File: gsl-ref.info,  Node: Random Number Distribution References and Further Reading,  Prev: Random Number Distribution Examples,  Up: Random Number Distributions
+
+19.40 References and Further Reading
+====================================
+
+For an encyclopaedic coverage of the subject readers are advised to
+consult the book `Non-Uniform Random Variate Generation' by Luc
+Devroye.  It covers every imaginable distribution and provides hundreds
+of algorithms.
+
+     Luc Devroye, `Non-Uniform Random Variate Generation',
+     Springer-Verlag, ISBN 0-387-96305-7.
+
+The subject of random variate generation is also reviewed by Knuth, who
+describes algorithms for all the major distributions.
+
+     Donald E. Knuth, `The Art of Computer Programming: Seminumerical
+     Algorithms' (Vol 2, 3rd Ed, 1997), Addison-Wesley, ISBN 0201896842.
+
+The Particle Data Group provides a short review of techniques for
+generating distributions of random numbers in the "Monte Carlo" section
+of its Annual Review of Particle Physics.
+
+     `Review of Particle Properties' R.M. Barnett et al., Physical
+     Review D54, 1 (1996) `http://pdg.lbl.gov/'.
+
+The Review of Particle Physics is available online in postscript and pdf
+format.
+
+An overview of methods used to compute cumulative distribution functions
+can be found in `Statistical Computing' by W.J. Kennedy and J.E.
+Gentle. Another general reference is `Elements of Statistical
+Computing' by R.A. Thisted.
+
+     William E. Kennedy and James E. Gentle, `Statistical Computing'
+     (1980), Marcel Dekker, ISBN 0-8247-6898-1.
+
+     Ronald A. Thisted, `Elements of Statistical Computing' (1988),
+     Chapman & Hall, ISBN 0-412-01371-1.
+
+The cumulative distribution functions for the Gaussian distribution are
+based on the following papers,
+
+     `Rational Chebyshev Approximations Using Linear Equations', W.J.
+     Cody, W. Fraser, J.F. Hart. Numerische Mathematik 12, 242-251
+     (1968).
+
+     `Rational Chebyshev Approximations for the Error Function', W.J.
+     Cody. Mathematics of Computation 23, n107, 631-637 (July 1969).
+
+
+File: gsl-ref.info,  Node: Statistics,  Next: Histograms,  Prev: Random Number Distributions,  Up: Top
+
+20 Statistics
+*************
+
+This chapter describes the statistical functions in the library.  The
+basic statistical functions include routines to compute the mean,
+variance and standard deviation.  More advanced functions allow you to
+calculate absolute deviations, skewness, and kurtosis as well as the
+median and arbitrary percentiles.  The algorithms use recurrence
+relations to compute average quantities in a stable way, without large
+intermediate values that might overflow.
+
+   The functions are available in versions for datasets in the standard
+floating-point and integer types.  The versions for double precision
+floating-point data have the prefix `gsl_stats' and are declared in the
+header file `gsl_statistics_double.h'.  The versions for integer data
+have the prefix `gsl_stats_int' and are declared in the header file
+`gsl_statistics_int.h'.
+
+* Menu:
+
+* Mean and standard deviation and variance::
+* Absolute deviation::
+* Higher moments (skewness and kurtosis)::
+* Autocorrelation::
+* Covariance::
+* Correlation::
+* Weighted Samples::
+* Maximum and Minimum values::
+* Median and Percentiles::
+* Example statistical programs::
+* Statistics References and Further Reading::
+
+
+File: gsl-ref.info,  Node: Mean and standard deviation and variance,  Next: Absolute deviation,  Up: Statistics
+
+20.1 Mean, Standard Deviation and Variance
+==========================================
+
+ -- Function: double gsl_stats_mean (const double DATA[], size_t
+          STRIDE, size_t N)
+     This function returns the arithmetic mean of DATA, a dataset of
+     length N with stride STRIDE.  The arithmetic mean, or "sample
+     mean", is denoted by \Hat\mu and defined as,
+
+          \Hat\mu = (1/N) \sum x_i
+
+     where x_i are the elements of the dataset DATA.  For samples drawn
+     from a gaussian distribution the variance of \Hat\mu is \sigma^2 /
+     N.
+
+ -- Function: double gsl_stats_variance (const double DATA[], size_t
+          STRIDE, size_t N)
+     This function returns the estimated, or "sample", variance of
+     DATA, a dataset of length N with stride STRIDE.  The estimated
+     variance is denoted by \Hat\sigma^2 and is defined by,
+
+          \Hat\sigma^2 = (1/(N-1)) \sum (x_i - \Hat\mu)^2
+
+     where x_i are the elements of the dataset DATA.  Note that the
+     normalization factor of 1/(N-1) results from the derivation of
+     \Hat\sigma^2 as an unbiased estimator of the population variance
+     \sigma^2.  For samples drawn from a gaussian distribution the
+     variance of \Hat\sigma^2 itself is 2 \sigma^4 / N.
+
+     This function computes the mean via a call to `gsl_stats_mean'.  If
+     you have already computed the mean then you can pass it directly to
+     `gsl_stats_variance_m'.
+
+ -- Function: double gsl_stats_variance_m (const double DATA[], size_t
+          STRIDE, size_t N, double MEAN)
+     This function returns the sample variance of DATA relative to the
+     given value of MEAN.  The function is computed with \Hat\mu
+     replaced by the value of MEAN that you supply,
+
+          \Hat\sigma^2 = (1/(N-1)) \sum (x_i - mean)^2
+
+ -- Function: double gsl_stats_sd (const double DATA[], size_t STRIDE,
+          size_t N)
+ -- Function: double gsl_stats_sd_m (const double DATA[], size_t
+          STRIDE, size_t N, double MEAN)
+     The standard deviation is defined as the square root of the
+     variance.  These functions return the square root of the
+     corresponding variance functions above.
+
+ -- Function: double gsl_stats_variance_with_fixed_mean (const double
+          DATA[], size_t STRIDE, size_t N, double MEAN)
+     This function computes an unbiased estimate of the variance of
+     DATA when the population mean MEAN of the underlying distribution
+     is known _a priori_.  In this case the estimator for the variance
+     uses the factor 1/N and the sample mean \Hat\mu is replaced by the
+     known population mean \mu,
+
+          \Hat\sigma^2 = (1/N) \sum (x_i - \mu)^2
+
+ -- Function: double gsl_stats_sd_with_fixed_mean (const double DATA[],
+          size_t STRIDE, size_t N, double MEAN)
+     This function calculates the standard deviation of DATA for a
+     fixed population mean MEAN.  The result is the square root of the
+     corresponding variance function.
+
+
+File: gsl-ref.info,  Node: Absolute deviation,  Next: Higher moments (skewness and kurtosis),  Prev: Mean and standard deviation and variance,  Up: Statistics
+
+20.2 Absolute deviation
+=======================
+
+ -- Function: double gsl_stats_absdev (const double DATA[], size_t
+          STRIDE, size_t N)
+     This function computes the absolute deviation from the mean of
+     DATA, a dataset of length N with stride STRIDE.  The absolute
+     deviation from the mean is defined as,
+
+          absdev  = (1/N) \sum |x_i - \Hat\mu|
+
+     where x_i are the elements of the dataset DATA.  The absolute
+     deviation from the mean provides a more robust measure of the
+     width of a distribution than the variance.  This function computes
+     the mean of DATA via a call to `gsl_stats_mean'.
+
+ -- Function: double gsl_stats_absdev_m (const double DATA[], size_t
+          STRIDE, size_t N, double MEAN)
+     This function computes the absolute deviation of the dataset DATA
+     relative to the given value of MEAN,
+
+          absdev  = (1/N) \sum |x_i - mean|
+
+     This function is useful if you have already computed the mean of
+     DATA (and want to avoid recomputing it), or wish to calculate the
+     absolute deviation relative to another value (such as zero, or the
+     median).
+
+
+File: gsl-ref.info,  Node: Higher moments (skewness and kurtosis),  Next: Autocorrelation,  Prev: Absolute deviation,  Up: Statistics
+
+20.3 Higher moments (skewness and kurtosis)
+===========================================
+
+ -- Function: double gsl_stats_skew (const double DATA[], size_t
+          STRIDE, size_t N)
+     This function computes the skewness of DATA, a dataset of length N
+     with stride STRIDE.  The skewness is defined as,
+
+          skew = (1/N) \sum ((x_i - \Hat\mu)/\Hat\sigma)^3
+
+     where x_i are the elements of the dataset DATA.  The skewness
+     measures the asymmetry of the tails of a distribution.
+
+     The function computes the mean and estimated standard deviation of
+     DATA via calls to `gsl_stats_mean' and `gsl_stats_sd'.
+
+ -- Function: double gsl_stats_skew_m_sd (const double DATA[], size_t
+          STRIDE, size_t N, double MEAN, double SD)
+     This function computes the skewness of the dataset DATA using the
+     given values of the mean MEAN and standard deviation SD,
+
+          skew = (1/N) \sum ((x_i - mean)/sd)^3
+
+     These functions are useful if you have already computed the mean
+     and standard deviation of DATA and want to avoid recomputing them.
+
+ -- Function: double gsl_stats_kurtosis (const double DATA[], size_t
+          STRIDE, size_t N)
+     This function computes the kurtosis of DATA, a dataset of length N
+     with stride STRIDE.  The kurtosis is defined as,
+
+          kurtosis = ((1/N) \sum ((x_i - \Hat\mu)/\Hat\sigma)^4)  - 3
+
+     The kurtosis measures how sharply peaked a distribution is,
+     relative to its width.  The kurtosis is normalized to zero for a
+     gaussian distribution.
+
+ -- Function: double gsl_stats_kurtosis_m_sd (const double DATA[],
+          size_t STRIDE, size_t N, double MEAN, double SD)
+     This function computes the kurtosis of the dataset DATA using the
+     given values of the mean MEAN and standard deviation SD,
+
+          kurtosis = ((1/N) \sum ((x_i - mean)/sd)^4) - 3
+
+     This function is useful if you have already computed the mean and
+     standard deviation of DATA and want to avoid recomputing them.
+
+
+File: gsl-ref.info,  Node: Autocorrelation,  Next: Covariance,  Prev: Higher moments (skewness and kurtosis),  Up: Statistics
+
+20.4 Autocorrelation
+====================
+
+ -- Function: double gsl_stats_lag1_autocorrelation (const double
+          DATA[], const size_t STRIDE, const size_t N)
+     This function computes the lag-1 autocorrelation of the dataset
+     DATA.
+
+          a_1 = {\sum_{i = 1}^{n} (x_{i} - \Hat\mu) (x_{i-1} - \Hat\mu)
+                 \over
+                 \sum_{i = 1}^{n} (x_{i} - \Hat\mu) (x_{i} - \Hat\mu)}
+
+ -- Function: double gsl_stats_lag1_autocorrelation_m (const double
+          DATA[], const size_t STRIDE, const size_t N, const double
+          MEAN)
+     This function computes the lag-1 autocorrelation of the dataset
+     DATA using the given value of the mean MEAN.
+
+
+
+File: gsl-ref.info,  Node: Covariance,  Next: Correlation,  Prev: Autocorrelation,  Up: Statistics
+
+20.5 Covariance
+===============
+
+ -- Function: double gsl_stats_covariance (const double DATA1[], const
+          size_t STRIDE1, const double DATA2[], const size_t STRIDE2,
+          const size_t N)
+     This function computes the covariance of the datasets DATA1 and
+     DATA2 which must both be of the same length N.
+
+          covar = (1/(n - 1)) \sum_{i = 1}^{n} (x_i - \Hat x) (y_i - \Hat y)
+
+ -- Function: double gsl_stats_covariance_m (const double DATA1[],
+          const size_t STRIDE1, const double DATA2[], const size_t
+          STRIDE2, const size_t N, const double MEAN1, const double
+          MEAN2)
+     This function computes the covariance of the datasets DATA1 and
+     DATA2 using the given values of the means, MEAN1 and MEAN2.  This
+     is useful if you have already computed the means of DATA1 and
+     DATA2 and want to avoid recomputing them.
+
+
+File: gsl-ref.info,  Node: Correlation,  Next: Weighted Samples,  Prev: Covariance,  Up: Statistics
+
+20.6 Correlation
+================
+
+ -- Function: double gsl_stats_correlation (const double DATA1[], const
+          size_t STRIDE1, const double DATA2[], const size_t STRIDE2,
+          const size_t N)
+     This function efficiently computes the Pearson correlation
+     coefficient between the datasets DATA1 and DATA2 which must both
+     be of the same length N.
+          r = cov(x, y) / (\Hat\sigma_x \Hat\sigma_y)
+            = {1/(n-1) \sum (x_i - \Hat x) (y_i - \Hat y)
+               \over
+               \sqrt{1/(n-1) \sum (x_i - \Hat x)^2} \sqrt{1/(n-1) \sum (y_i - \Hat y)^2}
+              }
+
+
+File: gsl-ref.info,  Node: Weighted Samples,  Next: Maximum and Minimum values,  Prev: Correlation,  Up: Statistics
+
+20.7 Weighted Samples
+=====================
+
+The functions described in this section allow the computation of
+statistics for weighted samples.  The functions accept an array of
+samples, x_i, with associated weights, w_i.  Each sample x_i is
+considered as having been drawn from a Gaussian distribution with
+variance \sigma_i^2.  The sample weight w_i is defined as the
+reciprocal of this variance, w_i = 1/\sigma_i^2.  Setting a weight to
+zero corresponds to removing a sample from a dataset.
+
+ -- Function: double gsl_stats_wmean (const double W[], size_t WSTRIDE,
+          const double DATA[], size_t STRIDE, size_t N)
+     This function returns the weighted mean of the dataset DATA with
+     stride STRIDE and length N, using the set of weights W with stride
+     WSTRIDE and length N.  The weighted mean is defined as,
+
+          \Hat\mu = (\sum w_i x_i) / (\sum w_i)
+
+ -- Function: double gsl_stats_wvariance (const double W[], size_t
+          WSTRIDE, const double DATA[], size_t STRIDE, size_t N)
+     This function returns the estimated variance of the dataset DATA
+     with stride STRIDE and length N, using the set of weights W with
+     stride WSTRIDE and length N.  The estimated variance of a weighted
+     dataset is defined as,
+
+          \Hat\sigma^2 = ((\sum w_i)/((\sum w_i)^2 - \sum (w_i^2)))
+                          \sum w_i (x_i - \Hat\mu)^2
+
+     Note that this expression reduces to an unweighted variance with
+     the familiar 1/(N-1) factor when there are N equal non-zero
+     weights.
+
+ -- Function: double gsl_stats_wvariance_m (const double W[], size_t
+          WSTRIDE, const double DATA[], size_t STRIDE, size_t N, double
+          WMEAN)
+     This function returns the estimated variance of the weighted
+     dataset DATA using the given weighted mean WMEAN.
+
+ -- Function: double gsl_stats_wsd (const double W[], size_t WSTRIDE,
+          const double DATA[], size_t STRIDE, size_t N)
+     The standard deviation is defined as the square root of the
+     variance.  This function returns the square root of the
+     corresponding variance function `gsl_stats_wvariance' above.
+
+ -- Function: double gsl_stats_wsd_m (const double W[], size_t WSTRIDE,
+          const double DATA[], size_t STRIDE, size_t N, double WMEAN)
+     This function returns the square root of the corresponding variance
+     function `gsl_stats_wvariance_m' above.
+
+ -- Function: double gsl_stats_wvariance_with_fixed_mean (const double
+          W[], size_t WSTRIDE, const double DATA[], size_t STRIDE,
+          size_t N, const double MEAN)
+     This function computes an unbiased estimate of the variance of
+     weighted dataset DATA when the population mean MEAN of the
+     underlying distribution is known _a priori_.  In this case the
+     estimator for the variance replaces the sample mean \Hat\mu by the
+     known population mean \mu,
+
+          \Hat\sigma^2 = (\sum w_i (x_i - \mu)^2) / (\sum w_i)
+
+ -- Function: double gsl_stats_wsd_with_fixed_mean (const double W[],
+          size_t WSTRIDE, const double DATA[], size_t STRIDE, size_t N,
+          const double MEAN)
+     The standard deviation is defined as the square root of the
+     variance.  This function returns the square root of the
+     corresponding variance function above.
+
+ -- Function: double gsl_stats_wabsdev (const double W[], size_t
+          WSTRIDE, const double DATA[], size_t STRIDE, size_t N)
+     This function computes the weighted absolute deviation from the
+     weighted mean of DATA.  The absolute deviation from the mean is
+     defined as,
+
+          absdev = (\sum w_i |x_i - \Hat\mu|) / (\sum w_i)
+
+ -- Function: double gsl_stats_wabsdev_m (const double W[], size_t
+          WSTRIDE, const double DATA[], size_t STRIDE, size_t N, double
+          WMEAN)
+     This function computes the absolute deviation of the weighted
+     dataset DATA about the given weighted mean WMEAN.
+
+ -- Function: double gsl_stats_wskew (const double W[], size_t WSTRIDE,
+          const double DATA[], size_t STRIDE, size_t N)
+     This function computes the weighted skewness of the dataset DATA.
+
+          skew = (\sum w_i ((x_i - xbar)/\sigma)^3) / (\sum w_i)
+
+ -- Function: double gsl_stats_wskew_m_sd (const double W[], size_t
+          WSTRIDE, const double DATA[], size_t STRIDE, size_t N, double
+          WMEAN, double WSD)
+     This function computes the weighted skewness of the dataset DATA
+     using the given values of the weighted mean and weighted standard
+     deviation, WMEAN and WSD.
+
+ -- Function: double gsl_stats_wkurtosis (const double W[], size_t
+          WSTRIDE, const double DATA[], size_t STRIDE, size_t N)
+     This function computes the weighted kurtosis of the dataset DATA.
+
+          kurtosis = ((\sum w_i ((x_i - xbar)/sigma)^4) / (\sum w_i)) - 3
+
+ -- Function: double gsl_stats_wkurtosis_m_sd (const double W[], size_t
+          WSTRIDE, const double DATA[], size_t STRIDE, size_t N, double
+          WMEAN, double WSD)
+     This function computes the weighted kurtosis of the dataset DATA
+     using the given values of the weighted mean and weighted standard
+     deviation, WMEAN and WSD.
+
+
 File: gsl-ref.info,  Node: Maximum and Minimum values,  Next: Median and Percentiles,  Prev: Weighted Samples,  Up: Statistics
 
-20.7 Maximum and Minimum values
+20.8 Maximum and Minimum values
 ===============================
 
 The following functions find the maximum and minimum values of a
@@ -82,7 +625,7 @@ array is returned.
 
 File: gsl-ref.info,  Node: Median and Percentiles,  Next: Example statistical programs,  Prev: Maximum and Minimum values,  Up: Statistics
 
-20.8 Median and Percentiles
+20.9 Median and Percentiles
 ===========================
 
 The median and percentile functions described in this section operate on
@@ -132,8 +675,8 @@ of 0 to 1, instead of percentiles (which use a scale of 0 to 100).
 
 File: gsl-ref.info,  Node: Example statistical programs,  Next: Statistics References and Further Reading,  Prev: Median and Percentiles,  Up: Statistics
 
-20.9 Examples
-=============
+20.10 Examples
+==============
 
 Here is a basic example of how to use the statistical functions:
 
@@ -219,7 +762,7 @@ Here is a basic example of how to use the statistical functions:
 
 File: gsl-ref.info,  Node: Statistics References and Further Reading,  Prev: Example statistical programs,  Up: Statistics
 
-20.10 References and Further Reading
+20.11 References and Further Reading
 ====================================
 
 The standard reference for almost any topic in statistics is the
@@ -1183,7 +1726,7 @@ histograms to a file as binary data or formatted text.
           gsl_histogram2d * H)
      This function reads formatted data from the stream STREAM into the
      histogram H.  The data is assumed to be in the five-column format
-     used by `gsl_histogram_fprintf'.  The histogram H must be
+     used by `gsl_histogram2d_fprintf'.  The histogram H must be
      preallocated with the correct lengths since the function uses the
      sizes of H to determine how many numbers to read.  The function
      returns 0 for success and `GSL_EFAILED' if there was a problem
@@ -2573,7 +3116,7 @@ minimum.
      $ ./siman_test | awk '!/^#/ {print $1, $4}'
       | graph -y 1.34 1.4 -W0 -X generation -Y position
       | plot -Tps > siman-test.eps
-     $ ./siman_test | awk '!/^#/ {print $1, $4}'
+     $ ./siman_test | awk '!/^#/ {print $1, $5}'
       | graph -y -0.88 -0.83 -W0 -X generation -Y energy
       | plot -Tps > siman-energy.eps
 
@@ -3104,11 +3647,11 @@ be passed in through the PARAMS argument using a pointer to a struct.
 controller to maintain an absolute accuracy of 10^{-6} in the function
 values Y.
 
-To obtain the values at regular intervals, rather than the variable
-spacings chosen by the control function, the main loop can be modified
-to advance the solution from one point to the next.  For example, the
-following main loop prints the solution at the fixed points t = 0, 1,
-2, \dots, 100,
+To obtain the values at user-specified positions, rather than those
+chosen automatically by the control function, the main loop can be
+modified to advance the solution from one chosen point to the next.
+For example, the following main loop prints the solution at the points
+t_i = 0, 1, 2, \dots, 100,
 
        for (i = 1; i <= 100; i++)
          {
@@ -3125,8 +3668,12 @@ following main loop prints the solution at the fixed points t = 0, 1,
            printf ("%.5e %.5e %.5e\n", t, y[0], y[1]);
          }
 
-It is also possible to work with a non-adaptive integrator, using only
-the stepping function itself.  The following program uses the `rk4'
+Note that arbitrary values of t_i can be used for each stage of the
+integration.  The equally spaced points in this example are just used
+as an illustration.
+
+   It is also possible to work with a non-adaptive integrator, using
+only the stepping function itself.  The following program uses the `rk4'
 fourth-order Runge-Kutta stepping function with a fixed stepsize of
 0.01,
 
@@ -3257,8 +3804,9 @@ The interpolation function for a given dataset is stored in a
      data (XA,YA) where XA and YA are arrays of size SIZE.  The
      interpolation object (`gsl_interp') does not save the data arrays
      XA and YA and only stores the static state computed from the data.
-     The XA data array is always assumed to be strictly ordered; the
-     behavior for other arrangements is not defined.
+     The XA data array is always assumed to be strictly ordered, with
+     increasing x values; the behavior for other arrangements is not
+     defined.
 
  -- Function: void gsl_interp_free (gsl_interp * INTERP)
      This function frees the interpolation object INTERP.
@@ -3341,7 +3889,8 @@ immediately.
           X, size_t INDEX_LO, size_t INDEX_HI)
      This function returns the index i of the array X_ARRAY such that
      `x_array[i] <= x < x_array[i+1]'.  The index is searched for in
-     the range [INDEX_LO,INDEX_HI].
+     the range [INDEX_LO,INDEX_HI].  An inline version of this function
+     is used when `HAVE_INLINE' is defined.
 
  -- Function: gsl_interp_accel * gsl_interp_accel_alloc (void)
      This function returns a pointer to an accelerator object, which is
@@ -3354,7 +3903,9 @@ immediately.
      This function performs a lookup action on the data array X_ARRAY
      of size SIZE, using the given accelerator A.  This is how lookups
      are performed during evaluation of an interpolation.  The function
-     returns an index i such that `x_array[i] <= x < x_array[i+1]'.
+     returns an index i such that `x_array[i] <= x < x_array[i+1]'.  An
+     inline version of this function is used when `HAVE_INLINE' is
+     defined.
 
  -- Function: void gsl_interp_accel_free (gsl_interp_accel* ACC)
      This function frees the accelerator object ACC.
@@ -6929,22 +7480,23 @@ following data types:
     `void * params'
           a pointer to the parameters of the function.
 
-The following example function defines a simple paraboloid with two
-parameters,
+The following example function defines a simple two-dimensional
+paraboloid with five parameters,
 
-     /* Paraboloid centered on (dp[0],dp[1]) */
+     /* Paraboloid centered on (p[0],p[1]), with
+        scale factors (p[2],p[3]) and minimum p[4] */
 
      double
      my_f (const gsl_vector *v, void *params)
      {
        double x, y;
-       double *dp = (double *)params;
+       double *p = (double *)params;
 
        x = gsl_vector_get(v, 0);
        y = gsl_vector_get(v, 1);
 
-       return 10.0 * (x - dp[0]) * (x - dp[0]) +
-                20.0 * (y - dp[1]) * (y - dp[1]) + 30.0;
+       return p[2] * (x - p[0]) * (x - p[0]) +
+                p[3] * (y - p[1]) * (y - p[1]) + p[4];
      }
 
      /* The gradient of f, df = (df/dx, df/dy). */
@@ -6953,13 +7505,13 @@ parameters,
             gsl_vector *df)
      {
        double x, y;
-       double *dp = (double *)params;
+       double *p = (double *)params;
 
        x = gsl_vector_get(v, 0);
        y = gsl_vector_get(v, 1);
 
-       gsl_vector_set(df, 0, 20.0 * (x - dp[0]));
-       gsl_vector_set(df, 1, 40.0 * (y - dp[1]));
+       gsl_vector_set(df, 0, 2.0 * p[2] * (x - p[0]));
+       gsl_vector_set(df, 1, 2.0 * p[3] * (y - p[1]));
      }
 
      /* Compute both f and df together. */
@@ -6975,546 +7527,13 @@ The function can be initialized using the following code,
 
      gsl_multimin_function_fdf my_func;
 
-     double p[2] = { 1.0, 2.0 }; /* center at (1,2) */
+     /* Paraboloid center at (1,2), scale factors (10, 20),
+        minimum value 30 */
+     double p[5] = { 1.0, 2.0, 10.0, 20.0, 30.0 };
 
+     my_func.n = 2;  /* number of function components */
      my_func.f = &my_f;
      my_func.df = &my_df;
      my_func.fdf = &my_fdf;
-     my_func.n = 2;
      my_func.params = (void *)p;
-
-
-File: gsl-ref.info,  Node: Multimin Iteration,  Next: Multimin Stopping Criteria,  Prev: Providing a function to minimize,  Up: Multidimensional Minimization
-
-35.5 Iteration
-==============
-
-The following function drives the iteration of each algorithm.  The
-function performs one iteration to update the state of the minimizer.
-The same function works for all minimizers so that different methods can
-be substituted at runtime without modifications to the code.
-
- -- Function: int gsl_multimin_fdfminimizer_iterate
-          (gsl_multimin_fdfminimizer * S)
- -- Function: int gsl_multimin_fminimizer_iterate
-          (gsl_multimin_fminimizer * S)
-     These functions perform a single iteration of the minimizer S.  If
-     the iteration encounters an unexpected problem then an error code
-     will be returned.
-
-The minimizer maintains a current best estimate of the minimum at all
-times.  This information can be accessed with the following auxiliary
-functions,
-
- -- Function: gsl_vector * gsl_multimin_fdfminimizer_x (const
-          gsl_multimin_fdfminimizer * S)
- -- Function: gsl_vector * gsl_multimin_fminimizer_x (const
-          gsl_multimin_fminimizer * S)
- -- Function: double gsl_multimin_fdfminimizer_minimum (const
-          gsl_multimin_fdfminimizer * S)
- -- Function: double gsl_multimin_fminimizer_minimum (const
-          gsl_multimin_fminimizer * S)
- -- Function: gsl_vector * gsl_multimin_fdfminimizer_gradient (const
-          gsl_multimin_fdfminimizer * S)
- -- Function: double gsl_multimin_fminimizer_size (const
-          gsl_multimin_fminimizer * S)
-     These functions return the current best estimate of the location
-     of the minimum, the value of the function at that point, its
-     gradient, and minimizer specific characteristic size for the
-     minimizer S.
-
- -- Function: int gsl_multimin_fdfminimizer_restart
-          (gsl_multimin_fdfminimizer * S)
-     This function resets the minimizer S to use the current point as a
-     new starting point.
-
-
-File: gsl-ref.info,  Node: Multimin Stopping Criteria,  Next: Multimin Algorithms,  Prev: Multimin Iteration,  Up: Multidimensional Minimization
-
-35.6 Stopping Criteria
-======================
-
-A minimization procedure should stop when one of the following
-conditions is true:
-
-   * A minimum has been found to within the user-specified precision.
-
-   * A user-specified maximum number of iterations has been reached.
-
-   * An error has occurred.
-
-The handling of these conditions is under user control.  The functions
-below allow the user to test the precision of the current result.
-
- -- Function: int gsl_multimin_test_gradient (const gsl_vector * G,
-          double EPSABS)
-     This function tests the norm of the gradient G against the
-     absolute tolerance EPSABS. The gradient of a multidimensional
-     function goes to zero at a minimum. The test returns `GSL_SUCCESS'
-     if the following condition is achieved,
-
-          |g| < epsabs
-
-     and returns `GSL_CONTINUE' otherwise.  A suitable choice of EPSABS
-     can be made from the desired accuracy in the function for small
-     variations in x.  The relationship between these quantities is
-     given by \delta f = g \delta x.
-
- -- Function: int gsl_multimin_test_size (const double SIZE, double
-          EPSABS)
-     This function tests the minimizer specific characteristic size (if
-     applicable to the used minimizer) against absolute tolerance
-     EPSABS.  The test returns `GSL_SUCCESS' if the size is smaller
-     than tolerance, otherwise `GSL_CONTINUE' is returned.
-
-
-File: gsl-ref.info,  Node: Multimin Algorithms,  Next: Multimin Examples,  Prev: Multimin Stopping Criteria,  Up: Multidimensional Minimization
-
-35.7 Algorithms
-===============
-
-There are several minimization methods available. The best choice of
-algorithm depends on the problem.  All of the algorithms use the value
-of the function and its gradient at each evaluation point, except for
-the Simplex algorithm which uses function values only.
-
- -- Minimizer: gsl_multimin_fdfminimizer_conjugate_fr
-     This is the Fletcher-Reeves conjugate gradient algorithm. The
-     conjugate gradient algorithm proceeds as a succession of line
-     minimizations. The sequence of search directions is used to build
-     up an approximation to the curvature of the function in the
-     neighborhood of the minimum.
-
-     An initial search direction P is chosen using the gradient, and
-     line minimization is carried out in that direction.  The accuracy
-     of the line minimization is specified by the parameter TOL.  The
-     minimum along this line occurs when the function gradient G and
-     the search direction P are orthogonal.  The line minimization
-     terminates when dot(p,g) < tol |p| |g|.  The search direction is
-     updated  using the Fletcher-Reeves formula p' = g' - \beta g where
-     \beta=-|g'|^2/|g|^2, and the line minimization is then repeated
-     for the new search direction.
-
- -- Minimizer: gsl_multimin_fdfminimizer_conjugate_pr
-     This is the Polak-Ribiere conjugate gradient algorithm.  It is
-     similar to the Fletcher-Reeves method, differing only in the
-     choice of the coefficient \beta. Both methods work well when the
-     evaluation point is close enough to the minimum of the objective
-     function that it is well approximated by a quadratic hypersurface.
-
- -- Minimizer: gsl_multimin_fdfminimizer_vector_bfgs2
- -- Minimizer: gsl_multimin_fdfminimizer_vector_bfgs
-     These methods use the vector Broyden-Fletcher-Goldfarb-Shanno
-     (BFGS) algorithm.  This is a quasi-Newton method which builds up
-     an approximation to the second derivatives of the function f using
-     the difference between successive gradient vectors.  By combining
-     the first and second derivatives the algorithm is able to take
-     Newton-type steps towards the function minimum, assuming quadratic
-     behavior in that region.
-
-     The `bfgs2' version of this minimizer is the most efficient
-     version available, and is a faithful implementation of the line
-     minimization scheme described in Fletcher's `Practical Methods of
-     Optimization', Algorithms 2.6.2 and 2.6.4.  It supercedes the
-     original `bfgs' routine and requires substantially fewer function
-     and gradient evaluations.  The user-supplied tolerance TOL
-     corresponds to the parameter \sigma used by Fletcher.  A value of
-     0.1 is recommended for typical use (larger values correspond to
-     less accurate line searches).
-
-
- -- Minimizer: gsl_multimin_fdfminimizer_steepest_descent
-     The steepest descent algorithm follows the downhill gradient of the
-     function at each step. When a downhill step is successful the
-     step-size is increased by a factor of two.  If the downhill step
-     leads to a higher function value then the algorithm backtracks and
-     the step size is decreased using the parameter TOL.  A suitable
-     value of TOL for most applications is 0.1.  The steepest descent
-     method is inefficient and is included only for demonstration
-     purposes.
-
- -- Minimizer: gsl_multimin_fminimizer_nmsimplex
-     This is the Simplex algorithm of Nelder and Mead. It constructs n
-     vectors p_i from the starting vector X and the vector STEP_SIZE as
-     follows:
-
-          p_0 = (x_0, x_1, ... , x_n)
-          p_1 = (x_0 + step_size_0, x_1, ... , x_n)
-          p_2 = (x_0, x_1 + step_size_1, ... , x_n)
-          ... = ...
-          p_n = (x_0, x_1, ... , x_n+step_size_n)
-
-     These vectors form the n+1 vertices of a simplex in n dimensions.
-     On each iteration the algorithm tries to improve the parameter
-     vector p_i corresponding to the highest function value by simple
-     geometrical transformations.  These are reflection, reflection
-     followed by expansion, contraction and multiple contraction. Using
-     these transformations the simplex moves through the parameter
-     space towards the minimum, where it contracts itself.
-
-     After each iteration, the best vertex is returned.  Note, that due
-     to the nature of the algorithm not every step improves the current
-     best parameter vector.  Usually several iterations are required.
-
-     The routine calculates the minimizer specific characteristic size
-     as the average distance from the geometrical center of the simplex
-     to all its vertices.  This size can be used as a stopping
-     criteria, as the simplex contracts itself near the minimum. The
-     size is returned by the function `gsl_multimin_fminimizer_size'.
-
-
-File: gsl-ref.info,  Node: Multimin Examples,  Next: Multimin References and Further Reading,  Prev: Multimin Algorithms,  Up: Multidimensional Minimization
-
-35.8 Examples
-=============
-
-This example program finds the minimum of the paraboloid function
-defined earlier.  The location of the minimum is offset from the origin
-in x and y, and the function value at the minimum is non-zero. The main
-program is given below, it requires the example function given earlier
-in this chapter.
-
-     int
-     main (void)
-     {
-       size_t iter = 0;
-       int status;
-
-       const gsl_multimin_fdfminimizer_type *T;
-       gsl_multimin_fdfminimizer *s;
-
-       /* Position of the minimum (1,2). */
-       double par[2] = { 1.0, 2.0 };
-
-       gsl_vector *x;
-       gsl_multimin_function_fdf my_func;
-
-       my_func.f = &my_f;
-       my_func.df = &my_df;
-       my_func.fdf = &my_fdf;
-       my_func.n = 2;
-       my_func.params = &par;
-
-       /* Starting point, x = (5,7) */
-       x = gsl_vector_alloc (2);
-       gsl_vector_set (x, 0, 5.0);
-       gsl_vector_set (x, 1, 7.0);
-
-       T = gsl_multimin_fdfminimizer_conjugate_fr;
-       s = gsl_multimin_fdfminimizer_alloc (T, 2);
-
-       gsl_multimin_fdfminimizer_set (s, &my_func, x, 0.01, 1e-4);
-
-       do
-         {
-           iter++;
-           status = gsl_multimin_fdfminimizer_iterate (s);
-
-           if (status)
-             break;
-
-           status = gsl_multimin_test_gradient (s->gradient, 1e-3);
-
-           if (status == GSL_SUCCESS)
-             printf ("Minimum found at:\n");
-
-           printf ("%5d %.5f %.5f %10.5f\n", iter,
-                   gsl_vector_get (s->x, 0),
-                   gsl_vector_get (s->x, 1),
-                   s->f);
-
-         }
-       while (status == GSL_CONTINUE && iter < 100);
-
-       gsl_multimin_fdfminimizer_free (s);
-       gsl_vector_free (x);
-
-       return 0;
-     }
-
-The initial step-size is chosen as 0.01, a conservative estimate in this
-case, and the line minimization parameter is set at 0.0001.  The program
-terminates when the norm of the gradient has been reduced below 0.001.
-The output of the program is shown below,
-
-              x       y         f
-         1 4.99629 6.99072  687.84780
-         2 4.98886 6.97215  683.55456
-         3 4.97400 6.93501  675.01278
-         4 4.94429 6.86073  658.10798
-         5 4.88487 6.71217  625.01340
-         6 4.76602 6.41506  561.68440
-         7 4.52833 5.82083  446.46694
-         8 4.05295 4.63238  261.79422
-         9 3.10219 2.25548   75.49762
-        10 2.85185 1.62963   67.03704
-        11 2.19088 1.76182   45.31640
-        12 0.86892 2.02622   30.18555
-     Minimum found at:
-        13 1.00000 2.00000   30.00000
-
-Note that the algorithm gradually increases the step size as it
-successfully moves downhill, as can be seen by plotting the successive
-points.
-
-The conjugate gradient algorithm finds the minimum on its second
-direction because the function is purely quadratic. Additional
-iterations would be needed for a more complicated function.
-
-   Here is another example using the Nelder-Mead Simplex algorithm to
-minimize the same example object function, as above.
-
-     int
-     main(void)
-     {
-       size_t np = 2;
-       double par[2] = {1.0, 2.0};
-
-       const gsl_multimin_fminimizer_type *T =
-         gsl_multimin_fminimizer_nmsimplex;
-       gsl_multimin_fminimizer *s = NULL;
-       gsl_vector *ss, *x;
-       gsl_multimin_function minex_func;
-
-       size_t iter = 0, i;
-       int status;
-       double size;
-
-       /* Initial vertex size vector */
-       ss = gsl_vector_alloc (np);
-
-       /* Set all step sizes to 1 */
-       gsl_vector_set_all (ss, 1.0);
-
-       /* Starting point */
-       x = gsl_vector_alloc (np);
-
-       gsl_vector_set (x, 0, 5.0);
-       gsl_vector_set (x, 1, 7.0);
-
-       /* Initialize method and iterate */
-       minex_func.f = &my_f;
-       minex_func.n = np;
-       minex_func.params = (void *)&par;
-
-       s = gsl_multimin_fminimizer_alloc (T, np);
-       gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
-
-       do
-         {
-           iter++;
-           status = gsl_multimin_fminimizer_iterate(s);
-
-           if (status)
-             break;
-
-           size = gsl_multimin_fminimizer_size (s);
-           status = gsl_multimin_test_size (size, 1e-2);
-
-           if (status == GSL_SUCCESS)
-             {
-               printf ("converged to minimum at\n");
-             }
-
-           printf ("%5d ", iter);
-           for (i = 0; i < np; i++)
-             {
-               printf ("%10.3e ", gsl_vector_get (s->x, i));
-             }
-           printf ("f() = %7.3f size = %.3f\n", s->fval, size);
-         }
-       while (status == GSL_CONTINUE && iter < 100);
-
-       gsl_vector_free(x);
-       gsl_vector_free(ss);
-       gsl_multimin_fminimizer_free (s);
-
-       return status;
-     }
-
-The minimum search stops when the Simplex size drops to 0.01. The
-output is shown below.
-
-         1  6.500e+00  5.000e+00 f() = 512.500 size = 1.082
-         2  5.250e+00  4.000e+00 f() = 290.625 size = 1.372
-         3  5.250e+00  4.000e+00 f() = 290.625 size = 1.372
-         4  5.500e+00  1.000e+00 f() = 252.500 size = 1.372
-         5  2.625e+00  3.500e+00 f() = 101.406 size = 1.823
-         6  3.469e+00  1.375e+00 f() = 98.760  size = 1.526
-         7  1.820e+00  3.156e+00 f() = 63.467  size = 1.105
-         8  1.820e+00  3.156e+00 f() = 63.467  size = 1.105
-         9  1.016e+00  2.812e+00 f() = 43.206  size = 1.105
-        10  2.041e+00  2.008e+00 f() = 40.838  size = 0.645
-        11  1.236e+00  1.664e+00 f() = 32.816  size = 0.645
-        12  1.236e+00  1.664e+00 f() = 32.816  size = 0.447
-        13  5.225e-01  1.980e+00 f() = 32.288  size = 0.447
-        14  1.103e+00  2.073e+00 f() = 30.214  size = 0.345
-        15  1.103e+00  2.073e+00 f() = 30.214  size = 0.264
-        16  1.103e+00  2.073e+00 f() = 30.214  size = 0.160
-        17  9.864e-01  1.934e+00 f() = 30.090  size = 0.132
-        18  9.190e-01  1.987e+00 f() = 30.069  size = 0.092
-        19  1.028e+00  2.017e+00 f() = 30.013  size = 0.056
-        20  1.028e+00  2.017e+00 f() = 30.013  size = 0.046
-        21  1.028e+00  2.017e+00 f() = 30.013  size = 0.033
-        22  9.874e-01  1.985e+00 f() = 30.006  size = 0.028
-        23  9.846e-01  1.995e+00 f() = 30.003  size = 0.023
-        24  1.007e+00  2.003e+00 f() = 30.001  size = 0.012
-     converged to minimum at
-        25  1.007e+00  2.003e+00 f() = 30.001  size = 0.010
-
-The simplex size first increases, while the simplex moves towards the
-minimum. After a while the size begins to decrease as the simplex
-contracts around the minimum.
-
-
-File: gsl-ref.info,  Node: Multimin References and Further Reading,  Prev: Multimin Examples,  Up: Multidimensional Minimization
-
-35.9 References and Further Reading
-===================================
-
-The conjugate gradient and BFGS methods are described in detail in the
-following book,
-
-     R. Fletcher, `Practical Methods of Optimization (Second Edition)'
-     Wiley (1987), ISBN 0471915475.
-
-   A brief description of multidimensional minimization algorithms and
-more recent references can be found in,
-
-     C.W. Ueberhuber, `Numerical Computation (Volume 2)', Chapter 14,
-     Section 4.4 "Minimization Methods", p. 325-335, Springer (1997),
-     ISBN 3-540-62057-5.
-
-The simplex algorithm is described in the following paper,
-
-     J.A. Nelder and R. Mead, `A simplex method for function
-     minimization', Computer Journal vol. 7 (1965), 308-315.
-
-
-
-File: gsl-ref.info,  Node: Least-Squares Fitting,  Next: Nonlinear Least-Squares Fitting,  Prev: Multidimensional Minimization,  Up: Top
-
-36 Least-Squares Fitting
-************************
-
-This chapter describes routines for performing least squares fits to
-experimental data using linear combinations of functions.  The data may
-be weighted or unweighted, i.e. with known or unknown errors.  For
-weighted data the functions compute the best fit parameters and their
-associated covariance matrix.  For unweighted data the covariance
-matrix is estimated from the scatter of the points, giving a
-variance-covariance matrix.
-
-   The functions are divided into separate versions for simple one- or
-two-parameter regression and multiple-parameter fits.  The functions
-are declared in the header file `gsl_fit.h'.
-
-* Menu:
-
-* Fitting Overview::
-* Linear regression::
-* Linear fitting without a constant term::
-* Multi-parameter fitting::
-* Fitting Examples::
-* Fitting References and Further Reading::
-
-
-File: gsl-ref.info,  Node: Fitting Overview,  Next: Linear regression,  Up: Least-Squares Fitting
-
-36.1 Overview
-=============
-
-Least-squares fits are found by minimizing \chi^2 (chi-squared), the
-weighted sum of squared residuals over n experimental datapoints (x_i,
-y_i) for the model Y(c,x),
-
-     \chi^2 = \sum_i w_i (y_i - Y(c, x_i))^2
-
-The p parameters of the model are c = {c_0, c_1, ...}.  The weight
-factors w_i are given by w_i = 1/\sigma_i^2, where \sigma_i is the
-experimental error on the data-point y_i.  The errors are assumed to be
-gaussian and uncorrelated.  For unweighted data the chi-squared sum is
-computed without any weight factors.
-
-   The fitting routines return the best-fit parameters c and their p
-\times p covariance matrix.  The covariance matrix measures the
-statistical errors on the best-fit parameters resulting from the errors
-on the data, \sigma_i, and is defined as C_{ab} = <\delta c_a \delta
-c_b> where < > denotes an average over the gaussian error distributions
-of the underlying datapoints.
-
-   The covariance matrix is calculated by error propagation from the
-data errors \sigma_i.  The change in a fitted parameter \delta c_a
-caused by a small change in the data \delta y_i is given by
-
-     \delta c_a = \sum_i (dc_a/dy_i) \delta y_i
-
-allowing the covariance matrix to be written in terms of the errors on
-the data,
-
-     C_{ab} = \sum_{i,j} (dc_a/dy_i) (dc_b/dy_j) <\delta y_i \delta y_j>
-
-For uncorrelated data the fluctuations of the underlying datapoints
-satisfy <\delta y_i \delta y_j> = \sigma_i^2 \delta_{ij}, giving a
-corresponding parameter covariance matrix of
-
-     C_{ab} = \sum_i (1/w_i) (dc_a/dy_i) (dc_b/dy_i)
-
-When computing the covariance matrix for unweighted data, i.e. data
-with unknown errors, the weight factors w_i in this sum are replaced by
-the single estimate w = 1/\sigma^2, where \sigma^2 is the computed
-variance of the residuals about the best-fit model, \sigma^2 = \sum
-(y_i - Y(c,x_i))^2 / (n-p).  This is referred to as the
-"variance-covariance matrix".  
-
-   The standard deviations of the best-fit parameters are given by the
-square root of the corresponding diagonal elements of the covariance
-matrix, \sigma_{c_a} = \sqrt{C_{aa}}.
-
-
-File: gsl-ref.info,  Node: Linear regression,  Next: Linear fitting without a constant term,  Prev: Fitting Overview,  Up: Least-Squares Fitting
-
-36.2 Linear regression
-======================
-
-The functions described in this section can be used to perform
-least-squares fits to a straight line model, Y(c,x) = c_0 + c_1 x.
-
- -- Function: int gsl_fit_linear (const double * X, const size_t
-          XSTRIDE, const double * Y, const size_t YSTRIDE, size_t N,
-          double * C0, double * C1, double * COV00, double * COV01,
-          double * COV11, double * SUMSQ)
-     This function computes the best-fit linear regression coefficients
-     (C0,C1) of the model Y = c_0 + c_1 X for the dataset (X, Y), two
-     vectors of length N with strides XSTRIDE and YSTRIDE.  The errors
-     on Y are assumed unknown so the variance-covariance matrix for the
-     parameters (C0, C1) is estimated from the scatter of the points
-     around the best-fit line and returned via the parameters (COV00,
-     COV01, COV11).  The sum of squares of the residuals from the
-     best-fit line is returned in SUMSQ.
-
- -- Function: int gsl_fit_wlinear (const double * X, const size_t
-          XSTRIDE, const double * W, const size_t WSTRIDE, const double
-          * Y, const size_t YSTRIDE, size_t N, double * C0, double *
-          C1, double * COV00, double * COV01, double * COV11, double *
-          CHISQ)
-     This function computes the best-fit linear regression coefficients
-     (C0,C1) of the model Y = c_0 + c_1 X for the weighted dataset (X,
-     Y), two vectors of length N with strides XSTRIDE and YSTRIDE.  The
-     vector W, of length N and stride WSTRIDE, specifies the weight of
-     each datapoint. The weight is the reciprocal of the variance for
-     each datapoint in Y.
-
-     The covariance matrix for the parameters (C0, C1) is computed
-     using the weights and returned via the parameters (COV00, COV01,
-     COV11).  The weighted sum of squares of the residuals from the
-     best-fit line, \chi^2, is returned in CHISQ.
-
- -- Function: int gsl_fit_linear_est (double X, double C0, double C1,
-          double C00, double C01, double C11, double * Y, double *
-          Y_ERR)
-     This function uses the best-fit linear regression coefficients
-     C0,C1 and their covariance COV00,COV01,COV11 to compute the fitted
-     function Y and its standard deviation Y_ERR for the model Y = c_0
-     + c_1 X at the point X.
 

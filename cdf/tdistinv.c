@@ -1,10 +1,11 @@
 /* cdf/tdistinv.c
  *
+ * Copyright (C) 2007 Brian Gough
  * Copyright (C) 2002 Jason H. Stover.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
@@ -130,11 +131,15 @@ gsl_cdf_tdist_Pinv (const double P, const double nu)
       if (fabs (step) > 1e-10 * fabs (x))
         goto start;
     }
+    
+  end:
+    if (fabs(dP) > GSL_SQRT_DBL_EPSILON * P)
+      {
+        GSL_ERROR_VAL("inverse failed to converge", GSL_EFAILED, GSL_NAN);
+      }
+    
+    return x;
   }
-
-end:
-
-  return x;
 }
 
 double

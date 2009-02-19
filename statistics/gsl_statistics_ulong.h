@@ -1,10 +1,10 @@
 /* statistics/gsl_statistics_ulong.h
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000 Jim Davies, Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Jim Davies, Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -45,6 +45,7 @@ double gsl_stats_ulong_kurtosis (const unsigned long data[], const size_t stride
 double gsl_stats_ulong_lag1_autocorrelation (const unsigned long data[], const size_t stride, const size_t n);
 
 double gsl_stats_ulong_covariance (const unsigned long data1[], const size_t stride1,const unsigned long data2[], const size_t stride2, const size_t n);
+double gsl_stats_ulong_correlation (const unsigned long data1[], const size_t stride1,const unsigned long data2[], const size_t stride2, const size_t n);
 
 double gsl_stats_ulong_variance_m (const unsigned long data[], const size_t stride, const size_t n, const double mean);
 double gsl_stats_ulong_sd_m (const unsigned long data[], const size_t stride, const size_t n, const double mean);

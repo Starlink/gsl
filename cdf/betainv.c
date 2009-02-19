@@ -1,13 +1,13 @@
 /* cdf/betainv.c
  *
  * Copyright (C) 2004 Free Software Foundation, Inc.
- * Copyright (C) 2006 Brian Gough
+ * Copyright (C) 2006, 2007 Brian Gough
  * Written by Jason H. Stover.
  * Modified for GSL by Brian Gough
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
@@ -44,6 +44,28 @@
 #include <gsl/gsl_randist.h>
 
 #include "error.h"
+
+static double 
+bisect (double x, double P, double a, double b, double xtol, double Ptol)
+{
+  double x0 = 0, x1 = 1, Px;
+
+  while (fabs(x1 - x0) > xtol) {
+    Px = gsl_cdf_beta_P (x, a, b);
+    if (fabs(Px - P) < Ptol) {
+      /* return as soon as approximation is good enough, including on
+         the first iteration */
+      return x;  
+    } else if (Px < P) {
+      x0 = x;
+    } else if (Px > P) {
+      x1 = x;
+    }
+    x = 0.5 * (x0 + x1);
+  }
+  return x;
+}  
+
 
 double
 gsl_cdf_beta_Pinv (const double P, const double a, const double b)
@@ -107,6 +129,9 @@ gsl_cdf_beta_Pinv (const double P, const double a, const double b)
       x = mean;
     }
 
+  /* Do bisection to get closer */
+  x = bisect (x, P, a, b, 0.01, 0.01);
+
   {
     double lambda, dP, phi;
     unsigned int n = 0;
@@ -150,8 +175,13 @@ gsl_cdf_beta_Pinv (const double P, const double a, const double b)
     }
 
   end:
-    return x;
 
+    if (fabs(dP) > GSL_SQRT_DBL_EPSILON * P)
+      {
+        GSL_ERROR_VAL("inverse failed to converge", GSL_EFAILED, GSL_NAN);
+      }
+
+    return x;
   }
 }
 

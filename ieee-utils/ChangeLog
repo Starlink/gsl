@@ -1,3 +1,12 @@
+2007-06-21  Brian Gough  <bjg@network-theory.co.uk>
+
+	* fp.c: allow universal binaries by checking __ppc__ and __i386__
+	preprocessor definitions on Darwin
+
+2007-04-23  Brian Gough  <bjg@network-theory.co.uk>
+
+	* fp-gnux86.c (gsl_ieee_set_mode): added support for MXCSR register
+
 2005-02-11  Brian Gough  <bjg@network-theory.co.uk>
 
 	* fp-gnuc99.c (gsl_ieee_set_mode): added an #ifdef for the default

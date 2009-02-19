@@ -1,3 +1,26 @@
+2007-09-01  Brian Gough  <bjg@network-theory.co.uk>
+
+	* gsl.m4: changed default name to AX_PATH_GSL
+
+2007-08-22  Brian Gough  <bjg@network-theory.co.uk>
+
+	* configure.ac: started moving definitions out of
+	acconfig.h (deprecated)
+
+2007-07-30  Brian Gough  <bjg@network-theory.co.uk>
+
+	* configure.ac: check ieeefp.h for isfinite
+
+2007-04-23  Brian Gough  <bjg@network-theory.co.uk>
+
+	* acconfig.h (finite): don't redefine finite in terms of isfinite,
+	which causes problems with system headers, use gsl_finite instead.
+
+2007-04-17  Brian Gough  <bjg@network-theory.co.uk>
+
+	* configure.ac: use an actual floating point number instead of an
+	integer for testing long double I/O.
+
 2007-01-09  Brian Gough  <bjg@network-theory.co.uk>
 
 	* gsl_math.h (M_PI_4): corrected typo in higher digits of M_PI_4

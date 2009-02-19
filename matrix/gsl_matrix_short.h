@@ -1,10 +1,10 @@
 /* matrix/gsl_matrix_short.h
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000 Gerard Jungman, Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Gerard Jungman, Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -116,6 +116,14 @@ gsl_matrix_short_subdiagonal (gsl_matrix_short * m, const size_t k);
 _gsl_vector_short_view 
 gsl_matrix_short_superdiagonal (gsl_matrix_short * m, const size_t k);
 
+_gsl_vector_short_view
+gsl_matrix_short_subrow (gsl_matrix_short * m, const size_t i,
+                         const size_t offset, const size_t n);
+
+_gsl_vector_short_view
+gsl_matrix_short_subcolumn (gsl_matrix_short * m, const size_t j,
+                            const size_t offset, const size_t n);
+
 _gsl_matrix_short_view
 gsl_matrix_short_view_array (short * base,
                              const size_t n1, 
@@ -163,6 +171,14 @@ gsl_matrix_short_const_subdiagonal (const gsl_matrix_short * m,
 _gsl_vector_short_const_view 
 gsl_matrix_short_const_superdiagonal (const gsl_matrix_short * m, 
                                       const size_t k);
+
+_gsl_vector_short_const_view
+gsl_matrix_short_const_subrow (const gsl_matrix_short * m, const size_t i,
+                               const size_t offset, const size_t n);
+
+_gsl_vector_short_const_view
+gsl_matrix_short_const_subcolumn (const gsl_matrix_short * m, const size_t j,
+                                  const size_t offset, const size_t n);
 
 _gsl_matrix_short_const_view
 gsl_matrix_short_const_view_array (const short * base,
@@ -223,6 +239,7 @@ void gsl_matrix_short_minmax_index (const gsl_matrix_short * m, size_t * imin, s
 int gsl_matrix_short_isnull (const gsl_matrix_short * m);
 int gsl_matrix_short_ispos (const gsl_matrix_short * m);
 int gsl_matrix_short_isneg (const gsl_matrix_short * m);
+int gsl_matrix_short_isnonneg (const gsl_matrix_short * m);
 
 int gsl_matrix_short_add (gsl_matrix_short * a, const gsl_matrix_short * b);
 int gsl_matrix_short_sub (gsl_matrix_short * a, const gsl_matrix_short * b);

@@ -1,11 +1,11 @@
 /* system.h: System-dependent declarations.  Include this first.
-   $Id: system.h,v 1.2 2003/06/17 21:06:10 bjg Exp $
+   $Id: system.h,v 1.3 2007/07/02 16:34:28 bjg Exp $
 
    Copyright (C) 1997 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,

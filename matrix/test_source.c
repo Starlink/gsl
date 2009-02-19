@@ -1,10 +1,10 @@
 /* matrix/test_source.c
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000 Gerard Jungman, Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Gerard Jungman, Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -93,6 +93,9 @@ FUNCTION (test, func) (void)
     
     status = (FUNCTION(gsl_matrix,isneg)(m) != 0);
     TEST (status, "_isneg" DESC " on calloc matrix");
+
+    status = (FUNCTION(gsl_matrix,isnonneg)(m) != 1);
+    TEST (status, "_isnonneg" DESC " on calloc matrix");
   }
 
 
@@ -274,6 +277,9 @@ FUNCTION (test, func) (void)
 
     status = (FUNCTION(gsl_matrix,isneg)(m) != 0);
     TEST (status, "_isneg" DESC " on null matrix") ;
+
+    status = (FUNCTION(gsl_matrix,isnonneg)(m) != 1);
+    TEST (status, "_isnonneg" DESC " on null matrix") ;
   }
 
 
@@ -296,6 +302,9 @@ FUNCTION (test, func) (void)
 
     status = (FUNCTION(gsl_matrix,isneg)(m) != 0);
     TEST (status, "_isneg" DESC " on non-negative matrix") ;
+
+    status = (FUNCTION(gsl_matrix,isnonneg)(m) != 1);
+    TEST (status, "_isnonneg" DESC " on non-negative matrix") ;
   }
 
 #ifndef UNSIGNED
@@ -304,8 +313,8 @@ FUNCTION (test, func) (void)
     {
       for (j = 0; j < N; j++)
         {
-          k++;
-          FUNCTION (gsl_matrix, set) (m, i, j, (ATOMIC) ((k % 10) - 5));
+          ATOMIC mij = ((++k) % 10)  - (ATOMIC) 5;
+          FUNCTION (gsl_matrix, set) (m, i, j, mij);
         }
     }
 
@@ -318,6 +327,9 @@ FUNCTION (test, func) (void)
 
     status = (FUNCTION(gsl_matrix,isneg)(m) != 0);
     TEST (status, "_isneg" DESC " on mixed matrix") ;
+
+    status = (FUNCTION(gsl_matrix,isnonneg)(m) != 0);
+    TEST (status, "_isnonneg" DESC " on mixed matrix") ;
   }
 
   k = 0;
@@ -339,6 +351,9 @@ FUNCTION (test, func) (void)
 
     status = (FUNCTION(gsl_matrix,isneg)(m) != 0);
     TEST (status, "_isneg" DESC " on non-positive matrix") ;
+
+    status = (FUNCTION(gsl_matrix,isnonneg)(m) != 0);
+    TEST (status, "_isnonneg" DESC " on non-positive matrix") ;
   }
 #endif
 
@@ -361,6 +376,9 @@ FUNCTION (test, func) (void)
 
     status = (FUNCTION(gsl_matrix,isneg)(m) != 0);
     TEST (status, "_isneg" DESC " on positive matrix") ;
+
+    status = (FUNCTION(gsl_matrix,isnonneg)(m) != 1);
+    TEST (status, "_isnonneg" DESC " on positive matrix") ;
   }
 
 #if (!defined(UNSIGNED) && !defined(BASE_CHAR))
@@ -383,6 +401,9 @@ FUNCTION (test, func) (void)
 
     status = (FUNCTION(gsl_matrix,isneg)(m) != 1);
     TEST (status, "_isneg" DESC " on negative matrix") ;
+
+    status = (FUNCTION(gsl_matrix,isnonneg)(m) != 0);
+    TEST (status, "_isnonneg" DESC " on negative matrix") ;
   }
 #endif
 

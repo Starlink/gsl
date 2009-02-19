@@ -1,10 +1,10 @@
 /* vector/gsl_vector_uchar.h
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000 Gerard Jungman, Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Gerard Jungman, Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -163,6 +163,7 @@ int gsl_vector_uchar_add_constant (gsl_vector_uchar * a, const double x);
 int gsl_vector_uchar_isnull (const gsl_vector_uchar * v);
 int gsl_vector_uchar_ispos (const gsl_vector_uchar * v);
 int gsl_vector_uchar_isneg (const gsl_vector_uchar * v);
+int gsl_vector_uchar_isnonneg (const gsl_vector_uchar * v);
 
 #ifdef HAVE_INLINE
 

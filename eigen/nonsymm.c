@@ -4,7 +4,7 @@
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -62,7 +62,7 @@ gsl_eigen_nonsymm_alloc(const size_t n)
     }
 
   w = (gsl_eigen_nonsymm_workspace *)
-      malloc (sizeof (gsl_eigen_nonsymm_workspace));
+      calloc (1, sizeof (gsl_eigen_nonsymm_workspace));
 
   if (w == 0)
     {
@@ -77,6 +77,7 @@ gsl_eigen_nonsymm_alloc(const size_t n)
 
   if (w->diag == 0)
     {
+      gsl_eigen_nonsymm_free(w);
       GSL_ERROR_NULL ("failed to allocate space for balancing vector", GSL_ENOMEM);
     }
 
@@ -84,6 +85,7 @@ gsl_eigen_nonsymm_alloc(const size_t n)
 
   if (w->tau == 0)
     {
+      gsl_eigen_nonsymm_free(w);
       GSL_ERROR_NULL ("failed to allocate space for hessenberg coefficients", GSL_ENOMEM);
     }
 
@@ -91,6 +93,7 @@ gsl_eigen_nonsymm_alloc(const size_t n)
 
   if (w->francis_workspace_p == 0)
     {
+      gsl_eigen_nonsymm_free(w);
       GSL_ERROR_NULL ("failed to allocate space for francis workspace", GSL_ENOMEM);
     }
 
@@ -105,11 +108,14 @@ gsl_eigen_nonsymm_free()
 void
 gsl_eigen_nonsymm_free (gsl_eigen_nonsymm_workspace * w)
 {
-  gsl_vector_free(w->tau);
+  if (w->tau)
+    gsl_vector_free(w->tau);
 
-  gsl_vector_free(w->diag);
+  if (w->diag)
+    gsl_vector_free(w->diag);
 
-  gsl_eigen_francis_free(w->francis_workspace_p);
+  if (w->francis_workspace_p)
+    gsl_eigen_francis_free(w->francis_workspace_p);
 
   free(w);
 } /* gsl_eigen_nonsymm_free() */
@@ -187,7 +193,7 @@ gsl_eigen_nonsymm (gsl_matrix * A, gsl_vector_complex * eval,
         }
 
       /* compute the Hessenberg reduction of A */
-      gsl_linalg_hessenberg(A, w->tau);
+      gsl_linalg_hessenberg_decomp(A, w->tau);
 
       if (w->Z)
         {
