@@ -475,3 +475,25 @@ evaluation and ode improvements
 * Ettl Martin - bug report, rk4 memory
 
 * Yevgeniy Naumovich - bspline allocators fix
+
+* Huan Wu - gsl_linalg_complex_cholesky_invert
+
+* Ralf Wildenhues - numerous proofreading corrections
+
+* Thomas Tanner <tanner@gmx.de> - bug report for gsl_sf_beta_inc
+
+* Sam Mason <sam@samason.me.uk> - bug fix for gsl_pow_int
+
+* José Luis García Pallero <jgpallero@gmail.com> - error checking for GSL cblas
+
+* Teemu Ikonen <tpikonen@gmail.com> patch for gsl_ran_chisq_pdf
+
+* Evgeny Kurbatov <EvgenyKurbatov@yandex.ru> - patch for error
+  handling in interpolation routines
+
+* Michel Kern <Michel.Kern@inria.fr> - fix for singular Jacobian in
+  Newton solver
+
+* Nikolay Simakov <nsimakov@andrew.cmu.edu> - bug report for gsl_eigen_jacobi
+
+* Jim Ward - numerous bug reports and useful suggestions

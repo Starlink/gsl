@@ -1,3 +1,32 @@
+2010-11-11  Brian Gough  <bjg@gnu.org>
+
+	* ellint.c (gsl_sf_ellint_RC_e, gsl_sf_ellint_RD_e)
+	(gsl_sf_ellint_RF_e, gsl_sf_ellint_RJ_e): introduce a limit of
+	10000 iterations to avoid infinite loops
+
+	* bessel_Knu.c (gsl_sf_bessel_Knu_scaled_e10_e): alternative
+	version of Knu_scaled function to allow greater range for
+	gsl_sf_bessel_lnKnu_e.
+
+2010-10-29  Brian Gough  <bjg@gnu.org>
+
+	* hyperg_U.c (hyperg_U_small_a_bgt0): corrected result->err for
+	case where a==0.0
+
+2010-08-31  Brian Gough  <bjg@network-theory.co.uk>
+
+	* beta_inc.c (gsl_sf_beta_inc_e): ignore underflow error when term
+	is subtracted from 1
+
+2010-08-27  Brian Gough  <bjg@network-theory.co.uk>
+
+	* hyperg_2F1.c (gsl_sf_hyperg_2F1_e): use ap and bp consistently
+	in large c and large b cases, previously mixed a,b and ap,bp.
+
+2010-04-15  Brian Gough  <bjg@network-theory.co.uk>
+
+	* atanint.c (gsl_sf_atanint_e): added missing term 1/ax for large x
+
 2010-02-25  Brian Gough  <bjg@network-theory.co.uk>
 
 	* hyperg_U.c (hyperg_U_negx): handle the case where x<0

@@ -1,4 +1,4 @@
-This is gsl-ref.info, produced by makeinfo version 4.11 from
+This is gsl-ref.info, produced by makeinfo version 4.13 from
 gsl-ref.texi.
 
 INFO-DIR-SECTION Software libraries
@@ -7,7 +7,7 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007, 2008, 2009, 2010 The GSL Team.
+2005, 2006, 2007, 2008, 2009, 2010, 2011 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -20,6 +20,79 @@ License".
 
    (a) The Back-Cover Text is: "You have the freedom to copy and modify
 this GNU Manual."
+
+
+File: gsl-ref.info,  Node: Combination Examples,  Next: Combination References and Further Reading,  Prev: Reading and writing combinations,  Up: Combinations
+
+10.7 Examples
+=============
+
+The example program below prints all subsets of the set {0,1,2,3}
+ordered by size.  Subsets of the same size are ordered
+lexicographically.
+
+     #include <stdio.h>
+     #include <gsl/gsl_combination.h>
+
+     int
+     main (void)
+     {
+       gsl_combination * c;
+       size_t i;
+
+       printf ("All subsets of {0,1,2,3} by size:\n") ;
+       for (i = 0; i <= 4; i++)
+         {
+           c = gsl_combination_calloc (4, i);
+           do
+             {
+               printf ("{");
+               gsl_combination_fprintf (stdout, c, " %u");
+               printf (" }\n");
+             }
+           while (gsl_combination_next (c) == GSL_SUCCESS);
+           gsl_combination_free (c);
+         }
+
+       return 0;
+     }
+
+Here is the output from the program,
+
+     $ ./a.out
+     All subsets of {0,1,2,3} by size:
+     { }
+     { 0 }
+     { 1 }
+     { 2 }
+     { 3 }
+     { 0 1 }
+     { 0 2 }
+     { 0 3 }
+     { 1 2 }
+     { 1 3 }
+     { 2 3 }
+     { 0 1 2 }
+     { 0 1 3 }
+     { 0 2 3 }
+     { 1 2 3 }
+     { 0 1 2 3 }
+
+All 16 subsets are generated, and the subsets of each size are sorted
+lexicographically.
+
+
+File: gsl-ref.info,  Node: Combination References and Further Reading,  Prev: Combination Examples,  Up: Combinations
+
+10.8 References and Further Reading
+===================================
+
+Further information on combinations can be found in,
+
+     Donald L. Kreher, Douglas R. Stinson, `Combinatorial Algorithms:
+     Generation, Enumeration and Search', 1998, CRC Press LLC, ISBN
+     084933988X
+
 
 
 File: gsl-ref.info,  Node: Multisets,  Next: Sorting,  Prev: Combinations,  Up: Top
@@ -682,8 +755,8 @@ needs of most users.
 interface only includes the corresponding dense-storage BLAS functions.
 The full BLAS functionality for band-format and packed-format matrices
 is available through the low-level CBLAS interface.  Similarly, GSL
-vectors are restricted to positive strides, whereas the the low-level
-CBLAS interface supports negative strides as specified in the BLAS
+vectors are restricted to positive strides, whereas the low-level CBLAS
+interface supports negative strides as specified in the BLAS
 standard.(1)
 
    The interface for the `gsl_cblas' layer is specified in the file
@@ -1120,7 +1193,7 @@ File: gsl-ref.info,  Node: Level 2 GSL BLAS Interface,  Next: Level 3 GSL BLAS I
           ALPHA, const gsl_vector_complex * X, const gsl_vector_complex
           * Y, gsl_matrix_complex * A)
      These functions compute the hermitian rank-2 update A = \alpha x
-     y^H + \alpha^* y x^H A of the hermitian matrix A.  Since the
+     y^H + \alpha^* y x^H + A of the hermitian matrix A.  Since the
      matrix A is hermitian only its upper half or lower half need to be
      stored.  When UPLO is `CblasUpper' then the upper triangle and
      diagonal of A are used, and when UPLO is `CblasLower' then the
@@ -1893,15 +1966,18 @@ L^T x = y), which can be solved by forward and back-substitution.
           gsl_matrix_complex * CHOLESKY, gsl_vector_complex * X)
      These functions solve the system A x = b in-place using the
      Cholesky decomposition of A held in the matrix CHOLESKY which must
-     have been previously computed by by `gsl_linalg_cholesky_decomp' or
+     have been previously computed by `gsl_linalg_cholesky_decomp' or
      `gsl_linalg_complex_cholesky_decomp'. On input X should contain
      the right-hand side b, which is replaced by the solution on output.
 
  -- Function: int gsl_linalg_cholesky_invert (gsl_matrix * CHOLESKY)
-     This function computes the inverse of the matrix CHOLESKY which
-     must have been previously computed by `gsl_linalg_cholesky_decomp'.
-     The inverse of the original matrix A is stored in CHOLESKY on
-     output.
+ -- Function: int gsl_linalg_complex_cholesky_invert
+          (gsl_matrix_complex * CHOLESKY)
+     These functions compute the inverse of a matrix from its Cholesky
+     decomposition CHOLESKY, which must have been previously computed
+     by `gsl_linalg_cholesky_decomp' or
+     `gsl_linalg_complex_cholesky_decomp'.  On output, the inverse is
+     stored in-place in CHOLESKY.
 
 
 File: gsl-ref.info,  Node: Tridiagonal Decomposition of Real Symmetric Matrices,  Next: Tridiagonal Decomposition of Hermitian Matrices,  Prev: Cholesky Decomposition,  Up: Linear Algebra
@@ -2380,10 +2456,10 @@ the following papers,
      value decomposition", `Computer Journal', Volume 30 (1987), p
      268-275.
 
-     James Demmel, Kresimir Veselic, "Jacobi's Method is more accurate
-     than QR", `Lapack Working Note 15' (LAWN-15), October 1989.
-     Available from netlib, `http://www.netlib.org/lapack/' in the
-     `lawns' or `lawnspdf' directories.
+     James Demmel, Kres<imir Veselic', "Jacobi's Method is more
+     accurate than QR", `Lapack Working Note 15' (LAWN-15), October
+     1989. Available from netlib, `http://www.netlib.org/lapack/' in
+     the `lawns' or `lawnspdf' directories.
 
 
 File: gsl-ref.info,  Node: Eigensystems,  Next: Fast Fourier Transforms,  Prev: Linear Algebra,  Up: Top
@@ -2608,6 +2684,15 @@ double-shift Francis method.
  -- Function: void gsl_eigen_nonsymmv_free
           (gsl_eigen_nonsymmv_workspace * W)
      This function frees the memory associated with the workspace W.
+
+ -- Function: void gsl_eigen_nonsymmv_params (const int BALANCE,
+          gsl_eigen_nonsymm_workspace * W)
+     This function sets parameters which determine how the eigenvalue
+     problem is solved in subsequent calls to `gsl_eigen_nonsymmv'.  If
+     BALANCE is set to 1, a balancing transformation is applied to the
+     matrix. See `gsl_eigen_nonsymm_params' for more information.
+     Balancing is turned off by default since it does not preserve the
+     orthogonality of the Schur vectors.
 
  -- Function: int gsl_eigen_nonsymmv (gsl_matrix * A,
           gsl_vector_complex * EVAL, gsl_matrix_complex * EVEC,
@@ -3202,15 +3287,15 @@ File: gsl-ref.info,  Node: Mathematical Definitions,  Next: Overview of complex 
 =============================
 
 Fast Fourier Transforms are efficient algorithms for calculating the
-discrete fourier transform (DFT),
+discrete Fourier transform (DFT),
 
      x_j = \sum_{k=0}^{n-1} z_k \exp(-2\pi i j k / n)
 
-   The DFT usually arises as an approximation to the continuous fourier
+   The DFT usually arises as an approximation to the continuous Fourier
 transform when functions are sampled at discrete intervals in space or
-time.  The naive evaluation of the discrete fourier transform is a
+time.  The naive evaluation of the discrete Fourier transform is a
 matrix-vector multiplication W\vec{z}. A general matrix-vector
-multiplication takes O(n^2) operations for n data-points.  Fast fourier
+multiplication takes O(n^2) operations for n data-points.  Fast Fourier
 transform algorithms use a divide-and-conquer strategy to factorize the
 matrix W into smaller sub-matrices, corresponding to the integer
 factors of the length n.  If n can be factorized into a product of
@@ -3220,11 +3305,11 @@ operations.  For a radix-2 FFT this gives an operation count of O(n
 
    All the FFT functions offer three types of transform: forwards,
 inverse and backwards, based on the same mathematical definitions.  The
-definition of the "forward fourier transform", x = FFT(z), is,
+definition of the "forward Fourier transform", x = FFT(z), is,
 
      x_j = \sum_{k=0}^{n-1} z_k \exp(-2\pi i j k / n)
 
-and the definition of the "inverse fourier transform", x = IFFT(z), is,
+and the definition of the "inverse Fourier transform", x = IFFT(z), is,
 
      z_j = {1 \over n} \sum_{k=0}^{n-1} x_k \exp(2\pi i j k / n).
 
@@ -3237,7 +3322,7 @@ numerical errors).
 exponential in the transform/ inverse-transform pair. GSL follows the
 same convention as FFTPACK, using a negative exponential for the forward
 transform.  The advantage of this convention is that the inverse
-transform recreates the original function with simple fourier
+transform recreates the original function with simple Fourier
 synthesis.  Numerical Recipes uses the opposite convention, a positive
 exponential in the forward transform.
 
@@ -3373,7 +3458,7 @@ header file `gsl_fft_complex.h'.
 
 
    Here is an example program which computes the FFT of a short pulse
-in a sample of length 128.  To make the resulting fourier transform
+in a sample of length 128.  To make the resulting Fourier transform
 real the pulse is defined for equal positive and negative times (-10
 ... 10), where the negative times wrap around the end of the array.
 
@@ -3430,7 +3515,7 @@ safe error handler you would need to check the return status of
 same plot as the input.  Only the real part is shown, by the choice of
 the input data the imaginary part is zero.  Allowing for the
 wrap-around of negative times at t=128, and working in units of k/n,
-the DFT approximates the continuum fourier transform, giving a
+the DFT approximates the continuum Fourier transform, giving a
 modulated sine function.
 
 
@@ -3666,7 +3751,7 @@ File: gsl-ref.info,  Node: Overview of real data FFTs,  Next: Radix-2 FFT routin
 
 The functions for real data are similar to those for complex data.
 However, there is an important difference between forward and inverse
-transforms.  The fourier transform of a real sequence is not real.  It
+transforms.  The Fourier transform of a real sequence is not real.  It
 is a complex sequence with a special symmetry:
 
      z_k = z_{n-k}^*
@@ -3681,12 +3766,12 @@ which operate on half-complex sequences.
 
    Functions in `gsl_fft_real' compute the frequency coefficients of a
 real sequence.  The half-complex coefficients c of a real sequence x
-are given by fourier analysis,
+are given by Fourier analysis,
 
      c_k = \sum_{j=0}^{n-1} x_j \exp(-2 \pi i j k /n)
 
 Functions in `gsl_fft_halfcomplex' compute inverse or backwards
-transforms.  They reconstruct real sequences by fourier synthesis from
+transforms.  They reconstruct real sequences by Fourier synthesis from
 their half-complex frequency coefficients, c,
 
      x_j = {1 \over n} \sum_{k=0}^{n-1} c_k \exp(2 \pi i j k /n)
@@ -3937,7 +4022,7 @@ data,
      array of length N, using a mixed radix decimation-in-frequency
      algorithm.  For `gsl_fft_real_transform' DATA is an array of
      time-ordered real data.  For `gsl_fft_halfcomplex_transform' DATA
-     contains fourier coefficients in the half-complex ordering
+     contains Fourier coefficients in the half-complex ordering
      described above.  There is no restriction on the length N.
      Efficient modules are provided for subtransforms of length 2, 3, 4
      and 5.  Any remaining factors are computed with a slow, O(n^2),
@@ -3997,13 +4082,13 @@ data,
 
    Here is an example program using `gsl_fft_real_transform' and
 `gsl_fft_halfcomplex_inverse'.  It generates a real signal in the shape
-of a square pulse.  The pulse is fourier transformed to frequency
+of a square pulse.  The pulse is Fourier transformed to frequency
 space, and all but the lowest ten frequency components are removed from
-the array of fourier coefficients returned by `gsl_fft_real_transform'.
+the array of Fourier coefficients returned by `gsl_fft_real_transform'.
 
-   The remaining fourier coefficients are transformed back to the
+   The remaining Fourier coefficients are transformed back to the
 time-domain, to give a filtered version of the square pulse.  Since
-fourier coefficients are stored using the half-complex symmetry both
+Fourier coefficients are stored using the half-complex symmetry both
 positive and negative frequencies are removed and the final filtered
 signal is also real.
 
@@ -4077,7 +4162,7 @@ A good starting point for learning more about the FFT is the review
 article `Fast Fourier Transforms: A Tutorial Review and A State of the
 Art' by Duhamel and Vetterli,
 
-     P. Duhamel and M. Vetterli.  Fast fourier transforms: A tutorial
+     P. Duhamel and M. Vetterli.  Fast Fourier transforms: A tutorial
      review and a state of the art.  `Signal Processing', 19:259-299,
      1990.
 
@@ -4102,18 +4187,18 @@ Both these introductory books cover the radix-2 FFT in some detail.
 The mixed-radix algorithm at the heart of the FFTPACK routines is
 reviewed in Clive Temperton's paper,
 
-     Clive Temperton.  Self-sorting mixed-radix fast fourier transforms.
+     Clive Temperton.  Self-sorting mixed-radix fast Fourier transforms.
      `Journal of Computational Physics', 52(1):1-23, 1983.
 
 The derivation of FFTs for real-valued data is explained in the
 following two articles,
 
      Henrik V. Sorenson, Douglas L. Jones, Michael T. Heideman, and C.
-     Sidney Burrus.  Real-valued fast fourier transform algorithms.
+     Sidney Burrus.  Real-valued fast Fourier transform algorithms.
      `IEEE Transactions on Acoustics, Speech, and Signal Processing',
      ASSP-35(6):849-863, 1987.
 
-     Clive Temperton.  Fast mixed-radix real fourier transforms.
+     Clive Temperton.  Fast mixed-radix real Fourier transforms.
      `Journal of Computational Physics', 52:340-350, 1983.
 
 In 1979 the IEEE published a compendium of carefully-reviewed Fortran
@@ -4148,8 +4233,8 @@ specialised routines for specific cases.  These include integration over
 infinite and semi-infinite ranges, singular integrals, including
 logarithmic singularities, computation of Cauchy principal values and
 oscillatory integrals.  The library reimplements the algorithms used in
-QUADPACK, a numerical integration package written by Piessens,
-Doncker-Kapenga, Uberhuber and Kahaner.  Fortran code for QUADPACK is
+QUADPACK, a numerical integration package written by Piessens, de
+Doncker-Kapenga, Ueberhuber and Kahaner.  Fortran code for QUADPACK is
 available on Netlib.  Also included are non-adaptive, fixed-order
 Gauss-Legendre integration routines with high precision coefficients by
 Pavel Holoborodko.
@@ -4169,6 +4254,7 @@ file `gsl_integration.h'.
 * QAWS adaptive integration for singular functions::
 * QAWO adaptive integration for oscillatory functions::
 * QAWF adaptive integration for Fourier integrals::
+* CQUAD doubly-adaptive integration::
 * Fixed order Gauss-Legendre integration::
 * Numerical integration error codes::
 * Numerical integration examples::
@@ -4657,7 +4743,7 @@ gsl_integration_qawo_table_alloc (double OMEGA, double L, enum
 
 
 
-File: gsl-ref.info,  Node: QAWF adaptive integration for Fourier integrals,  Next: Fixed order Gauss-Legendre integration,  Prev: QAWO adaptive integration for oscillatory functions,  Up: Numerical Integration
+File: gsl-ref.info,  Node: QAWF adaptive integration for Fourier integrals,  Next: CQUAD doubly-adaptive integration,  Prev: QAWO adaptive integration for oscillatory functions,  Up: Numerical Integration
 
 17.10 QAWF adaptive integration for Fourier integrals
 =====================================================
@@ -4676,7 +4762,7 @@ File: gsl-ref.info,  Node: QAWF adaptive integration for Fourier integrals,  Nex
 
      The parameter \omega and choice of \sin or \cos is taken from the
      table WF (the length L can take any value, since it is overridden
-     by this function to a value appropriate for the fourier
+     by this function to a value appropriate for the Fourier
      integration).  The integral is computed using the QAWO algorithm
      over each of the subintervals,
 
@@ -4717,9 +4803,69 @@ File: gsl-ref.info,  Node: QAWF adaptive integration for Fourier integrals,  Nex
 
 
 
-File: gsl-ref.info,  Node: Fixed order Gauss-Legendre integration,  Next: Numerical integration error codes,  Prev: QAWF adaptive integration for Fourier integrals,  Up: Numerical Integration
+File: gsl-ref.info,  Node: CQUAD doubly-adaptive integration,  Next: Fixed order Gauss-Legendre integration,  Prev: QAWF adaptive integration for Fourier integrals,  Up: Numerical Integration
 
-17.11 Gauss-Legendre integration
+17.11 CQUAD doubly-adaptive integration
+=======================================
+
+CQUAD is a new doubly-adaptive general-purpose quadrature routine which
+can handle most types of singularities, non-numerical function values
+such as `Inf' or `NaN', as well as some divergent integrals. It
+generally requires more function evaluations than the integration
+routines in QUADPACK, yet fails less often for difficult integrands.
+
+   The underlying algorithm uses a doubly-adaptive scheme in which
+Clenshaw-Curtis quadrature rules of increasing degree are used to
+compute the integral in each interval. The L_2-norm of the difference
+between the underlying interpolatory polynomials of two successive
+rules is used as an error estimate. The interval is subdivided if the
+difference between two successive rules is too large or a rule of
+maximum degree has been reached.
+
+ -- Function: gsl_integration_cquad_workspace *
+gsl_integration_cquad_workspace_alloc (size_t N)
+     This function allocates a workspace sufficient to hold the data for
+     N intervals. The number N is not the maximum number of intervals
+     that will be evaluated. If the workspace is full, intervals with
+     smaller error estimates will be discarded. A minimum of 3
+     intervals is required and or most functions, a workspace of size
+     100 is sufficient.
+
+ -- Function: void gsl_integration_cquad_workspace_free
+          (gsl_integration_cquad_workspace * W)
+     This function frees the memory associated with the workspace W.
+
+ -- Function: int gsl_integration_cquad (const gsl_function * F, double
+          A, double B, double EPSABS, double EPSREL,
+          gsl_integration_cquad_workspace * WORKSPACE, double * RESULT,
+          double * ABSERR, size_t * NEVALS)
+     This function computes the integral of f over (a,b) within the
+     desired absolute and relative error limits, EPSABS and EPSREL
+     using the CQUAD algorithm.  The function returns the final
+     approximation, RESULT, an estimate of the absolute error, ABSERR,
+     and the number of function evaluations required, NEVALS.
+
+     The CQUAD algorithm divides the integration region into
+     subintervals, and in each iteration, the subinterval with the
+     largest estimated error is processed.  The algorithm uses
+     Clenshaw-Curits quadrature rules of degree 4, 8, 16 and 32 over 5,
+     9, 17 and 33 nodes respectively. Each interval is initialized with
+     the lowest-degree rule. When an interval is processed, the
+     next-higher degree rule is evaluated and an error estimate is
+     computed based on the L_2-norm of the difference between the
+     underlying interpolating polynomials of both rules. If the
+     highest-degree rule has already been used, or the interpolatory
+     polynomials differ significantly, the interval is bisected.
+
+     The subintervals and their results are stored in the memory
+     provided by WORKSPACE. If the error estimate or the number of
+     function evaluations is not needed, the pointers ABSERR and NEVALS
+     can be set to `NULL'.
+
+
+File: gsl-ref.info,  Node: Fixed order Gauss-Legendre integration,  Next: Numerical integration error codes,  Prev: CQUAD doubly-adaptive integration,  Up: Numerical Integration
+
+17.12 Gauss-Legendre integration
 ================================
 
 The fixed-order Gauss-Legendre integration routines are provided for
@@ -4739,18 +4885,26 @@ gsl_integration_glfixed_table_alloc (size_t N)
      coefficients are computed on the fly.
 
  -- Function: double gsl_integration_glfixed (const gsl_function * F,
-          double A, double B, gsl_integration_glfixed_table * T)
+          double A, double B, const gsl_integration_glfixed_table * T)
      This function applies the Gauss-Legendre integration rule
      contained in table T and returns the result.
 
- -- Function: void gsl_integration_glfixed_table_alloc
+ -- Function: int gsl_integration_glfixed_point (double A, double B,
+          size_t I, double * XI, double * WI, const
+          gsl_integration_glfixed_table * T)
+     For I in [0, ..., t->n - 1], this function obtains the I-th
+     Gauss-Legendre point XI and weight WI on the interval [A,B].  The
+     points and weights are ordered by increasing point value.  A
+     function f may be integrated on [A,B] by summing wi * f(xi) over I.
+
+ -- Function: void gsl_integration_glfixed_table_free
           (gsl_integration_glfixed_table * T)
      This function frees the memory associated with the table T.
 
 
 File: gsl-ref.info,  Node: Numerical integration error codes,  Next: Numerical integration examples,  Prev: Fixed order Gauss-Legendre integration,  Up: Numerical Integration
 
-17.12 Error codes
+17.13 Error codes
 =================
 
 In addition to the standard error codes for invalid arguments the
@@ -4774,7 +4928,7 @@ functions can return the following values,
 
 File: gsl-ref.info,  Node: Numerical integration examples,  Next: Numerical integration References and Further Reading,  Prev: Numerical integration error codes,  Up: Numerical Integration
 
-17.13 Examples
+17.14 Examples
 ==============
 
 The integrator `QAGS' will handle a large class of definite integrals.
@@ -4842,7 +4996,7 @@ margin of safety of one order of magnitude.
 
 File: gsl-ref.info,  Node: Numerical integration References and Further Reading,  Prev: Numerical integration examples,  Up: Numerical Integration
 
-17.14 References and Further Reading
+17.15 References and Further Reading
 ====================================
 
 The following book is the definitive reference for QUADPACK, and was
@@ -4851,10 +5005,15 @@ algorithms, program listings, test programs and examples.  It also
 includes useful advice on numerical integration and many references to
 the numerical integration literature used in developing QUADPACK.
 
-     R. Piessens, E. de Doncker-Kapenga, C.W. Uberhuber, D.K. Kahaner.
+     R. Piessens, E. de Doncker-Kapenga, C.W. Ueberhuber, D.K. Kahaner.
      `QUADPACK A subroutine package for automatic integration' Springer
      Verlag, 1983.
 
+The CQUAD integration algorithm is described in the following paper:
+
+     P. Gonnet, "Increasing the Reliability of Adaptive Quadrature Using
+     Explicit Interpolants", `ACM Transactions on Mathematical
+     Software', Volume 37 (2010), Issue 3, Article 26.
 
 
 File: gsl-ref.info,  Node: Random Number Generation,  Next: Quasi-Random Sequences,  Prev: Numerical Integration,  Up: Top
@@ -5054,7 +5213,7 @@ obtain non-uniform distributions *note Random Number Distributions::.
 
      In particular, this function is not intended for generating the
      full range of unsigned integer values [0,2^32-1]. Instead choose a
-     generator with the maximal integer range and zero mimimum value,
+     generator with the maximal integer range and zero minimum value,
      such as `gsl_rng_ranlxd1', `gsl_rng_mt19937' or `gsl_rng_taus',
      and sample it directly using `gsl_rng_get'.  The range of each
      generator can be found using the auxiliary functions described in
@@ -5298,6 +5457,9 @@ randomness.
      can provide truly decorrelated numbers at a known level of
      randomness.  The higher luxury levels provide increased
      decorrelation between samples as an additional safety margin.
+
+     Note that the range of allowed seeds for this generator is
+     [0,2^31-1]. Higher seed values are wrapped modulo 2^31.
 
  -- Generator: gsl_rng_ranlxd1
  -- Generator: gsl_rng_ranlxd2
@@ -5552,7 +5714,7 @@ it is best to avoid using the least significant bits.
      = 2^48.  The seed specifies the lower 32 bits of the initial value,
      x_1, with the lowest bit set to prevent the seed taking an even
      value.  The upper 16 bits of x_1 are set to 0. A consequence of
-     this procedure is that the pairs of seeds 2 and 3, 4 and 5, etc
+     this procedure is that the pairs of seeds 2 and 3, 4 and 5, etc.
      produce the same sequences.
 
      The generator compatible with the CRAY MATHLIB routine RANF. It
@@ -6384,7 +6546,7 @@ File: gsl-ref.info,  Node: The Exponential Power Distribution,  Next: The Cauchy
           p(x) dx = {1 \over 2 a \Gamma(1+1/b)} \exp(-|x/a|^b) dx
 
      for x >= 0.  For b = 1 this reduces to the Laplace distribution.
-     For b = 2 it has the same form as a gaussian distribution, but
+     For b = 2 it has the same form as a Gaussian distribution, but
      with a = \sqrt{2} \sigma.
 
  -- Function: double gsl_ran_exppow_pdf (double X, double A, double B)
@@ -6513,7 +6675,7 @@ File: gsl-ref.info,  Node: The Levy alpha-Stable Distributions,  Next: The Levy 
           ALPHA)
      This function returns a random variate from the Levy symmetric
      stable distribution with scale C and exponent ALPHA.  The symmetric
-     stable probability distribution is defined by a fourier transform,
+     stable probability distribution is defined by a Fourier transform,
 
           p(x) = {1 \over 2 \pi} \int_{-\infty}^{+\infty} dt \exp(-it x - |c t|^alpha)
 
@@ -6537,7 +6699,7 @@ File: gsl-ref.info,  Node: The Levy skew alpha-Stable Distribution,  Next: The G
      This function returns a random variate from the Levy skew stable
      distribution with scale C, exponent ALPHA and skewness parameter
      BETA.  The skewness parameter must lie in the range [-1,1].  The
-     Levy skew stable probability distribution is defined by a fourier
+     Levy skew stable probability distribution is defined by a Fourier
      transform,
 
           p(x) = {1 \over 2 \pi} \int_{-\infty}^{+\infty} dt \exp(-it x - |c t|^alpha (1-i beta sign(t) tan(pi alpha/2)))
@@ -6670,7 +6832,7 @@ File: gsl-ref.info,  Node: The Chi-squared Distribution,  Next: The F-distributi
 ==================================
 
 The chi-squared distribution arises in statistics.  If Y_i are n
-independent gaussian random variates with unit variance then the
+independent Gaussian random variates with unit variance then the
 sum-of-squares,
 
      X_i = \sum_i Y_i^2
@@ -6866,178 +7028,4 @@ File: gsl-ref.info,  Node: The Pareto Distribution,  Next: Spherical Vector Dist
      These functions compute the cumulative distribution functions
      P(x), Q(x) and their inverses for the Pareto distribution with
      exponent A and scale B.
-
-
-File: gsl-ref.info,  Node: Spherical Vector Distributions,  Next: The Weibull Distribution,  Prev: The Pareto Distribution,  Up: Random Number Distributions
-
-20.23 Spherical Vector Distributions
-====================================
-
-The spherical distributions generate random vectors, located on a
-spherical surface.  They can be used as random directions, for example
-in the steps of a random walk.
-
- -- Function: void gsl_ran_dir_2d (const gsl_rng * R, double * X,
-          double * Y)
- -- Function: void gsl_ran_dir_2d_trig_method (const gsl_rng * R,
-          double * X, double * Y)
-     This function returns a random direction vector v = (X,Y) in two
-     dimensions.  The vector is normalized such that |v|^2 = x^2 + y^2
-     = 1.  The obvious way to do this is to take a uniform random
-     number between 0 and 2\pi and let X and Y be the sine and cosine
-     respectively.  Two trig functions would have been expensive in the
-     old days, but with modern hardware implementations, this is
-     sometimes the fastest way to go.  This is the case for the Pentium
-     (but not the case for the Sun Sparcstation).  One can avoid the
-     trig evaluations by choosing X and Y in the interior of a unit
-     circle (choose them at random from the interior of the enclosing
-     square, and then reject those that are outside the unit circle),
-     and then dividing by \sqrt{x^2 + y^2}.  A much cleverer approach,
-     attributed to von Neumann (See Knuth, v2, 3rd ed, p140, exercise
-     23), requires neither trig nor a square root.  In this approach, U
-     and V are chosen at random from the interior of a unit circle, and
-     then x=(u^2-v^2)/(u^2+v^2) and y=2uv/(u^2+v^2).
-
- -- Function: void gsl_ran_dir_3d (const gsl_rng * R, double * X,
-          double * Y, double * Z)
-     This function returns a random direction vector v = (X,Y,Z) in
-     three dimensions.  The vector is normalized such that |v|^2 = x^2
-     + y^2 + z^2 = 1.  The method employed is due to Robert E. Knop
-     (CACM 13, 326 (1970)), and explained in Knuth, v2, 3rd ed, p136.
-     It uses the surprising fact that the distribution projected along
-     any axis is actually uniform (this is only true for 3 dimensions).
-
- -- Function: void gsl_ran_dir_nd (const gsl_rng * R, size_t N, double
-          * X)
-     This function returns a random direction vector v =
-     (x_1,x_2,...,x_n) in N dimensions.  The vector is normalized such
-     that |v|^2 = x_1^2 + x_2^2 + ... + x_n^2 = 1.  The method uses the
-     fact that a multivariate gaussian distribution is spherically
-     symmetric.  Each component is generated to have a gaussian
-     distribution, and then the components are normalized.  The method
-     is described by Knuth, v2, 3rd ed, p135-136, and attributed to G.
-     W. Brown, Modern Mathematics for the Engineer (1956).
-
-
-File: gsl-ref.info,  Node: The Weibull Distribution,  Next: The Type-1 Gumbel Distribution,  Prev: Spherical Vector Distributions,  Up: Random Number Distributions
-
-20.24 The Weibull Distribution
-==============================
-
- -- Function: double gsl_ran_weibull (const gsl_rng * R, double A,
-          double B)
-     This function returns a random variate from the Weibull
-     distribution.  The distribution function is,
-
-          p(x) dx = {b \over a^b} x^{b-1}  \exp(-(x/a)^b) dx
-
-     for x >= 0.
-
- -- Function: double gsl_ran_weibull_pdf (double X, double A, double B)
-     This function computes the probability density p(x) at X for a
-     Weibull distribution with scale A and exponent B, using the
-     formula given above.
-
-
- -- Function: double gsl_cdf_weibull_P (double X, double A, double B)
- -- Function: double gsl_cdf_weibull_Q (double X, double A, double B)
- -- Function: double gsl_cdf_weibull_Pinv (double P, double A, double B)
- -- Function: double gsl_cdf_weibull_Qinv (double Q, double A, double B)
-     These functions compute the cumulative distribution functions
-     P(x), Q(x) and their inverses for the Weibull distribution with
-     scale A and exponent B.
-
-
-File: gsl-ref.info,  Node: The Type-1 Gumbel Distribution,  Next: The Type-2 Gumbel Distribution,  Prev: The Weibull Distribution,  Up: Random Number Distributions
-
-20.25 The Type-1 Gumbel Distribution
-====================================
-
- -- Function: double gsl_ran_gumbel1 (const gsl_rng * R, double A,
-          double B)
-     This function returns  a random variate from the Type-1 Gumbel
-     distribution.  The Type-1 Gumbel distribution function is,
-
-          p(x) dx = a b \exp(-(b \exp(-ax) + ax)) dx
-
-     for -\infty < x < \infty.
-
- -- Function: double gsl_ran_gumbel1_pdf (double X, double A, double B)
-     This function computes the probability density p(x) at X for a
-     Type-1 Gumbel distribution with parameters A and B, using the
-     formula given above.
-
-
- -- Function: double gsl_cdf_gumbel1_P (double X, double A, double B)
- -- Function: double gsl_cdf_gumbel1_Q (double X, double A, double B)
- -- Function: double gsl_cdf_gumbel1_Pinv (double P, double A, double B)
- -- Function: double gsl_cdf_gumbel1_Qinv (double Q, double A, double B)
-     These functions compute the cumulative distribution functions
-     P(x), Q(x) and their inverses for the Type-1 Gumbel distribution
-     with parameters A and B.
-
-
-File: gsl-ref.info,  Node: The Type-2 Gumbel Distribution,  Next: The Dirichlet Distribution,  Prev: The Type-1 Gumbel Distribution,  Up: Random Number Distributions
-
-20.26 The Type-2 Gumbel Distribution
-====================================
-
- -- Function: double gsl_ran_gumbel2 (const gsl_rng * R, double A,
-          double B)
-     This function returns a random variate from the Type-2 Gumbel
-     distribution.  The Type-2 Gumbel distribution function is,
-
-          p(x) dx = a b x^{-a-1} \exp(-b x^{-a}) dx
-
-     for 0 < x < \infty.
-
- -- Function: double gsl_ran_gumbel2_pdf (double X, double A, double B)
-     This function computes the probability density p(x) at X for a
-     Type-2 Gumbel distribution with parameters A and B, using the
-     formula given above.
-
-
- -- Function: double gsl_cdf_gumbel2_P (double X, double A, double B)
- -- Function: double gsl_cdf_gumbel2_Q (double X, double A, double B)
- -- Function: double gsl_cdf_gumbel2_Pinv (double P, double A, double B)
- -- Function: double gsl_cdf_gumbel2_Qinv (double Q, double A, double B)
-     These functions compute the cumulative distribution functions
-     P(x), Q(x) and their inverses for the Type-2 Gumbel distribution
-     with parameters A and B.
-
-
-File: gsl-ref.info,  Node: The Dirichlet Distribution,  Next: General Discrete Distributions,  Prev: The Type-2 Gumbel Distribution,  Up: Random Number Distributions
-
-20.27 The Dirichlet Distribution
-================================
-
- -- Function: void gsl_ran_dirichlet (const gsl_rng * R, size_t K,
-          const double ALPHA[], double THETA[])
-     This function returns an array of K random variates from a
-     Dirichlet distribution of order K-1. The distribution function is
-
-          p(\theta_1, ..., \theta_K) d\theta_1 ... d\theta_K =
-            (1/Z) \prod_{i=1}^K \theta_i^{\alpha_i - 1} \delta(1 -\sum_{i=1}^K \theta_i) d\theta_1 ... d\theta_K
-
-     for theta_i >= 0 and alpha_i > 0.  The delta function ensures that
-     \sum \theta_i = 1.  The normalization factor Z is
-
-          Z = {\prod_{i=1}^K \Gamma(\alpha_i)} / {\Gamma( \sum_{i=1}^K \alpha_i)}
-
-     The random variates are generated by sampling K values from gamma
-     distributions with parameters a=alpha_i, b=1, and renormalizing.
-     See A.M. Law, W.D. Kelton, `Simulation Modeling and Analysis'
-     (1991).
-
- -- Function: double gsl_ran_dirichlet_pdf (size_t K, const double
-          ALPHA[], const double THETA[])
-     This function computes the probability density p(\theta_1, ... ,
-     \theta_K) at THETA[K] for a Dirichlet distribution with parameters
-     ALPHA[K], using the formula given above.
-
- -- Function: double gsl_ran_dirichlet_lnpdf (size_t K, const double
-          ALPHA[], const double THETA[])
-     This function computes the logarithm of the probability density
-     p(\theta_1, ... , \theta_K) for a Dirichlet distribution with
-     parameters ALPHA[K].
 

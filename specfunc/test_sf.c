@@ -551,6 +551,13 @@ int test_ellint(void)
   TEST_SF(s,  gsl_sf_ellint_Dcomp_e, (0.50, mode, &r), 0.8731525818926755496456335628, TEST_TOL0, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_ellint_Dcomp_e, (0.01, mode, &r), 0.7854276176694868932799393751, TEST_TOL0, GSL_SUCCESS);
 
+  /* Bug report from Will M. Farr bug #31362 */
+  /* FIXME: we are accepting MAXITER as the return code, but really
+     this should be changed to EINVAL in the routine itself */
+
+  TEST_SF(s, gsl_sf_ellint_Kcomp_e, (GSL_NAN, mode, &r), GSL_NAN, GSL_NAN, GSL_EMAXITER);
+  TEST_SF(s, gsl_sf_ellint_Ecomp_e, (GSL_NAN, mode, &r), GSL_NAN, GSL_NAN, GSL_EMAXITER);
+
   TEST_SF(s,  gsl_sf_ellint_F_e, (M_PI/3.0, 0.99, mode, &r), 1.3065333392738766762, TEST_TOL0, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_ellint_F_e, (M_PI/3.0, 0.50, mode, &r), 1.0895506700518854093, TEST_TOL0, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_ellint_F_e, (M_PI/3.0, 0.01, mode, &r), 1.0472129063770918952, TEST_TOL0, GSL_SUCCESS);
@@ -1292,6 +1299,9 @@ int test_expint(void)
   TEST_SF(s,  gsl_sf_atanint_e, (50.0, &r), 6.16499047850274874222, TEST_TOL0, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_atanint_e, (300.0, &r), 8.96281388924518959990, TEST_TOL0, GSL_SUCCESS);
   TEST_SF(s,  gsl_sf_atanint_e, (1.0e+5, &r), 18.084471031038661920, TEST_TOL0, GSL_SUCCESS);
+
+  /* Bug report from Wolfgang Ehrhardt <Wolfgang.Ehrhardt@munich.netsurf.de> */
+  TEST_SF(s,  gsl_sf_atanint_e, (1.0e+9, &r), 32.552029856869591656, TEST_TOL0, GSL_SUCCESS);
 
   return s;
 }

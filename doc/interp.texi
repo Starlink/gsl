@@ -132,10 +132,13 @@ interp uses 'cspline' interpolation.
 @end deftypefun
 
 @deftypefun {unsigned int} gsl_interp_min_size (const gsl_interp * @var{interp})
-This function returns the minimum number of points required by the
-interpolation type of @var{interp}.  For example, Akima spline interpolation
-requires a minimum of 5 points.
+@deftypefunx {unsigned int} gsl_interp_type_min_size (const gsl_interp_type * @var{T})
+These functions return the minimum number of points required by the
+interpolation object @var{interp} or interpolation type @var{T}.  For
+example, Akima spline interpolation requires a minimum of 5 points.
 @end deftypefun
+
+
 
 @node Index Look-up and Acceleration
 @section Index Look-up and Acceleration
@@ -184,8 +187,11 @@ This function frees the accelerator object @var{acc}.
 @deftypefun  double gsl_interp_eval (const gsl_interp * @var{interp}, const double @var{xa}[], const double @var{ya}[], double @var{x}, gsl_interp_accel * @var{acc})
 @deftypefunx int gsl_interp_eval_e (const gsl_interp * @var{interp}, const double @var{xa}[], const double @var{ya}[], double @var{x}, gsl_interp_accel * @var{acc}, double * @var{y})
 These functions return the interpolated value of @var{y} for a given
-point @var{x}, using the interpolation object @var{interp}, data arrays
-@var{xa} and @var{ya} and the accelerator @var{acc}.
+point @var{x}, using the interpolation object @var{interp}, data
+arrays @var{xa} and @var{ya} and the accelerator @var{acc}.  When
+@var{x} is outside the range of @var{xa}, the error code
+@code{GSL_EDOM} is returned with a value of @code{GSL_NAN} for
+@var{y}.
 @end deftypefun
 
 @deftypefun double gsl_interp_eval_deriv (const gsl_interp * @var{interp}, const double @var{xa}[], const double @var{ya}[], double @var{x}, gsl_interp_accel * @var{acc})

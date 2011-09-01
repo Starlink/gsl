@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([gsl],[1.14])
+AC_INIT([gsl],[1.15])
 AC_CONFIG_SRCDIR(gsl_math.h)
 
 AM_INIT_AUTOMAKE([gnu])
@@ -26,6 +26,7 @@ dnl gsl-1.11   libgsl 12:0:12  libgslcblas 0:0:0
 dnl gsl-1.12   libgsl 13:0:13  libgslcblas 0:0:0 
 dnl gsl-1.13   libgsl 14:0:14  libgslcblas 0:0:0 
 dnl gsl-1.14   libgsl 15:0:15  libgslcblas 0:0:0 
+dnl gsl-1.15   libgsl 16:0:16  libgslcblas 0:0:0 
 dnl 
 dnl (*) There was an error on this release.  Firstly, the versioning
 dnl numbers were not updated.  Secondly, 2 functions were removed, but
@@ -46,9 +47,9 @@ dnl interfaces have been removed. removal has precedence over adding,
 dnl so set to 0 if both happened.
 
 dnl
-GSL_CURRENT=15
+GSL_CURRENT=16
 GSL_REVISION=0
-GSL_AGE=15
+GSL_AGE=16
 dnl
 CBLAS_CURRENT=0
 CBLAS_REVISION=0
@@ -101,9 +102,13 @@ AC_C_CHAR_UNSIGNED
 
 GSL_CFLAGS="-I$includedir"
 GSL_LIBS="-L$libdir -lgsl"
+dnl macro from libtool - can be replaced with LT_LIB_M when we require libtool 2
+AC_CHECK_LIBM
+GSL_LIBM=$LIBM
 
 AC_SUBST(GSL_CFLAGS)
 AC_SUBST(GSL_LIBS)
+AC_SUBST(GSL_LIBM)
 
 if test "$ac_cv_c_inline" != no ; then 
 dnl Check for "extern inline", using a modified version of the test
@@ -197,6 +202,7 @@ AC_CHECK_DECLS(asinh,,,[#include <math.h>])
 AC_CHECK_DECLS(atanh,,,[#include <math.h>])
 AC_CHECK_DECLS(ldexp,,,[#include <math.h>])
 AC_CHECK_DECLS(frexp,,,[#include <math.h>])
+AC_CHECK_DECLS([fprnd_t],[],[],[[#include <float.h>]]) 
 AC_CHECK_DECLS(isinf,,,[#include <math.h>])
 AC_CHECK_DECLS(isfinite,,,[#include <math.h>])
 AC_CHECK_DECLS(finite,,,[#include <math.h>
@@ -527,6 +533,10 @@ AH_BOTTOM([/* Substitute gsl functions for missing system functions */
 #define isinf gsl_isinf
 #endif
 
+#if !HAVE_DECL_ISFINITE
+#define isfinite gsl_finite
+#endif
+
 #if !HAVE_DECL_FINITE
 #define finite gsl_finite
 #endif
@@ -553,5 +563,5 @@ AH_VERBATIM([GSL_DISABLE_DEPRECATED],
 #define GSL_DISABLE_DEPRECATED 1])
 
 dnl
-AC_CONFIG_FILES([gsl_version.h gsl.spec gsl/Makefile test/Makefile err/Makefile sys/Makefile utils/Makefile const/Makefile min/Makefile multimin/Makefile ieee-utils/Makefile fft/Makefile specfunc/Makefile dht/Makefile fit/Makefile multifit/Makefile bspline/Makefile statistics/Makefile sum/Makefile roots/Makefile multiroots/Makefile ntuple/Makefile poly/Makefile qrng/Makefile rng/Makefile randist/Makefile siman/Makefile integration/Makefile interpolation/Makefile doc/Makefile block/Makefile vector/Makefile matrix/Makefile histogram/Makefile monte/Makefile ode-initval/Makefile cblas/Makefile blas/Makefile linalg/Makefile eigen/Makefile permutation/Makefile combination/Makefile multiset/Makefile sort/Makefile complex/Makefile diff/Makefile deriv/Makefile cheb/Makefile cdf/Makefile wavelet/Makefile Makefile])
+AC_CONFIG_FILES([gsl_version.h gsl.spec gsl/Makefile test/Makefile err/Makefile sys/Makefile utils/Makefile const/Makefile min/Makefile multimin/Makefile ieee-utils/Makefile fft/Makefile specfunc/Makefile dht/Makefile fit/Makefile multifit/Makefile bspline/Makefile statistics/Makefile sum/Makefile roots/Makefile multiroots/Makefile ntuple/Makefile poly/Makefile qrng/Makefile rng/Makefile randist/Makefile siman/Makefile integration/Makefile interpolation/Makefile doc/Makefile block/Makefile vector/Makefile matrix/Makefile histogram/Makefile monte/Makefile ode-initval/Makefile ode-initval2/Makefile cblas/Makefile blas/Makefile linalg/Makefile eigen/Makefile permutation/Makefile combination/Makefile multiset/Makefile sort/Makefile complex/Makefile diff/Makefile deriv/Makefile cheb/Makefile cdf/Makefile wavelet/Makefile Makefile])
 AC_OUTPUT

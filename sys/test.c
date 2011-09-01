@@ -286,8 +286,34 @@ main (void)
       {
         y = gsl_pow_int (-3.14, n);
         y_expected = pow (-3.14, n);
-        gsl_test_rel (y, y_expected, 1e-15, "gsl_pow_n(-3.14,%d)", n);
+        gsl_test_rel (y, y_expected, 1e-15, "gsl_pow_int(-3.14,%d)", n);
       }
+  }
+
+
+  {
+    unsigned int n;
+    for (n = 0; n < 10; n++)
+      {
+        y = gsl_pow_uint (-3.14, n);
+        y_expected = pow (-3.14, n);
+        gsl_test_rel (y, y_expected, 1e-15, "gsl_pow_uint(-3.14,%d)", n);
+      }
+  }
+
+  /* Test case for n at INT_MAX, INT_MIN */
+
+  {
+    double u = 1.0000001;
+    int n = INT_MAX;
+    y = gsl_pow_int (u, n);
+    y_expected = pow (u, n);
+    gsl_test_rel (y, y_expected, 1e-6, "gsl_pow_int(%.7f,%d)", u, n);
+
+    n = INT_MIN;
+    y = gsl_pow_int (u, n);
+    y_expected = pow (u, n);
+    gsl_test_rel (y, y_expected, 1e-6, "gsl_pow_int(%.7f,%d)", u, n);
   }
 
   /* Test for ldexp */

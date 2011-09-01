@@ -27,12 +27,21 @@
 
 double gsl_pow_int(double x, int n)
 {
-  double value = 1.0;
+  unsigned int un;
 
   if(n < 0) {
     x = 1.0/x;
-    n = -n;
+    un = -n;
+  } else {
+    un = n;
   }
+
+  return gsl_pow_uint(x, un);
+}
+
+double gsl_pow_uint(double x, unsigned int n)
+{
+  double value = 1.0;
 
   /* repeated squaring method 
    * returns 0.0^0 = 1.0, so continuous in x
@@ -45,4 +54,3 @@ double gsl_pow_int(double x, int n)
 
   return value;
 }
-
