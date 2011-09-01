@@ -11,8 +11,10 @@ infinite and semi-infinite ranges, singular integrals, including
 logarithmic singularities, computation of Cauchy principal values and
 oscillatory integrals.  The library reimplements the algorithms used in
 @sc{quadpack}, a numerical integration package written by Piessens,
-Doncker-Kapenga, Uberhuber and Kahaner.  Fortran code for @sc{quadpack} is
-available on Netlib.
+de Doncker-Kapenga, Ueberhuber and Kahaner.  Fortran code for @sc{quadpack} is
+available on Netlib.  Also included are non-adaptive, fixed-order
+Gauss-Legendre integration routines with high precision coefficients
+by Pavel Holoborodko.
 
 The functions described in this chapter are declared in the header file
 @file{gsl_integration.h}.
@@ -28,6 +30,8 @@ The functions described in this chapter are declared in the header file
 * QAWS adaptive integration for singular functions::  
 * QAWO adaptive integration for oscillatory functions::  
 * QAWF adaptive integration for Fourier integrals::  
+* CQUAD doubly-adaptive integration::  
+* Fixed order Gauss-Legendre integration::  
 * Numerical integration error codes::  
 * Numerical integration examples::  
 * Numerical integration References and Further Reading::  
@@ -223,6 +227,7 @@ which handles the memory for the subinterval ranges, results and error
 estimates.
 
 @deftypefun {gsl_integration_workspace *} gsl_integration_workspace_alloc (size_t @var{n}) 
+@tpindex gsl_integration_workspace
 This function allocates a workspace sufficient to hold @var{n} double
 precision intervals, their integration results and error estimates.
 @end deftypefun
@@ -455,7 +460,7 @@ work efficiently the algorithm requires a precomputed table of
 Chebyshev moments.
 
 @deftypefun {gsl_integration_qaws_table *} gsl_integration_qaws_table_alloc (double @var{alpha}, double @var{beta}, int @var{mu}, int @var{nu})
-
+@tpindex gsl_integration_qaws_table
 This function allocates space for a @code{gsl_integration_qaws_table}
 struct describing a singular weight function
 @math{W(x)} with the parameters @math{(\alpha, \beta, \mu, \nu)},
@@ -564,7 +569,7 @@ work efficiently the algorithm requires a table of Chebyshev moments
 which must be pre-computed with calls to the functions below.
 
 @deftypefun {gsl_integration_qawo_table *} gsl_integration_qawo_table_alloc (double @var{omega}, double @var{L}, enum gsl_integration_qawo_enum @var{sine}, size_t @var{n})
-
+@tpindex gsl_integration_qawo_table
 This function allocates space for a @code{gsl_integration_qawo_table}
 struct and its associated workspace describing a sine or cosine weight
 function @math{W(x)} with the parameters @math{(\omega, L)},
@@ -691,7 +696,7 @@ I = \int_a^@{+\infty@} dx f(x) cos(omega x)
 The parameter @math{\omega} and choice of @math{\sin} or @math{\cos} is
 taken from the table @var{wf} (the length @var{L} can take any value,
 since it is overridden by this function to a value appropriate for the
-fourier integration).  The integral is computed using the QAWO algorithm
+Fourier integration).  The integral is computed using the QAWO algorithm
 over each of the subintervals,
 @tex
 \beforedisplay
@@ -775,6 +780,102 @@ The integration over each subinterval uses the memory provided by
 
 @end deftypefun
 
+@node CQUAD doubly-adaptive integration
+@section CQUAD doubly-adaptive integration
+@cindex cquad, doubly-adaptive integration
+
+@sc{cquad} is a new doubly-adaptive general-purpose quadrature
+routine which can handle most types of singularities,
+non-numerical function values such as @code{Inf} or @code{NaN},
+as well as some divergent integrals. It generally requires more
+function evaluations than the integration routines in
+@sc{quadpack}, yet fails less often for difficult integrands.
+
+The underlying algorithm uses a doubly-adaptive scheme in which
+Clenshaw-Curtis quadrature rules of increasing degree are used
+to compute the integral in each interval. The @math{L_2}-norm of
+the difference between the underlying interpolatory polynomials
+of two successive rules is used as an error estimate. The
+interval is subdivided if the difference between two successive
+rules is too large or a rule of maximum degree has been reached.
+     
+@deftypefun {gsl_integration_cquad_workspace *} gsl_integration_cquad_workspace_alloc (size_t @var{n}) 
+@tpindex gsl_integration_cquad_workspace
+This function allocates a workspace sufficient to hold the data for
+@var{n} intervals. The number @var{n} is not the maximum number of
+intervals that will be evaluated. If the workspace is full, intervals
+with smaller error estimates will be discarded. A minimum of 3
+intervals is required and or most functions, a workspace of size 100
+is sufficient.
+@end deftypefun
+
+@deftypefun void gsl_integration_cquad_workspace_free (gsl_integration_cquad_workspace * @var{w})
+This function frees the memory associated with the workspace @var{w}.
+@end deftypefun
+
+@deftypefun int gsl_integration_cquad (const gsl_function * @var{f}, double @var{a}, double @var{b}, double @var{epsabs}, double @var{epsrel}, gsl_integration_cquad_workspace * @var{workspace},  double * @var{result}, double * @var{abserr}, size_t * @var{nevals})
+This function computes the integral of @math{f} over @math{(a,b)}
+within the desired absolute and relative error limits, @var{epsabs}
+and @var{epsrel} using the @sc{cquad} algorithm.  The function returns
+the final approximation, @var{result}, an estimate of the absolute
+error, @var{abserr}, and the number of function evaluations required,
+@var{nevals}.
+
+The @sc{cquad} algorithm divides the integration region into
+subintervals, and in each iteration, the subinterval with the largest
+estimated error is processed.  The algorithm uses Clenshaw-Curits
+quadrature rules of degree 4, 8, 16 and 32 over 5, 9, 17 and 33 nodes
+respectively. Each interval is initialized with the lowest-degree
+rule. When an interval is processed, the next-higher degree rule is
+evaluated and an error estimate is computed based on the
+@math{L_2}-norm of the difference between the underlying interpolating
+polynomials of both rules. If the highest-degree rule has already been
+used, or the interpolatory polynomials differ significantly, the
+interval is bisected.
+
+The subintervals and their results are stored in the memory 
+provided by @var{workspace}. If the error estimate or the number of 
+function evaluations is not needed, the pointers @var{abserr} and @var{nevals}
+can be set to @code{NULL}.
+@end deftypefun
+
+@node Fixed order Gauss-Legendre integration
+@section Gauss-Legendre integration
+
+The fixed-order Gauss-Legendre integration routines are provided for fast
+integration of smooth functions with known polynomial order.  The
+@math{n}-point Gauss-Legendre rule is exact for polynomials of order
+@math{2*n-1} or less.  For example, these rules are useful when integrating
+basis functions to form mass matrices for the Galerkin method.  Unlike other
+numerical integration routines within the library, these routines do not accept
+absolute or relative error bounds.
+
+@deftypefun {gsl_integration_glfixed_table *} gsl_integration_glfixed_table_alloc (size_t @var{n})
+@tpindex gsl_integration_glfixed_table
+This function determines the Gauss-Legendre abscissae and weights necessary for
+an @math{n}-point fixed order integration scheme.  If possible, high precision
+precomputed coefficients are used.  If precomputed weights are not available,
+lower precision coefficients are computed on the fly.
+@end deftypefun
+
+@deftypefun double gsl_integration_glfixed ({const gsl_function *} @var{f}, double @var{a}, double @var{b}, {const gsl_integration_glfixed_table *} @var{t})
+This function applies the Gauss-Legendre integration rule
+contained in table @var{t} and returns the result.
+@end deftypefun
+
+@deftypefun int gsl_integration_glfixed_point (double @var{a}, double @var{b}, size_t @var{i}, {double *} @var{xi}, {double *} @var{wi}, {const gsl_integration_glfixed_table *} @var{t})
+For @var{i} in @math{[0, @dots{}, t->n - 1]}, this function obtains the
+@var{i}-th Gauss-Legendre point @var{xi} and weight @var{wi} on the interval
+[@var{a},@var{b}].  The points and weights are ordered by increasing point
+value.  A function @math{f} may be integrated on [@var{a},@var{b}] by summing
+@math{wi * f(xi)} over @var{i}.
+@end deftypefun
+
+@deftypefun void gsl_integration_glfixed_table_free ({gsl_integration_glfixed_table *} @var{t})
+@tpindex gsl_integration_glfixed_table
+This function frees the memory associated with the table @var{t}.
+@end deftypefun
+
 @node Numerical integration error codes
 @section Error codes
 
@@ -799,7 +900,7 @@ numerically.
 @section Examples
 
 The integrator @code{QAGS} will handle a large class of definite
-integrals.  For example, consider the following integral, which has a
+integrals.  For example, consider the following integral, which has an
 algebraic-logarithmic singularity at the origin,
 @tex
 \beforedisplay
@@ -848,14 +949,22 @@ algorithms, program listings, test programs and examples.  It also
 includes useful advice on numerical integration and many references to
 the numerical integration literature used in developing @sc{quadpack}.
 
-@itemize @asis
+@itemize @w{}
 @item
-R. Piessens, E. de Doncker-Kapenga, C.W. Uberhuber, D.K. Kahaner.
+R. Piessens, E. de Doncker-Kapenga, C.W. Ueberhuber, D.K. Kahaner.
 @cite{@sc{quadpack} A subroutine package for automatic integration}
 Springer Verlag, 1983.
 @end itemize
 
 @noindent
+The @sc{cquad} integration algorithm is described in the following paper:
+
+@itemize @w{}
+@item
+P. Gonnet, ``Increasing the Reliability of Adaptive Quadrature Using
+Explicit Interpolants'', @cite{ACM Transactions on Mathematical
+Software}, Volume 37 (2010), Issue 3, Article 26.
+@end itemize
 
 
 

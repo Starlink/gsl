@@ -27,6 +27,8 @@ The functions described in this section are declared in the header file
 @section Quasi-random number generator initialization
 
 @deftypefun {gsl_qrng *} gsl_qrng_alloc (const gsl_qrng_type * @var{T}, unsigned int @var{d})
+@tpindex gsl_qrng
+@tpindex gsl_qrng_type
 This function returns a pointer to a newly-created instance of a
 quasi-random sequence generator of type @var{T} and dimension @var{d}.
 If there is insufficient memory to create the generator then the
@@ -163,7 +165,7 @@ The following plot shows the distribution in the x-y plane of the first
 The implementations of the quasi-random sequence routines are based on
 the algorithms described in the following paper,
 
-@itemize @asis
+@itemize @w{}
 P. Bratley and B.L. Fox and H. Niederreiter, ``Algorithm 738: Programs
 to Generate Niederreiter's Low-discrepancy Sequences'', @cite{ACM
 Transactions on Mathematical Software}, Vol.@: 20, No.@: 4, December, 1994,

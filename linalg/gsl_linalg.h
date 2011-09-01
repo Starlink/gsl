@@ -450,6 +450,9 @@ int gsl_linalg_complex_cholesky_solve (const gsl_matrix_complex * cholesky,
 int gsl_linalg_complex_cholesky_svx (const gsl_matrix_complex * cholesky,
                                      gsl_vector_complex * x);
 
+int gsl_linalg_complex_cholesky_invert(gsl_matrix_complex * cholesky);
+
+
 /* Symmetric to symmetric tridiagonal decomposition */
 
 int gsl_linalg_symmtd_decomp (gsl_matrix * A, 
@@ -472,7 +475,7 @@ int gsl_linalg_hermtd_decomp (gsl_matrix_complex * A,
 
 int gsl_linalg_hermtd_unpack (const gsl_matrix_complex * A, 
                               const gsl_vector_complex * tau,
-                              gsl_matrix_complex * Q, 
+                              gsl_matrix_complex * U, 
                               gsl_vector * diag, 
                               gsl_vector * sudiag);
 

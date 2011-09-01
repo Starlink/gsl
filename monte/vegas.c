@@ -1,6 +1,7 @@
 /* monte/vegas.c
  * 
  * Copyright (C) 1996, 1997, 1998, 1999, 2000 Michael Booth
+ * Copyright (C) 2009 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -179,7 +180,7 @@ gsl_monte_vegas_integrate (gsl_monte_function * f,
         }
 
       {
-        double tot_boxes = pow ((double) boxes, (double) dim);
+        double tot_boxes = gsl_pow_int ((double) boxes, dim);
         state->calls_per_box = GSL_MAX (calls / tot_boxes, 2);
         calls = state->calls_per_box * tot_boxes;
       }
@@ -508,6 +509,7 @@ gsl_monte_vegas_init (gsl_monte_vegas_state * state)
 void
 gsl_monte_vegas_free (gsl_monte_vegas_state * s)
 {
+  RETURN_IF_NULL (s);
   free (s->x);
   free (s->delx);
   free (s->d);
@@ -517,6 +519,41 @@ gsl_monte_vegas_free (gsl_monte_vegas_state * s)
   free (s->box);
   free (s->bin);
   free (s);
+}
+
+double
+gsl_monte_vegas_chisq (const gsl_monte_vegas_state * s)
+{
+  return s->chisq;
+}
+
+void
+gsl_monte_vegas_runval (const gsl_monte_vegas_state * s, double * result, double * sigma)
+{
+  *result = s->result;
+  *sigma = s->sigma;
+}
+
+void 
+gsl_monte_vegas_params_get (const gsl_monte_vegas_state * s, gsl_monte_vegas_params * p)
+{
+  p->alpha = s->alpha;
+  p->iterations = s->iterations;
+  p->stage = s->stage;
+  p->mode = s->mode;
+  p->verbose = s->verbose;
+  p->ostream = s->ostream;
+}
+
+void 
+gsl_monte_vegas_params_set (gsl_monte_vegas_state * s, const gsl_monte_vegas_params * p)
+{
+  s->alpha = p->alpha;
+  s->iterations = p->iterations;
+  s->stage = p->stage;
+  s->mode = p->mode;
+  s->verbose = p->verbose;
+  s->ostream = p->ostream;
 }
 
 static void

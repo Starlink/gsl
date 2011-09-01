@@ -97,20 +97,20 @@ Euler's constant, @math{\gamma}
 @cindex Not-a-number, defined as a macro
 @cindex IEEE NaN, defined as a macro
 
-@defmac GSL_POSINF
+@defvr {Macro} GSL_POSINF
 This macro contains the IEEE representation of positive infinity,
 @math{+\infty}. It is computed from the expression @code{+1.0/0.0}.
-@end defmac
+@end defvr
 
-@defmac GSL_NEGINF
+@defvr {Macro} GSL_NEGINF
 This macro contains the IEEE representation of negative infinity,
 @math{-\infty}. It is computed from the expression @code{-1.0/0.0}.
-@end defmac
+@end defvr
 
-@defmac GSL_NAN
+@defvr {Macro} GSL_NAN
 This macro contains the IEEE representation of the Not-a-Number symbol,
 @code{NaN}. It is computed from the ratio @code{0.0/0.0}.
-@end defmac
+@end defvr
 
 @deftypefun int gsl_isnan (const double @var{x})
 This function returns 1 if @var{x} is not-a-number.
@@ -228,7 +228,8 @@ functions to fill this gap.  For reasons of efficiency, these functions
 do not check for overflow or underflow conditions. 
 
 @deftypefun double gsl_pow_int (double @var{x}, int @var{n})
-This routine computes the power @math{x^n} for integer @var{n}.  The
+@deftypefunx double gsl_pow_uint (double @var{x}, unsigned int @var{n})
+These routines computes the power @math{x^n} for integer @var{n}.  The
 power is computed efficiently---for example, @math{x^8} is computed as
 @math{((x^2)^2)^2}, requiring only 3 multiplications.  A version of this
 function which also computes the numerical error in the result is

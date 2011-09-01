@@ -1,3 +1,64 @@
+2011-04-13  Brian Gough  <bjg@network-theory.co.uk>
+
+	* gsl_nan.h (GSL_NEGZERO): define negative zero as explicitly
+	floating point, same for positive zero.
+
+2011-04-01  Rhys Ulerich  <rhys.ulerich@gmail.com>
+
+	* doc/bspline.texi: Correct valid index range for Greville abscissae
+
+2011-01-31  Peter Johansson  <trojkan@gmail.com>
+
+	* gsl.pc.in (GSL_CBLAS_LIB): allow user to choose cblas via
+	pkg-config
+
+2010-08-06  Brian Gough  <bjg@network-theory.co.uk>
+
+	* ode-initval2: added Tuomo Keskitalo's new ode branch with a
+	gsl_odeiv2 prefix which is intended to be the new default.  Will
+	retain gsl_odeiv for binary compatibility but old interface will
+	be deprecated.
+
+2010-05-25  Peter Johansson  <trojkan@gmail.com>
+
+	* configure.ac: added variable GSL_LIBM from macro AC_CHECK_LIBM
+	* Makefile.am: added GSL_LIBM in edit substitution
+	* gsl-config.in: using variable $GSL_LIBM rather than hard-coded -libm
+	* gsl.pc.in: using variable $GSL_LIBM rather than hard-coded -libm
+
+2010-04-24  Brian Gough  <bjg@network-theory.co.uk>
+
+	* configure.ac: added macro for substituting isfinite by
+	gsl_finite when needed.
+
+2010-04-10  Giuseppe Scrivano  <gscrivano@gnu.org>
+
+	* utils/memcpy.c (memcpy): Use the standand method signature.
+
+	* utils/memmove.c (memmove): Likewise.
+
+2010-01-18  Brian Gough  <bjg@network-theory.co.uk>
+
+	* gsl_version.h.in, configure.ac: added GSL_MAJOR_VERSION and
+	GSL_MINOR_VERSION macros
+
+2009-07-09  Brian Gough  <bjg@network-theory.co.uk>
+
+	* configure.ac: added RETURN_IF_NULL macro to handle null argument
+	in free() type functions.
+
+2009-05-09  Brian Gough  <bjg@network-theory.co.uk>
+
+	* configure.ac: improve tests for C99 inline, and don't test when
+	inline is not available
+
+	* gsl_inline.h: added test for HAVE_C99_INLINE
+
+2009-04-10  Brian Gough  <bjg@network-theory.co.uk>
+
+	* Makefile.am: generate gsl-config gsl.pc from Makefile instead
+	of configure, to allow make install prefix=...
+
 2008-09-26  Brian Gough  <bjg@network-theory.co.uk>
 
 	* configure.ac: handle test for SSE in cross-compilation (fall

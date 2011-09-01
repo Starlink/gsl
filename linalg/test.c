@@ -1,6 +1,7 @@
 /* linalg/test.c
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2004, 2005, 2006, 2007 Gerard Jungman, Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2004, 2005, 2006, 2007, 2010 Gerard Jungman, Brian Gough
+ * Copyright (C) Huan Wu (test_choleskyc_invert and test_choleskyc_invert_dim)
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +40,7 @@ gsl_matrix * create_moler_matrix(unsigned long size);
 gsl_matrix * create_row_matrix(unsigned long size1, unsigned long size2);
 gsl_matrix * create_2x2_matrix(double a11, double a12, double a21, double a22);
 gsl_matrix * create_diagonal_matrix(double a[], unsigned long size);
+gsl_matrix * create_sparse_matrix(unsigned long m, unsigned long n);
 
 int test_matmult(void);
 int test_matmult_mod(void);
@@ -271,6 +273,43 @@ create_diagonal_matrix(double a[], unsigned long size)
   return m;
 }
 
+double rand_double() {
+  static unsigned int x;
+  x = (69069 * x + 1) & 0xFFFFFFFFUL;
+  return (x  / 4294967296.0);
+}
+
+gsl_matrix *
+create_sparse_matrix(unsigned long m, unsigned long n) {
+  gsl_matrix* A = gsl_matrix_calloc(m, n);
+  
+  unsigned long int i, j;
+
+  for (i = 0; i < m; i++) {
+    for (j = 0; j < n; j++) {
+      double a = (rand_double() < 0.6 ? 1 : 0);
+      gsl_matrix_set(A, i, j, a);
+    }
+  }
+
+  for (i = 0; i < m; i++) {
+    if (rand_double() < 0.9) {
+      gsl_vector_view row = gsl_matrix_row (A, i);
+      gsl_vector_set_zero (&row.vector);
+    }
+  }
+  for (i = 0; i < n; i++) {
+    if (rand_double() < 0.43) {
+      gsl_vector_view col = gsl_matrix_column (A, i);
+      gsl_vector_set_zero (&col.vector);
+    }
+  }
+
+  return A;
+}
+
+
+
 gsl_matrix * m11;
 gsl_matrix * m51;
 
@@ -299,7 +338,8 @@ gsl_matrix_complex * c7;
 
 gsl_matrix * inf5; double inf5_data[] = {1.0, 0.0, -3.0, 0.0, -5.0};
 gsl_matrix * nan5;
-gsl_matrix * dblmin3, * dblmin5;
+gsl_matrix * dblmin3, * dblmin5, * dblsubnorm5;
+gsl_matrix * bigsparse;
 
 double m53_lssolution[] = {52.5992295702070, -337.7263113752073, 
                            351.8823436427604};
@@ -1512,7 +1552,7 @@ int test_QRPT_update(void)
   gsl_test(f, "  QRPT_update m(3,5)");
   s += f;
 
-  f = test_QRPT_update_dim(m53, 2 * 512.0 * GSL_DBL_EPSILON);
+  f = test_QRPT_update_dim(m53, 2 * 1024.0 * GSL_DBL_EPSILON);
   gsl_test(f, "  QRPT_update m(5,3)");
   s += f;
 
@@ -2364,6 +2404,7 @@ test_SV_decomp_dim(const gsl_matrix * m, double eps)
   int s = 0;
   double di1;
   unsigned long i,j, M = m->size1, N = m->size2;
+  unsigned long input_nans = 0;
 
   gsl_matrix * v  = gsl_matrix_alloc(M,N);
   gsl_matrix * a  = gsl_matrix_alloc(M,N);
@@ -2374,7 +2415,17 @@ test_SV_decomp_dim(const gsl_matrix * m, double eps)
 
   gsl_matrix_memcpy(v,m);
 
-  s += gsl_linalg_SV_decomp(v, q, d, w); 
+  /* Check for nans in the input */
+  for (i = 0; i<M; i++) {
+    for (j = 0; j<N; j++) {
+      double m_ij = gsl_matrix_get (m, i, j);
+      if (gsl_isnan (m_ij)) input_nans++;
+    }
+  }
+
+  s = gsl_linalg_SV_decomp(v, q, d, w); 
+
+  if (s) printf("returned error code %d = %s\n", s, gsl_strerror(s));
 
   /* Check that singular values are non-negative and in non-decreasing
      order */
@@ -2387,7 +2438,13 @@ test_SV_decomp_dim(const gsl_matrix * m, double eps)
 
       if (gsl_isnan (di))
         {
-          continue;  /* skip NaNs */
+          if (input_nans > 0) 
+            continue;  /* skip NaNs if present in input */
+          else
+            {
+              s++;
+              printf("bad singular value %lu = %22.18g\n", i, di);
+            }
         }
 
       if (di < 0) {
@@ -2525,6 +2582,14 @@ int test_SV_decomp(void)
 
   f = test_SV_decomp_dim(dblmin5, 1024 * GSL_DBL_EPSILON);
   gsl_test(f, "  SV_decomp dblmin5");
+  s += f;
+
+  f = test_SV_decomp_dim(dblsubnorm5, 100 * 1024 * 1024 * GSL_DBL_EPSILON);
+  gsl_test(f, "  SV_decomp dblsubnorm5");
+  s += f;
+
+  f = test_SV_decomp_dim(bigsparse, 1024 * GSL_DBL_EPSILON);
+  gsl_test(f, "  SV_decomp bigsparse");
   s += f;
 
 
@@ -3579,6 +3644,116 @@ test_choleskyc_decomp(void)
   return s;
 }
 
+
+
+int
+test_choleskyc_invert_dim(const gsl_matrix_complex * m, double eps)
+{
+  int s = 0;
+  unsigned long i, j, N = m->size1;
+  gsl_complex af, bt;
+  gsl_matrix_complex * v  = gsl_matrix_complex_alloc(N, N);
+  gsl_matrix_complex * c  = gsl_matrix_complex_alloc(N, N);
+
+  gsl_matrix_complex_memcpy(v, m);
+
+  s += gsl_linalg_complex_cholesky_decomp(v);
+  s += gsl_linalg_complex_cholesky_invert(v);
+
+  GSL_SET_COMPLEX(&af, 1.0, 0.0);
+  GSL_SET_COMPLEX(&bt, 0.0, 0.0);
+  gsl_blas_zhemm(CblasLeft, CblasUpper, af, m, v, bt, c);
+
+  /* c should be the identity matrix */
+
+  for (i = 0; i < N; ++i)
+    {
+      for (j = 0; j < N; ++j)
+        {
+          int foo;
+          gsl_complex cij = gsl_matrix_complex_get(c, i, j);
+          double expected, actual;
+
+          /* check real part */
+          if (i == j)
+            expected = 1.0;
+          else
+            expected = 0.0;
+          actual = GSL_REAL(cij);
+          foo = check(actual, expected, eps);
+          if (foo)
+            printf("REAL(%3lu,%3lu)[%lu,%lu]: %22.18g   %22.18g\n", 
+                   N, N, i,j, actual, expected);
+          s += foo;
+
+          /* check imaginary part */
+          expected = 0.0;
+          actual = GSL_IMAG(cij);
+          foo = check(actual, expected, eps);
+          if (foo)
+            printf("IMAG(%3lu,%3lu)[%lu,%lu]: %22.18g   %22.18g\n", 
+                   N, N, i,j, actual, expected);
+          s += foo;
+
+        }
+    }
+
+  gsl_matrix_complex_free(v);
+  gsl_matrix_complex_free(c);
+
+  return s;
+}
+
+int
+test_choleskyc_invert(void)
+{
+  int f;
+  int s = 0;
+
+  double dat2[] = { 
+      92.303, 0.000,    10.858, 1.798,    
+      10.858, -1.798,    89.027, 0.000 
+  }; 
+
+  double dat3[] = { 
+      59.75,0,       49.25,172.25, 66.75,-162.75,
+      49.25,-172.25, 555.5,0,      -429,-333.5,
+      66.75,162.75,  -429,333.5,   536.5,0 
+  };
+
+  double dat4[] = { 
+      102.108, 0.000,    14.721, 1.343,    -17.480, 15.591,    3.308, -2.936,    
+      14.721, -1.343,    101.970, 0.000,    11.671, -6.776,    -5.009, -2.665,    
+      -17.480, -15.591,    11.671, 6.776,    105.071, 0.000,    3.396, 6.276,    
+      3.308, 2.936,    -5.009, 2.665,    3.396, -6.276,    107.128, 0.000 
+  }; 
+
+  {
+    gsl_matrix_complex_view rv2 = gsl_matrix_complex_view_array(dat2, 2, 2);
+    f = test_choleskyc_invert_dim(&rv2.matrix, 2 * 8.0 * GSL_DBL_EPSILON);
+    gsl_test(f, "  choleskyc_invert 2x2 Hermitian");
+    s += f;
+  }
+
+  { 
+    gsl_matrix_complex_view rv3 = gsl_matrix_complex_view_array(dat3, 3, 3);
+    f = test_choleskyc_invert_dim(&rv3.matrix, 2 * 1024.0 * GSL_DBL_EPSILON);
+    gsl_test(f, "  choleskyc_invert 3x3 Hermitian");
+    s += f;
+  }
+
+  {
+    gsl_matrix_complex_view rv4 = gsl_matrix_complex_view_array(dat4, 4, 4);
+    f = test_choleskyc_invert_dim(&rv4.matrix, 2 * 64.0 * GSL_DBL_EPSILON);
+    gsl_test(f, "  choleskyc_invert 4x4 Hermitian");
+    s += f;
+  }
+
+  return s;
+}
+
+
+
 int
 test_HH_solve_dim(const gsl_matrix * m, const double * actual, double eps)
 {
@@ -3808,7 +3983,7 @@ int test_TDS_cyc_solve(void)
 
     /*  f = test_TDS_cyc_solve_one(dim, diag, offdiag, rhs, actual, 7.0 * GSL_DBL_EPSILON);
         FIXME: bad accuracy */
-    f = test_TDS_cyc_solve_one(dim, diag, offdiag, rhs, actual, 35.0 * GSL_DBL_EPSILON);
+    f = test_TDS_cyc_solve_one(dim, diag, offdiag, rhs, actual, 40.0 * GSL_DBL_EPSILON);
     gsl_test(f, "  solve_TDS_cyc dim=%lu B", dim);
     s += f;
   }
@@ -4068,7 +4243,7 @@ int test_bidiag_decomp(void)
 void
 my_error_handler (const char *reason, const char *file, int line, int err)
 {
-  if (0) printf ("(caught [%s:%d: %s (%d)])\n", file, line, reason, err) ;
+  if (1) printf ("(caught [%s:%d: %s (%d)])\n", file, line, reason, err) ;
 }
 
 int main(void)
@@ -4121,6 +4296,12 @@ int main(void)
   dblmin5 = create_general_matrix (5, 5);
   gsl_matrix_scale(dblmin5, GSL_DBL_MIN);
 
+  dblsubnorm5 = create_general_matrix (5, 5);
+  gsl_matrix_scale(dblsubnorm5, GSL_DBL_MIN/1024);
+  gsl_matrix_set(dblsubnorm5, 0, 0, 0.0);
+
+  bigsparse = create_sparse_matrix(100, 100);
+
   /* Matmult now obsolete */
 #ifdef MATMULT
   gsl_test(test_matmult(),               "Matrix Multiply"); 
@@ -4158,6 +4339,8 @@ int main(void)
   gsl_test(test_cholesky_invert(),       "Cholesky Inverse");
   gsl_test(test_choleskyc_decomp(),      "Complex Cholesky Decomposition");
   gsl_test(test_choleskyc_solve(),       "Complex Cholesky Solve");
+  gsl_test(test_choleskyc_invert(),      "Complex Cholesky Inverse");
+
   gsl_test(test_HH_solve(),              "Householder solve");
   gsl_test(test_TDS_solve(),             "Tridiagonal symmetric solve");
   gsl_test(test_TDS_cyc_solve(),         "Tridiagonal symmetric cyclic solve");
@@ -4199,6 +4382,9 @@ int main(void)
 
   gsl_matrix_free (dblmin3);
   gsl_matrix_free (dblmin5);
+  gsl_matrix_free (dblsubnorm5);
+
+  gsl_matrix_free (bigsparse);
 
   exit (gsl_test_summary());
 }

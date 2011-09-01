@@ -1,13 +1,13 @@
-This is gsl-ref.info, produced by makeinfo version 4.11 from
+This is gsl-ref.info, produced by makeinfo version 4.13 from
 gsl-ref.texi.
 
-INFO-DIR-SECTION Scientific software
+INFO-DIR-SECTION Software libraries
 START-INFO-DIR-ENTRY
 * gsl-ref: (gsl-ref).                   GNU Scientific Library - Reference
 END-INFO-DIR-ENTRY
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007, 2008 The GSL Team.
+2005, 2006, 2007, 2008, 2009, 2010, 2011 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -22,9 +22,854 @@ License".
 this GNU Manual."
 
 
+File: gsl-ref.info,  Node: Initializing the Multidimensional Solver,  Next: Providing the multidimensional system of equations to solve,  Prev: Overview of Multidimensional Root Finding,  Up: Multidimensional Root-Finding
+
+35.2 Initializing the Solver
+============================
+
+The following functions initialize a multidimensional solver, either
+with or without derivatives.  The solver itself depends only on the
+dimension of the problem and the algorithm and can be reused for
+different problems.
+
+ -- Function: gsl_multiroot_fsolver * gsl_multiroot_fsolver_alloc
+          (const gsl_multiroot_fsolver_type * T, size_t N)
+     This function returns a pointer to a newly allocated instance of a
+     solver of type T for a system of N dimensions.  For example, the
+     following code creates an instance of a hybrid solver, to solve a
+     3-dimensional system of equations.
+
+          const gsl_multiroot_fsolver_type * T
+              = gsl_multiroot_fsolver_hybrid;
+          gsl_multiroot_fsolver * s
+              = gsl_multiroot_fsolver_alloc (T, 3);
+
+     If there is insufficient memory to create the solver then the
+     function returns a null pointer and the error handler is invoked
+     with an error code of `GSL_ENOMEM'.
+
+ -- Function: gsl_multiroot_fdfsolver * gsl_multiroot_fdfsolver_alloc
+          (const gsl_multiroot_fdfsolver_type * T, size_t N)
+     This function returns a pointer to a newly allocated instance of a
+     derivative solver of type T for a system of N dimensions.  For
+     example, the following code creates an instance of a
+     Newton-Raphson solver, for a 2-dimensional system of equations.
+
+          const gsl_multiroot_fdfsolver_type * T
+              = gsl_multiroot_fdfsolver_newton;
+          gsl_multiroot_fdfsolver * s =
+              gsl_multiroot_fdfsolver_alloc (T, 2);
+
+     If there is insufficient memory to create the solver then the
+     function returns a null pointer and the error handler is invoked
+     with an error code of `GSL_ENOMEM'.
+
+ -- Function: int gsl_multiroot_fsolver_set (gsl_multiroot_fsolver * S,
+          gsl_multiroot_function * F, const gsl_vector * X)
+ -- Function: int gsl_multiroot_fdfsolver_set (gsl_multiroot_fdfsolver
+          * S, gsl_multiroot_function_fdf * FDF, const gsl_vector * X)
+     These functions set, or reset, an existing solver S to use the
+     function F or function and derivative FDF, and the initial guess
+     X.  Note that the initial position is copied from X, this argument
+     is not modified by subsequent iterations.
+
+ -- Function: void gsl_multiroot_fsolver_free (gsl_multiroot_fsolver *
+          S)
+ -- Function: void gsl_multiroot_fdfsolver_free
+          (gsl_multiroot_fdfsolver * S)
+     These functions free all the memory associated with the solver S.
+
+ -- Function: const char * gsl_multiroot_fsolver_name (const
+          gsl_multiroot_fsolver * S)
+ -- Function: const char * gsl_multiroot_fdfsolver_name (const
+          gsl_multiroot_fdfsolver * S)
+     These functions return a pointer to the name of the solver.  For
+     example,
+
+          printf ("s is a '%s' solver\n",
+                  gsl_multiroot_fdfsolver_name (s));
+
+     would print something like `s is a 'newton' solver'.
+
+
+File: gsl-ref.info,  Node: Providing the multidimensional system of equations to solve,  Next: Iteration of the multidimensional solver,  Prev: Initializing the Multidimensional Solver,  Up: Multidimensional Root-Finding
+
+35.3 Providing the function to solve
+====================================
+
+You must provide n functions of n variables for the root finders to
+operate on.  In order to allow for general parameters the functions are
+defined by the following data types:
+
+ -- Data Type: gsl_multiroot_function
+     This data type defines a general system of functions with
+     parameters.
+
+    `int (* f) (const gsl_vector * X, void * PARAMS, gsl_vector * F)'
+          this function should store the vector result f(x,params) in F
+          for argument X and parameters PARAMS, returning an
+          appropriate error code if the function cannot be computed.
+
+    `size_t n'
+          the dimension of the system, i.e. the number of components of
+          the vectors X and F.
+
+    `void * params'
+          a pointer to the parameters of the function.
+
+Here is an example using Powell's test function,
+
+     f_1(x) = A x_0 x_1 - 1,
+     f_2(x) = exp(-x_0) + exp(-x_1) - (1 + 1/A)
+
+with A = 10^4.  The following code defines a `gsl_multiroot_function'
+system `F' which you could pass to a solver:
+
+     struct powell_params { double A; };
+
+     int
+     powell (gsl_vector * x, void * p, gsl_vector * f) {
+        struct powell_params * params
+          = *(struct powell_params *)p;
+        const double A = (params->A);
+        const double x0 = gsl_vector_get(x,0);
+        const double x1 = gsl_vector_get(x,1);
+
+        gsl_vector_set (f, 0, A * x0 * x1 - 1);
+        gsl_vector_set (f, 1, (exp(-x0) + exp(-x1)
+                               - (1.0 + 1.0/A)));
+        return GSL_SUCCESS
+     }
+
+     gsl_multiroot_function F;
+     struct powell_params params = { 10000.0 };
+
+     F.f = &powell;
+     F.n = 2;
+     F.params = &params;
+
+ -- Data Type: gsl_multiroot_function_fdf
+     This data type defines a general system of functions with
+     parameters and the corresponding Jacobian matrix of derivatives,
+
+    `int (* f) (const gsl_vector * X, void * PARAMS, gsl_vector * F)'
+          this function should store the vector result f(x,params) in F
+          for argument X and parameters PARAMS, returning an
+          appropriate error code if the function cannot be computed.
+
+    `int (* df) (const gsl_vector * X, void * PARAMS, gsl_matrix * J)'
+          this function should store the N-by-N matrix result J_ij = d
+          f_i(x,params) / d x_j in J for argument X and parameters
+          PARAMS, returning an appropriate error code if the function
+          cannot be computed.
+
+    `int (* fdf) (const gsl_vector * X, void * PARAMS, gsl_vector * F, gsl_matrix * J)'
+          This function should set the values of the F and J as above,
+          for arguments X and parameters PARAMS.  This function
+          provides an optimization of the separate functions for f(x)
+          and J(x)--it is always faster to compute the function and its
+          derivative at the same time.
+
+    `size_t n'
+          the dimension of the system, i.e. the number of components of
+          the vectors X and F.
+
+    `void * params'
+          a pointer to the parameters of the function.
+
+The example of Powell's test function defined above can be extended to
+include analytic derivatives using the following code,
+
+     int
+     powell_df (gsl_vector * x, void * p, gsl_matrix * J)
+     {
+        struct powell_params * params
+          = *(struct powell_params *)p;
+        const double A = (params->A);
+        const double x0 = gsl_vector_get(x,0);
+        const double x1 = gsl_vector_get(x,1);
+        gsl_matrix_set (J, 0, 0, A * x1);
+        gsl_matrix_set (J, 0, 1, A * x0);
+        gsl_matrix_set (J, 1, 0, -exp(-x0));
+        gsl_matrix_set (J, 1, 1, -exp(-x1));
+        return GSL_SUCCESS
+     }
+
+     int
+     powell_fdf (gsl_vector * x, void * p,
+                 gsl_matrix * f, gsl_matrix * J) {
+        struct powell_params * params
+          = *(struct powell_params *)p;
+        const double A = (params->A);
+        const double x0 = gsl_vector_get(x,0);
+        const double x1 = gsl_vector_get(x,1);
+
+        const double u0 = exp(-x0);
+        const double u1 = exp(-x1);
+
+        gsl_vector_set (f, 0, A * x0 * x1 - 1);
+        gsl_vector_set (f, 1, u0 + u1 - (1 + 1/A));
+
+        gsl_matrix_set (J, 0, 0, A * x1);
+        gsl_matrix_set (J, 0, 1, A * x0);
+        gsl_matrix_set (J, 1, 0, -u0);
+        gsl_matrix_set (J, 1, 1, -u1);
+        return GSL_SUCCESS
+     }
+
+     gsl_multiroot_function_fdf FDF;
+
+     FDF.f = &powell_f;
+     FDF.df = &powell_df;
+     FDF.fdf = &powell_fdf;
+     FDF.n = 2;
+     FDF.params = 0;
+
+Note that the function `powell_fdf' is able to reuse existing terms
+from the function when calculating the Jacobian, thus saving time.
+
+
+File: gsl-ref.info,  Node: Iteration of the multidimensional solver,  Next: Search Stopping Parameters for the multidimensional solver,  Prev: Providing the multidimensional system of equations to solve,  Up: Multidimensional Root-Finding
+
+35.4 Iteration
+==============
+
+The following functions drive the iteration of each algorithm.  Each
+function performs one iteration to update the state of any solver of the
+corresponding type.  The same functions work for all solvers so that
+different methods can be substituted at runtime without modifications to
+the code.
+
+ -- Function: int gsl_multiroot_fsolver_iterate (gsl_multiroot_fsolver
+          * S)
+ -- Function: int gsl_multiroot_fdfsolver_iterate
+          (gsl_multiroot_fdfsolver * S)
+     These functions perform a single iteration of the solver S.  If the
+     iteration encounters an unexpected problem then an error code will
+     be returned,
+
+    `GSL_EBADFUNC'
+          the iteration encountered a singular point where the function
+          or its derivative evaluated to `Inf' or `NaN'.
+
+    `GSL_ENOPROG'
+          the iteration is not making any progress, preventing the
+          algorithm from continuing.
+
+   The solver maintains a current best estimate of the root `s->x' and
+its function value `s->f' at all times.  This information can be
+accessed with the following auxiliary functions,
+
+ -- Function: gsl_vector * gsl_multiroot_fsolver_root (const
+          gsl_multiroot_fsolver * S)
+ -- Function: gsl_vector * gsl_multiroot_fdfsolver_root (const
+          gsl_multiroot_fdfsolver * S)
+     These functions return the current estimate of the root for the
+     solver S, given by `s->x'.
+
+ -- Function: gsl_vector * gsl_multiroot_fsolver_f (const
+          gsl_multiroot_fsolver * S)
+ -- Function: gsl_vector * gsl_multiroot_fdfsolver_f (const
+          gsl_multiroot_fdfsolver * S)
+     These functions return the function value f(x) at the current
+     estimate of the root for the solver S, given by `s->f'.
+
+ -- Function: gsl_vector * gsl_multiroot_fsolver_dx (const
+          gsl_multiroot_fsolver * S)
+ -- Function: gsl_vector * gsl_multiroot_fdfsolver_dx (const
+          gsl_multiroot_fdfsolver * S)
+     These functions return the last step dx taken by the solver S,
+     given by `s->dx'.
+
+
+File: gsl-ref.info,  Node: Search Stopping Parameters for the multidimensional solver,  Next: Algorithms using Derivatives,  Prev: Iteration of the multidimensional solver,  Up: Multidimensional Root-Finding
+
+35.5 Search Stopping Parameters
+===============================
+
+A root finding procedure should stop when one of the following
+conditions is true:
+
+   * A multidimensional root has been found to within the
+     user-specified precision.
+
+   * A user-specified maximum number of iterations has been reached.
+
+   * An error has occurred.
+
+The handling of these conditions is under user control.  The functions
+below allow the user to test the precision of the current result in
+several standard ways.
+
+ -- Function: int gsl_multiroot_test_delta (const gsl_vector * DX,
+          const gsl_vector * X, double EPSABS, double EPSREL)
+     This function tests for the convergence of the sequence by
+     comparing the last step DX with the absolute error EPSABS and
+     relative error EPSREL to the current position X.  The test returns
+     `GSL_SUCCESS' if the following condition is achieved,
+
+          |dx_i| < epsabs + epsrel |x_i|
+
+     for each component of X and returns `GSL_CONTINUE' otherwise.
+
+ -- Function: int gsl_multiroot_test_residual (const gsl_vector * F,
+          double EPSABS)
+     This function tests the residual value F against the absolute
+     error bound EPSABS.  The test returns `GSL_SUCCESS' if the
+     following condition is achieved,
+
+          \sum_i |f_i| < epsabs
+
+     and returns `GSL_CONTINUE' otherwise.  This criterion is suitable
+     for situations where the precise location of the root, x, is
+     unimportant provided a value can be found where the residual is
+     small enough.
+
+
+File: gsl-ref.info,  Node: Algorithms using Derivatives,  Next: Algorithms without Derivatives,  Prev: Search Stopping Parameters for the multidimensional solver,  Up: Multidimensional Root-Finding
+
+35.6 Algorithms using Derivatives
+=================================
+
+The root finding algorithms described in this section make use of both
+the function and its derivative.  They require an initial guess for the
+location of the root, but there is no absolute guarantee of
+convergence--the function must be suitable for this technique and the
+initial guess must be sufficiently close to the root for it to work.
+When the conditions are satisfied then convergence is quadratic.
+
+ -- Derivative Solver: gsl_multiroot_fdfsolver_hybridsj
+     This is a modified version of Powell's Hybrid method as
+     implemented in the HYBRJ algorithm in MINPACK.  Minpack was
+     written by Jorge J. More', Burton S. Garbow and Kenneth E.
+     Hillstrom.  The Hybrid algorithm retains the fast convergence of
+     Newton's method but will also reduce the residual when Newton's
+     method is unreliable.
+
+     The algorithm uses a generalized trust region to keep each step
+     under control.  In order to be accepted a proposed new position x'
+     must satisfy the condition |D (x' - x)| < \delta, where D is a
+     diagonal scaling matrix and \delta is the size of the trust
+     region.  The components of D are computed internally, using the
+     column norms of the Jacobian to estimate the sensitivity of the
+     residual to each component of x.  This improves the behavior of the
+     algorithm for badly scaled functions.
+
+     On each iteration the algorithm first determines the standard
+     Newton step by solving the system J dx = - f.  If this step falls
+     inside the trust region it is used as a trial step in the next
+     stage.  If not, the algorithm uses the linear combination of the
+     Newton and gradient directions which is predicted to minimize the
+     norm of the function while staying inside the trust region,
+
+          dx = - \alpha J^{-1} f(x) - \beta \nabla |f(x)|^2.
+
+     This combination of Newton and gradient directions is referred to
+     as a "dogleg step".
+
+     The proposed step is now tested by evaluating the function at the
+     resulting point, x'.  If the step reduces the norm of the function
+     sufficiently then it is accepted and size of the trust region is
+     increased.  If the proposed step fails to improve the solution
+     then the size of the trust region is decreased and another trial
+     step is computed.
+
+     The speed of the algorithm is increased by computing the changes
+     to the Jacobian approximately, using a rank-1 update.  If two
+     successive attempts fail to reduce the residual then the full
+     Jacobian is recomputed.  The algorithm also monitors the progress
+     of the solution and returns an error if several steps fail to make
+     any improvement,
+
+    `GSL_ENOPROG'
+          the iteration is not making any progress, preventing the
+          algorithm from continuing.
+
+    `GSL_ENOPROGJ'
+          re-evaluations of the Jacobian indicate that the iteration is
+          not making any progress, preventing the algorithm from
+          continuing.
+
+
+ -- Derivative Solver: gsl_multiroot_fdfsolver_hybridj
+     This algorithm is an unscaled version of `hybridsj'.  The steps are
+     controlled by a spherical trust region |x' - x| < \delta, instead
+     of a generalized region.  This can be useful if the generalized
+     region estimated by `hybridsj' is inappropriate.
+
+ -- Derivative Solver: gsl_multiroot_fdfsolver_newton
+     Newton's Method is the standard root-polishing algorithm.  The
+     algorithm begins with an initial guess for the location of the
+     solution.  On each iteration a linear approximation to the
+     function F is used to estimate the step which will zero all the
+     components of the residual.  The iteration is defined by the
+     following sequence,
+
+          x -> x' = x - J^{-1} f(x)
+
+     where the Jacobian matrix J is computed from the derivative
+     functions provided by F.  The step dx is obtained by solving the
+     linear system,
+
+          J dx = - f(x)
+
+     using LU decomposition.  If the Jacobian matrix is singular, an
+     error code of `GSL_EDOM' is returned.
+
+ -- Derivative Solver: gsl_multiroot_fdfsolver_gnewton
+     This is a modified version of Newton's method which attempts to
+     improve global convergence by requiring every step to reduce the
+     Euclidean norm of the residual, |f(x)|.  If the Newton step leads
+     to an increase in the norm then a reduced step of relative size,
+
+          t = (\sqrt(1 + 6 r) - 1) / (3 r)
+
+     is proposed, with r being the ratio of norms |f(x')|^2/|f(x)|^2.
+     This procedure is repeated until a suitable step size is found.
+
+
+File: gsl-ref.info,  Node: Algorithms without Derivatives,  Next: Example programs for Multidimensional Root finding,  Prev: Algorithms using Derivatives,  Up: Multidimensional Root-Finding
+
+35.7 Algorithms without Derivatives
+===================================
+
+The algorithms described in this section do not require any derivative
+information to be supplied by the user.  Any derivatives needed are
+approximated by finite differences.  Note that if the
+finite-differencing step size chosen by these routines is inappropriate,
+an explicit user-supplied numerical derivative can always be used with
+the algorithms described in the previous section.
+
+ -- Solver: gsl_multiroot_fsolver_hybrids
+     This is a version of the Hybrid algorithm which replaces calls to
+     the Jacobian function by its finite difference approximation.  The
+     finite difference approximation is computed using
+     `gsl_multiroots_fdjac' with a relative step size of
+     `GSL_SQRT_DBL_EPSILON'.  Note that this step size will not be
+     suitable for all problems.
+
+ -- Solver: gsl_multiroot_fsolver_hybrid
+     This is a finite difference version of the Hybrid algorithm without
+     internal scaling.
+
+ -- Solver: gsl_multiroot_fsolver_dnewton
+     The "discrete Newton algorithm" is the simplest method of solving a
+     multidimensional system.  It uses the Newton iteration
+
+          x -> x - J^{-1} f(x)
+
+     where the Jacobian matrix J is approximated by taking finite
+     differences of the function F.  The approximation scheme used by
+     this implementation is,
+
+          J_{ij} = (f_i(x + \delta_j) - f_i(x)) /  \delta_j
+
+     where \delta_j is a step of size \sqrt\epsilon |x_j| with \epsilon
+     being the machine precision (\epsilon \approx 2.22 \times 10^-16).
+     The order of convergence of Newton's algorithm is quadratic, but
+     the finite differences require n^2 function evaluations on each
+     iteration.  The algorithm may become unstable if the finite
+     differences are not a good approximation to the true derivatives.
+
+ -- Solver: gsl_multiroot_fsolver_broyden
+     The "Broyden algorithm" is a version of the discrete Newton
+     algorithm which attempts to avoids the expensive update of the
+     Jacobian matrix on each iteration.  The changes to the Jacobian
+     are also approximated, using a rank-1 update,
+
+          J^{-1} \to J^{-1} - (J^{-1} df - dx) dx^T J^{-1} / dx^T J^{-1} df
+
+     where the vectors dx and df are the changes in x and f.  On the
+     first iteration the inverse Jacobian is estimated using finite
+     differences, as in the discrete Newton algorithm.
+
+     This approximation gives a fast update but is unreliable if the
+     changes are not small, and the estimate of the inverse Jacobian
+     becomes worse as time passes.  The algorithm has a tendency to
+     become unstable unless it starts close to the root.  The Jacobian
+     is refreshed if this instability is detected (consult the source
+     for details).
+
+     This algorithm is included only for demonstration purposes, and is
+     not recommended for serious use.
+
+
+File: gsl-ref.info,  Node: Example programs for Multidimensional Root finding,  Next: References and Further Reading for Multidimensional Root Finding,  Prev: Algorithms without Derivatives,  Up: Multidimensional Root-Finding
+
+35.8 Examples
+=============
+
+The multidimensional solvers are used in a similar way to the
+one-dimensional root finding algorithms.  This first example
+demonstrates the `hybrids' scaled-hybrid algorithm, which does not
+require derivatives. The program solves the Rosenbrock system of
+equations,
+
+     f_1 (x, y) = a (1 - x)
+     f_2 (x, y) = b (y - x^2)
+
+with a = 1, b = 10. The solution of this system lies at (x,y) = (1,1)
+in a narrow valley.
+
+   The first stage of the program is to define the system of equations,
+
+     #include <stdlib.h>
+     #include <stdio.h>
+     #include <gsl/gsl_vector.h>
+     #include <gsl/gsl_multiroots.h>
+
+     struct rparams
+       {
+         double a;
+         double b;
+       };
+
+     int
+     rosenbrock_f (const gsl_vector * x, void *params,
+                   gsl_vector * f)
+     {
+       double a = ((struct rparams *) params)->a;
+       double b = ((struct rparams *) params)->b;
+
+       const double x0 = gsl_vector_get (x, 0);
+       const double x1 = gsl_vector_get (x, 1);
+
+       const double y0 = a * (1 - x0);
+       const double y1 = b * (x1 - x0 * x0);
+
+       gsl_vector_set (f, 0, y0);
+       gsl_vector_set (f, 1, y1);
+
+       return GSL_SUCCESS;
+     }
+
+The main program begins by creating the function object `f', with the
+arguments `(x,y)' and parameters `(a,b)'. The solver `s' is initialized
+to use this function, with the `hybrids' method.
+
+     int
+     main (void)
+     {
+       const gsl_multiroot_fsolver_type *T;
+       gsl_multiroot_fsolver *s;
+
+       int status;
+       size_t i, iter = 0;
+
+       const size_t n = 2;
+       struct rparams p = {1.0, 10.0};
+       gsl_multiroot_function f = {&rosenbrock_f, n, &p};
+
+       double x_init[2] = {-10.0, -5.0};
+       gsl_vector *x = gsl_vector_alloc (n);
+
+       gsl_vector_set (x, 0, x_init[0]);
+       gsl_vector_set (x, 1, x_init[1]);
+
+       T = gsl_multiroot_fsolver_hybrids;
+       s = gsl_multiroot_fsolver_alloc (T, 2);
+       gsl_multiroot_fsolver_set (s, &f, x);
+
+       print_state (iter, s);
+
+       do
+         {
+           iter++;
+           status = gsl_multiroot_fsolver_iterate (s);
+
+           print_state (iter, s);
+
+           if (status)   /* check if solver is stuck */
+             break;
+
+           status =
+             gsl_multiroot_test_residual (s->f, 1e-7);
+         }
+       while (status == GSL_CONTINUE && iter < 1000);
+
+       printf ("status = %s\n", gsl_strerror (status));
+
+       gsl_multiroot_fsolver_free (s);
+       gsl_vector_free (x);
+       return 0;
+     }
+
+Note that it is important to check the return status of each solver
+step, in case the algorithm becomes stuck.  If an error condition is
+detected, indicating that the algorithm cannot proceed, then the error
+can be reported to the user, a new starting point chosen or a different
+algorithm used.
+
+   The intermediate state of the solution is displayed by the following
+function.  The solver state contains the vector `s->x' which is the
+current position, and the vector `s->f' with corresponding function
+values.
+
+     int
+     print_state (size_t iter, gsl_multiroot_fsolver * s)
+     {
+       printf ("iter = %3u x = % .3f % .3f "
+               "f(x) = % .3e % .3e\n",
+               iter,
+               gsl_vector_get (s->x, 0),
+               gsl_vector_get (s->x, 1),
+               gsl_vector_get (s->f, 0),
+               gsl_vector_get (s->f, 1));
+     }
+
+Here are the results of running the program. The algorithm is started at
+(-10,-5) far from the solution.  Since the solution is hidden in a
+narrow valley the earliest steps follow the gradient of the function
+downhill, in an attempt to reduce the large value of the residual. Once
+the root has been approximately located, on iteration 8, the Newton
+behavior takes over and convergence is very rapid.
+
+     iter =  0 x = -10.000  -5.000  f(x) = 1.100e+01 -1.050e+03
+     iter =  1 x = -10.000  -5.000  f(x) = 1.100e+01 -1.050e+03
+     iter =  2 x =  -3.976  24.827  f(x) = 4.976e+00  9.020e+01
+     iter =  3 x =  -3.976  24.827  f(x) = 4.976e+00  9.020e+01
+     iter =  4 x =  -3.976  24.827  f(x) = 4.976e+00  9.020e+01
+     iter =  5 x =  -1.274  -5.680  f(x) = 2.274e+00 -7.302e+01
+     iter =  6 x =  -1.274  -5.680  f(x) = 2.274e+00 -7.302e+01
+     iter =  7 x =   0.249   0.298  f(x) = 7.511e-01  2.359e+00
+     iter =  8 x =   0.249   0.298  f(x) = 7.511e-01  2.359e+00
+     iter =  9 x =   1.000   0.878  f(x) = 1.268e-10 -1.218e+00
+     iter = 10 x =   1.000   0.989  f(x) = 1.124e-11 -1.080e-01
+     iter = 11 x =   1.000   1.000  f(x) = 0.000e+00  0.000e+00
+     status = success
+
+Note that the algorithm does not update the location on every
+iteration. Some iterations are used to adjust the trust-region
+parameter, after trying a step which was found to be divergent, or to
+recompute the Jacobian, when poor convergence behavior is detected.
+
+   The next example program adds derivative information, in order to
+accelerate the solution. There are two derivative functions
+`rosenbrock_df' and `rosenbrock_fdf'. The latter computes both the
+function and its derivative simultaneously. This allows the
+optimization of any common terms.  For simplicity we substitute calls to
+the separate `f' and `df' functions at this point in the code below.
+
+     int
+     rosenbrock_df (const gsl_vector * x, void *params,
+                    gsl_matrix * J)
+     {
+       const double a = ((struct rparams *) params)->a;
+       const double b = ((struct rparams *) params)->b;
+
+       const double x0 = gsl_vector_get (x, 0);
+
+       const double df00 = -a;
+       const double df01 = 0;
+       const double df10 = -2 * b  * x0;
+       const double df11 = b;
+
+       gsl_matrix_set (J, 0, 0, df00);
+       gsl_matrix_set (J, 0, 1, df01);
+       gsl_matrix_set (J, 1, 0, df10);
+       gsl_matrix_set (J, 1, 1, df11);
+
+       return GSL_SUCCESS;
+     }
+
+     int
+     rosenbrock_fdf (const gsl_vector * x, void *params,
+                     gsl_vector * f, gsl_matrix * J)
+     {
+       rosenbrock_f (x, params, f);
+       rosenbrock_df (x, params, J);
+
+       return GSL_SUCCESS;
+     }
+
+The main program now makes calls to the corresponding `fdfsolver'
+versions of the functions,
+
+     int
+     main (void)
+     {
+       const gsl_multiroot_fdfsolver_type *T;
+       gsl_multiroot_fdfsolver *s;
+
+       int status;
+       size_t i, iter = 0;
+
+       const size_t n = 2;
+       struct rparams p = {1.0, 10.0};
+       gsl_multiroot_function_fdf f = {&rosenbrock_f,
+                                       &rosenbrock_df,
+                                       &rosenbrock_fdf,
+                                       n, &p};
+
+       double x_init[2] = {-10.0, -5.0};
+       gsl_vector *x = gsl_vector_alloc (n);
+
+       gsl_vector_set (x, 0, x_init[0]);
+       gsl_vector_set (x, 1, x_init[1]);
+
+       T = gsl_multiroot_fdfsolver_gnewton;
+       s = gsl_multiroot_fdfsolver_alloc (T, n);
+       gsl_multiroot_fdfsolver_set (s, &f, x);
+
+       print_state (iter, s);
+
+       do
+         {
+           iter++;
+
+           status = gsl_multiroot_fdfsolver_iterate (s);
+
+           print_state (iter, s);
+
+           if (status)
+             break;
+
+           status = gsl_multiroot_test_residual (s->f, 1e-7);
+         }
+       while (status == GSL_CONTINUE && iter < 1000);
+
+       printf ("status = %s\n", gsl_strerror (status));
+
+       gsl_multiroot_fdfsolver_free (s);
+       gsl_vector_free (x);
+       return 0;
+     }
+
+The addition of derivative information to the `hybrids' solver does not
+make any significant difference to its behavior, since it able to
+approximate the Jacobian numerically with sufficient accuracy.  To
+illustrate the behavior of a different derivative solver we switch to
+`gnewton'. This is a traditional Newton solver with the constraint that
+it scales back its step if the full step would lead "uphill". Here is
+the output for the `gnewton' algorithm,
+
+     iter = 0 x = -10.000  -5.000 f(x) =  1.100e+01 -1.050e+03
+     iter = 1 x =  -4.231 -65.317 f(x) =  5.231e+00 -8.321e+02
+     iter = 2 x =   1.000 -26.358 f(x) = -8.882e-16 -2.736e+02
+     iter = 3 x =   1.000   1.000 f(x) = -2.220e-16 -4.441e-15
+     status = success
+
+The convergence is much more rapid, but takes a wide excursion out to
+the point (-4.23,-65.3). This could cause the algorithm to go astray in
+a realistic application.  The hybrid algorithm follows the downhill
+path to the solution more reliably.
+
+
+File: gsl-ref.info,  Node: References and Further Reading for Multidimensional Root Finding,  Prev: Example programs for Multidimensional Root finding,  Up: Multidimensional Root-Finding
+
+35.9 References and Further Reading
+===================================
+
+The original version of the Hybrid method is described in the following
+articles by Powell,
+
+     M.J.D. Powell, "A Hybrid Method for Nonlinear Equations" (Chap 6, p
+     87-114) and "A Fortran Subroutine for Solving systems of Nonlinear
+     Algebraic Equations" (Chap 7, p 115-161), in `Numerical Methods for
+     Nonlinear Algebraic Equations', P. Rabinowitz, editor.  Gordon and
+     Breach, 1970.
+
+The following papers are also relevant to the algorithms described in
+this section,
+
+     J.J. More', M.Y. Cosnard, "Numerical Solution of Nonlinear
+     Equations", `ACM Transactions on Mathematical Software', Vol 5, No
+     1, (1979), p 64-85
+
+     C.G. Broyden, "A Class of Methods for Solving Nonlinear
+     Simultaneous Equations", `Mathematics of Computation', Vol 19
+     (1965), p 577-593
+
+     J.J. More', B.S. Garbow, K.E. Hillstrom, "Testing Unconstrained
+     Optimization Software", ACM Transactions on Mathematical Software,
+     Vol 7, No 1 (1981), p 17-41
+
+
+File: gsl-ref.info,  Node: Multidimensional Minimization,  Next: Least-Squares Fitting,  Prev: Multidimensional Root-Finding,  Up: Top
+
+36 Multidimensional Minimization
+********************************
+
+This chapter describes routines for finding minima of arbitrary
+multidimensional functions.  The library provides low level components
+for a variety of iterative minimizers and convergence tests.  These can
+be combined by the user to achieve the desired solution, while providing
+full access to the intermediate steps of the algorithms.  Each class of
+methods uses the same framework, so that you can switch between
+minimizers at runtime without needing to recompile your program.  Each
+instance of a minimizer keeps track of its own state, allowing the
+minimizers to be used in multi-threaded programs. The minimization
+algorithms can be used to maximize a function by inverting its sign.
+
+   The header file `gsl_multimin.h' contains prototypes for the
+minimization functions and related declarations.
+
+* Menu:
+
+* Multimin Overview::
+* Multimin Caveats::
+* Initializing the Multidimensional Minimizer::
+* Providing a function to minimize::
+* Multimin Iteration::
+* Multimin Stopping Criteria::
+* Multimin Algorithms with Derivatives::
+* Multimin Algorithms without Derivatives::
+* Multimin Examples::
+* Multimin References and Further Reading::
+
+
+File: gsl-ref.info,  Node: Multimin Overview,  Next: Multimin Caveats,  Up: Multidimensional Minimization
+
+36.1 Overview
+=============
+
+The problem of multidimensional minimization requires finding a point x
+such that the scalar function,
+
+     f(x_1, ..., x_n)
+
+takes a value which is lower than at any neighboring point. For smooth
+functions the gradient g = \nabla f vanishes at the minimum. In general
+there are no bracketing methods available for the minimization of
+n-dimensional functions.  The algorithms proceed from an initial guess
+using a search algorithm which attempts to move in a downhill direction.
+
+   Algorithms making use of the gradient of the function perform a
+one-dimensional line minimisation along this direction until the lowest
+point is found to a suitable tolerance.  The search direction is then
+updated with local information from the function and its derivatives,
+and the whole process repeated until the true n-dimensional minimum is
+found.
+
+   Algorithms which do not require the gradient of the function use
+different strategies.  For example, the Nelder-Mead Simplex algorithm
+maintains n+1 trial parameter vectors as the vertices of a
+n-dimensional simplex.  On each iteration it tries to improve the worst
+vertex of the simplex by geometrical transformations.  The iterations
+are continued until the overall size of the simplex has decreased
+sufficiently.
+
+   Both types of algorithms use a standard framework. The user provides
+a high-level driver for the algorithms, and the library provides the
+individual functions necessary for each of the steps.  There are three
+main phases of the iteration.  The steps are,
+
+   * initialize minimizer state, S, for algorithm T
+
+   * update S using the iteration T
+
+   * test S for convergence, and repeat iteration if necessary
+
+Each iteration step consists either of an improvement to the
+line-minimisation in the current direction or an update to the search
+direction itself.  The state for the minimizers is held in a
+`gsl_multimin_fdfminimizer' struct or a `gsl_multimin_fminimizer'
+struct.
+
+
 File: gsl-ref.info,  Node: Multimin Caveats,  Next: Initializing the Multidimensional Minimizer,  Prev: Multimin Overview,  Up: Multidimensional Minimization
 
-35.2 Caveats
+36.2 Caveats
 ============
 
 Note that the minimization algorithms can only search for one local
@@ -41,7 +886,7 @@ minimum of the function in question.
 
 File: gsl-ref.info,  Node: Initializing the Multidimensional Minimizer,  Next: Providing a function to minimize,  Prev: Multimin Caveats,  Up: Multidimensional Minimization
 
-35.3 Initializing the Multidimensional Minimizer
+36.3 Initializing the Multidimensional Minimizer
 ================================================
 
 The following function initializes a multidimensional minimizer.  The
@@ -104,7 +949,7 @@ gsl_multimin_fdfminimizer_alloc (const gsl_multimin_fdfminimizer_type *
 
 File: gsl-ref.info,  Node: Providing a function to minimize,  Next: Multimin Iteration,  Prev: Initializing the Multidimensional Minimizer,  Up: Multidimensional Minimization
 
-35.4 Providing a function to minimize
+36.4 Providing a function to minimize
 =====================================
 
 You must provide a parametric function of n variables for the
@@ -219,7 +1064,7 @@ The function can be initialized using the following code,
 
 File: gsl-ref.info,  Node: Multimin Iteration,  Next: Multimin Stopping Criteria,  Prev: Providing a function to minimize,  Up: Multidimensional Minimization
 
-35.5 Iteration
+36.5 Iteration
 ==============
 
 The following function drives the iteration of each algorithm.  The
@@ -233,7 +1078,10 @@ be substituted at runtime without modifications to the code.
           (gsl_multimin_fminimizer * S)
      These functions perform a single iteration of the minimizer S.  If
      the iteration encounters an unexpected problem then an error code
-     will be returned.
+     will be returned.  The error code `GSL_ENOPROG' signifies that the
+     minimizer is unable to improve on its current estimate, either due
+     to numerical difficulty or because a genuine local minimum has been
+     reached.
 
 The minimizer maintains a current best estimate of the minimum at all
 times.  This information can be accessed with the following auxiliary
@@ -264,7 +1112,7 @@ functions,
 
 File: gsl-ref.info,  Node: Multimin Stopping Criteria,  Next: Multimin Algorithms with Derivatives,  Prev: Multimin Iteration,  Up: Multidimensional Minimization
 
-35.6 Stopping Criteria
+36.6 Stopping Criteria
 ======================
 
 A minimization procedure should stop when one of the following
@@ -303,7 +1151,7 @@ below allow the user to test the precision of the current result.
 
 File: gsl-ref.info,  Node: Multimin Algorithms with Derivatives,  Next: Multimin Algorithms without Derivatives,  Prev: Multimin Stopping Criteria,  Up: Multidimensional Minimization
 
-35.7 Algorithms with Derivatives
+36.7 Algorithms with Derivatives
 ================================
 
 There are several minimization methods available. The best choice of
@@ -348,7 +1196,7 @@ evaluation point.
      The `bfgs2' version of this minimizer is the most efficient
      version available, and is a faithful implementation of the line
      minimization scheme described in Fletcher's `Practical Methods of
-     Optimization', Algorithms 2.6.2 and 2.6.4.  It supercedes the
+     Optimization', Algorithms 2.6.2 and 2.6.4.  It supersedes the
      original `bfgs' routine and requires substantially fewer function
      and gradient evaluations.  The user-supplied tolerance TOL
      corresponds to the parameter \sigma used by Fletcher.  A value of
@@ -369,7 +1217,7 @@ evaluation point.
 
 File: gsl-ref.info,  Node: Multimin Algorithms without Derivatives,  Next: Multimin Examples,  Prev: Multimin Algorithms with Derivatives,  Up: Multidimensional Minimization
 
-35.8 Algorithms without Derivatives
+36.8 Algorithms without Derivatives
 ===================================
 
 The algorithms described in this section use only the value of the
@@ -377,23 +1225,24 @@ function at each evaluation point.
 
  -- Minimizer: gsl_multimin_fminimizer_nmsimplex2
  -- Minimizer: gsl_multimin_fminimizer_nmsimplex
-     These methods use the Simplex algorithm of Nelder and Mead. They
-     construct n vectors p_i from the starting vector X and the vector
+     These methods use the Simplex algorithm of Nelder and Mead.
+     Starting from the initial vector X = p_0, the algorithm constructs
+     an additional n vectors p_i using the step size vector s =
      STEP_SIZE as follows:
 
           p_0 = (x_0, x_1, ... , x_n)
-          p_1 = (x_0 + step_size_0, x_1, ... , x_n)
-          p_2 = (x_0, x_1 + step_size_1, ... , x_n)
+          p_1 = (x_0 + s_0, x_1, ... , x_n)
+          p_2 = (x_0, x_1 + s_1, ... , x_n)
           ... = ...
-          p_n = (x_0, x_1, ... , x_n+step_size_n)
+          p_n = (x_0, x_1, ... , x_n + s_n)
 
      These vectors form the n+1 vertices of a simplex in n dimensions.
-     On each iteration the algorithm tries to improve the parameter
-     vector p_i corresponding to the highest function value by simple
-     geometrical transformations.  These are reflection, reflection
-     followed by expansion, contraction and multiple contraction. Using
-     these transformations the simplex moves through the parameter
-     space towards the minimum, where it contracts itself.
+     On each iteration the algorithm uses simple geometrical
+     transformations to update the vector corresponding to the highest
+     function value.  The geometric transformations are reflection,
+     reflection followed by expansion, contraction and multiple
+     contraction.  Using these transformations the simplex moves through
+     the space towards the minimum, where it contracts itself.
 
      After each iteration, the best vertex is returned.  Note, that due
      to the nature of the algorithm not every step improves the current
@@ -405,16 +1254,29 @@ function at each evaluation point.
      simplex contracts itself near the minimum. The size is returned by
      the function `gsl_multimin_fminimizer_size'.
 
-     The `nmsimplex2' version of this minimiser is a new O(N)
-     implementation of the earlier O(N^2) `nmsimplex' minimiser.  It
-     calculates the size of simplex as the RMS distance of each vertex
-     from the center rather than the mean distance, which has the
-     advantage of allowing a linear update.
+     The `nmsimplex2' version of this minimiser is a new O(N) operations
+     implementation of the earlier O(N^2) operations `nmsimplex'
+     minimiser.  It uses the same underlying algorithm, but the simplex
+     updates are computed more efficiently for high-dimensional
+     problems.  In addition, the size of simplex is calculated as the
+     RMS distance of each vertex from the center rather than the mean
+     distance, allowing a linear update of this quantity on each step.
+     The memory usage is O(N^2) for both algorithms.
+
+ -- Minimizer: gsl_multimin_fminimizer_nmsimplex2rand
+     This method is a variant of `nmsimplex2' which initialises the
+     simplex around the starting point X using a randomly-oriented set
+     of basis vectors instead of the fixed coordinate axes. The final
+     dimensions of the simplex are scaled along the coordinate axes by
+     the vector STEP_SIZE.  The randomisation uses a simple
+     deterministic generator so that repeated calls to
+     `gsl_multimin_fminimizer_set' for a given solver object will vary
+     the orientation in a well-defined way.
 
 
 File: gsl-ref.info,  Node: Multimin Examples,  Next: Multimin References and Further Reading,  Prev: Multimin Algorithms without Derivatives,  Up: Multidimensional Minimization
 
-35.9 Examples
+36.9 Examples
 =============
 
 This example program finds the minimum of the paraboloid function
@@ -440,10 +1302,10 @@ in this chapter.
        gsl_multimin_function_fdf my_func;
 
        my_func.n = 2;
-       my_func.f = &my_f;
-       my_func.df = &my_df;
-       my_func.fdf = &my_fdf;
-       my_func.params = &par;
+       my_func.f = my_f;
+       my_func.df = my_df;
+       my_func.fdf = my_fdf;
+       my_func.params = par;
 
        /* Starting point, x = (5,7) */
        x = gsl_vector_alloc (2);
@@ -540,8 +1402,8 @@ minimize the same example object function, as above.
 
        /* Initialize method and iterate */
        minex_func.n = 2;
-       minex_func.f = &my_f;
-       minex_func.params = (void *)&par;
+       minex_func.f = my_f;
+       minex_func.params = par;
 
        s = gsl_multimin_fminimizer_alloc (T, 2);
        gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
@@ -613,7 +1475,7 @@ contracts around the minimum.
 
 File: gsl-ref.info,  Node: Multimin References and Further Reading,  Prev: Multimin Examples,  Up: Multidimensional Minimization
 
-35.10 References and Further Reading
+36.10 References and Further Reading
 ====================================
 
 The conjugate gradient and BFGS methods are described in detail in the
@@ -632,13 +1494,13 @@ more recent references can be found in,
 The simplex algorithm is described in the following paper,
 
      J.A. Nelder and R. Mead, `A simplex method for function
-     minimization', Computer Journal vol. 7 (1965), 308-315.
+     minimization', Computer Journal vol. 7 (1965), 308-313.
 
 
 
 File: gsl-ref.info,  Node: Least-Squares Fitting,  Next: Nonlinear Least-Squares Fitting,  Prev: Multidimensional Minimization,  Up: Top
 
-36 Least-Squares Fitting
+37 Least-Squares Fitting
 ************************
 
 This chapter describes routines for performing least squares fits to
@@ -665,7 +1527,7 @@ are declared in the header file `gsl_fit.h'.
 
 File: gsl-ref.info,  Node: Fitting Overview,  Next: Linear regression,  Up: Least-Squares Fitting
 
-36.1 Overview
+37.1 Overview
 =============
 
 Least-squares fits are found by minimizing \chi^2 (chi-squared), the
@@ -677,14 +1539,14 @@ y_i) for the model Y(c,x),
 The p parameters of the model are c = {c_0, c_1, ...}.  The weight
 factors w_i are given by w_i = 1/\sigma_i^2, where \sigma_i is the
 experimental error on the data-point y_i.  The errors are assumed to be
-gaussian and uncorrelated.  For unweighted data the chi-squared sum is
+Gaussian and uncorrelated.  For unweighted data the chi-squared sum is
 computed without any weight factors.
 
    The fitting routines return the best-fit parameters c and their p
 \times p covariance matrix.  The covariance matrix measures the
 statistical errors on the best-fit parameters resulting from the errors
 on the data, \sigma_i, and is defined as C_{ab} = <\delta c_a \delta
-c_b> where < > denotes an average over the gaussian error distributions
+c_b> where < > denotes an average over the Gaussian error distributions
 of the underlying datapoints.
 
    The covariance matrix is calculated by error propagation from the
@@ -720,7 +1582,7 @@ the fit parameters c_a and c_b is given by \rho_{ab} = C_{ab} /
 
 File: gsl-ref.info,  Node: Linear regression,  Next: Linear fitting without a constant term,  Prev: Fitting Overview,  Up: Least-Squares Fitting
 
-36.2 Linear regression
+37.2 Linear regression
 ======================
 
 The functions described in this section can be used to perform
@@ -770,7 +1632,7 @@ least-squares fits to a straight line model, Y(c,x) = c_0 + c_1 x.
 
 File: gsl-ref.info,  Node: Linear fitting without a constant term,  Next: Multi-parameter fitting,  Prev: Linear regression,  Up: Least-Squares Fitting
 
-36.3 Linear fitting without a constant term
+37.3 Linear fitting without a constant term
 ===========================================
 
 The functions described in this section can be used to perform
@@ -812,7 +1674,7 @@ least-squares fits to a straight line model without a constant term, Y
 
 File: gsl-ref.info,  Node: Multi-parameter fitting,  Next: Fitting Examples,  Prev: Linear fitting without a constant term,  Up: Least-Squares Fitting
 
-36.4 Multi-parameter fitting
+37.4 Multi-parameter fitting
 ============================
 
 The functions described in this section perform least-squares fits to a
@@ -862,13 +1724,10 @@ value decomposition of the matrix X.
  -- Function: int gsl_multifit_linear (const gsl_matrix * X, const
           gsl_vector * Y, gsl_vector * C, gsl_matrix * COV, double *
           CHISQ, gsl_multifit_linear_workspace * WORK)
- -- Function: int gsl_multifit_linear_svd (const gsl_matrix * X, const
-          gsl_vector * Y, double TOL, size_t * RANK, gsl_vector * C,
-          gsl_matrix * COV, double * CHISQ,
-          gsl_multifit_linear_workspace * WORK)
-     These functions compute the best-fit parameters C of the model y =
+     This function computes the best-fit parameters C of the model y =
      X c for the observations Y and the matrix of predictor variables
-     X.  The variance-covariance matrix of the model parameters COV is
+     X, using the preallocated workspace provided in WORK.  The
+     variance-covariance matrix of the model parameters COV is
      estimated from the scatter of the observations about the best-fit.
      The sum of squares of the residuals from the best-fit, \chi^2, is
      returned in CHISQ. If the coefficient of determination is desired,
@@ -877,40 +1736,48 @@ value decomposition of the matrix X.
      computed from `gsl_stats_tss'.
 
      The best-fit is found by singular value decomposition of the matrix
-     X using the preallocated workspace provided in WORK. The modified
-     Golub-Reinsch SVD algorithm is used, with column scaling to
-     improve the accuracy of the singular values. Any components which
-     have zero singular value (to machine precision) are discarded from
-     the fit.  In the second form of the function the components are
-     discarded if the ratio of singular values s_i/s_0 falls below the
-     user-specified tolerance TOL, and the effective rank is returned
-     in RANK.
+     X using the modified Golub-Reinsch SVD algorithm, with column
+     scaling to improve the accuracy of the singular values. Any
+     components which have zero singular value (to machine precision)
+     are discarded from the fit.
 
  -- Function: int gsl_multifit_wlinear (const gsl_matrix * X, const
           gsl_vector * W, const gsl_vector * Y, gsl_vector * C,
+          gsl_matrix * COV, double * CHISQ,
+          gsl_multifit_linear_workspace * WORK)
+     This function computes the best-fit parameters C of the weighted
+     model y = X c for the observations Y with weights W and the matrix
+     of predictor variables X, using the preallocated workspace
+     provided in WORK.  The covariance matrix of the model parameters
+     COV is computed with the given weights.  The weighted sum of
+     squares of the residuals from the best-fit, \chi^2, is returned in
+     CHISQ. If the coefficient of determination is desired, it can be
+     computed from the expression R^2 = 1 - \chi^2 / WTSS, where the
+     weighted total sum of squares (WTSS) of the observations Y may be
+     computed from `gsl_stats_wtss'.
+
+ -- Function: int gsl_multifit_linear_svd (const gsl_matrix * X, const
+          gsl_vector * Y, double TOL, size_t * RANK, gsl_vector * C,
           gsl_matrix * COV, double * CHISQ,
           gsl_multifit_linear_workspace * WORK)
  -- Function: int gsl_multifit_wlinear_svd (const gsl_matrix * X, const
           gsl_vector * W, const gsl_vector * Y, double TOL, size_t *
           RANK, gsl_vector * C, gsl_matrix * COV, double * CHISQ,
           gsl_multifit_linear_workspace * WORK)
-     This function computes the best-fit parameters C of the weighted
-     model y = X c for the observations Y with weights W and the matrix
-     of predictor variables X.  The covariance matrix of the model
-     parameters COV is computed with the given weights.  The weighted
-     sum of squares of the residuals from the best-fit, \chi^2, is
-     returned in CHISQ. If the coefficient of determination is desired,
-     it can be computed from the expression R^2 = 1 - \chi^2 / WTSS,
-     where the weighted total sum of squares (WTSS) of the observations
-     Y may be computed from `gsl_stats_wtss'.
+     In these functions components of the fit are discarded if the
+     ratio of singular values s_i/s_0 falls below the user-specified
+     tolerance TOL, and the effective rank is returned in RANK.
 
-     The best-fit is found by singular value decomposition of the matrix
-     X using the preallocated workspace provided in WORK. Any
-     components which have zero singular value (to machine precision)
-     are discarded from the fit.  In the second form of the function the
-     components are discarded if the ratio of singular values s_i/s_0
-     falls below the user-specified tolerance TOL, and the effective
-     rank is returned in RANK.
+ -- Function: int gsl_multifit_linear_usvd (const gsl_matrix * X, const
+          gsl_vector * Y, double TOL, size_t * RANK, gsl_vector * C,
+          gsl_matrix * COV, double * CHISQ,
+          gsl_multifit_linear_workspace * WORK)
+ -- Function: int gsl_multifit_wlinear_usvd (const gsl_matrix * X,
+          const gsl_vector * W, const gsl_vector * Y, double TOL,
+          size_t * RANK, gsl_vector * C, gsl_matrix * COV, double *
+          CHISQ, gsl_multifit_linear_workspace * WORK)
+     These functions compute the fit using an SVD without column
+     scaling.
 
  -- Function: int gsl_multifit_linear_est (const gsl_vector * X, const
           gsl_vector * C, const gsl_matrix * COV, double * Y, double *
@@ -928,7 +1795,7 @@ value decomposition of the matrix X.
 
 File: gsl-ref.info,  Node: Fitting Examples,  Next: Fitting References and Further Reading,  Prev: Multi-parameter fitting,  Up: Least-Squares Fitting
 
-36.5 Examples
+37.5 Examples
 =============
 
 The following program computes a least squares straight-line fit to a
@@ -1167,7 +2034,7 @@ indicating a reasonable fit to the data.
 
 File: gsl-ref.info,  Node: Fitting References and Further Reading,  Prev: Fitting Examples,  Up: Least-Squares Fitting
 
-36.6 References and Further Reading
+37.6 References and Further Reading
 ===================================
 
 A summary of formulas and techniques for least squares fitting can be
@@ -1189,7 +2056,7 @@ available from NIST at the following website,
 
 File: gsl-ref.info,  Node: Nonlinear Least-Squares Fitting,  Next: Basis Splines,  Prev: Least-Squares Fitting,  Up: Top
 
-37 Nonlinear Least-Squares Fitting
+38 Nonlinear Least-Squares Fitting
 **********************************
 
 This chapter describes functions for multidimensional nonlinear
@@ -1221,7 +2088,7 @@ multidimensional nonlinear fitting functions and related declarations.
 
 File: gsl-ref.info,  Node: Overview of Nonlinear Least-Squares Fitting,  Next: Initializing the Nonlinear Least-Squares Solver,  Up: Nonlinear Least-Squares Fitting
 
-37.1 Overview
+38.1 Overview
 =============
 
 The problem of multidimensional nonlinear least-squares fitting requires
@@ -1242,7 +2109,7 @@ decrease in the norm ||F|| on each step or using a trust region to
 avoid steps which fall outside the linear regime.
 
    To perform a weighted least-squares fit of a nonlinear model Y(x,t)
-to data (t_i, y_i) with independent gaussian errors \sigma_i, use
+to data (t_i, y_i) with independent Gaussian errors \sigma_i, use
 function components of the following form,
 
      f_i = (Y(x, t_i) - y_i) / \sigma_i
@@ -1258,7 +2125,7 @@ Y_i / d x_j, where Y_i = Y(x,t_i).
 
 File: gsl-ref.info,  Node: Initializing the Nonlinear Least-Squares Solver,  Next: Providing the Function to be Minimized,  Prev: Overview of Nonlinear Least-Squares Fitting,  Up: Nonlinear Least-Squares Fitting
 
-37.2 Initializing the Solver
+38.2 Initializing the Solver
 ============================
 
  -- Function: gsl_multifit_fsolver * gsl_multifit_fsolver_alloc (const
@@ -1291,12 +2158,12 @@ File: gsl-ref.info,  Node: Initializing the Nonlinear Least-Squares Solver,  Nex
      with an error code of `GSL_ENOMEM'.
 
  -- Function: int gsl_multifit_fsolver_set (gsl_multifit_fsolver * S,
-          gsl_multifit_function * F, gsl_vector * X)
+          gsl_multifit_function * F, const gsl_vector * X)
      This function initializes, or reinitializes, an existing solver S
      to use the function F and the initial guess X.
 
  -- Function: int gsl_multifit_fdfsolver_set (gsl_multifit_fdfsolver *
-          S, gsl_multifit_function_fdf * FDF, gsl_vector * X)
+          S, gsl_multifit_function_fdf * FDF, const gsl_vector * X)
      This function initializes, or reinitializes, an existing solver S
      to use the function and derivative FDF and the initial guess X.
 
@@ -1320,7 +2187,7 @@ File: gsl-ref.info,  Node: Initializing the Nonlinear Least-Squares Solver,  Nex
 
 File: gsl-ref.info,  Node: Providing the Function to be Minimized,  Next: Iteration of the Minimization Algorithm,  Prev: Initializing the Nonlinear Least-Squares Solver,  Up: Nonlinear Least-Squares Fitting
 
-37.3 Providing the Function to be Minimized
+38.3 Providing the Function to be Minimized
 ===========================================
 
 You must provide n functions of p variables for the minimization
@@ -1388,7 +2255,7 @@ the trial best-fit parameters through the X argument.
 
 File: gsl-ref.info,  Node: Iteration of the Minimization Algorithm,  Next: Search Stopping Parameters for Minimization Algorithms,  Prev: Providing the Function to be Minimized,  Up: Nonlinear Least-Squares Fitting
 
-37.4 Iteration
+38.4 Iteration
 ==============
 
 The following functions drive the iteration of each algorithm.  Each
@@ -1436,7 +2303,7 @@ auxiliary functions,
 
 File: gsl-ref.info,  Node: Search Stopping Parameters for Minimization Algorithms,  Next: Minimization Algorithms using Derivatives,  Prev: Iteration of the Minimization Algorithm,  Up: Nonlinear Least-Squares Fitting
 
-37.5 Search Stopping Parameters
+38.5 Search Stopping Parameters
 ===============================
 
 A minimization procedure should stop when one of the following
@@ -1486,7 +2353,7 @@ parameters in several standard ways.
 
 File: gsl-ref.info,  Node: Minimization Algorithms using Derivatives,  Next: Minimization Algorithms without Derivatives,  Prev: Search Stopping Parameters for Minimization Algorithms,  Up: Nonlinear Least-Squares Fitting
 
-37.6 Minimization Algorithms using Derivatives
+38.6 Minimization Algorithms using Derivatives
 ==============================================
 
 The minimization algorithms described in this section make use of both
@@ -1539,9 +2406,13 @@ initial guess must be sufficiently close to the minimum for it to work.
           the norm of the gradient, relative to the norm of the
           function, falls below machine precision
 
+    `GSL_ENOPROG'
+          the routine has made 10 or more attempts to find a suitable
+          trial step without success (but subsequent calls can be made
+          to continue the search).(1)
+
      These error codes indicate that further iterations will be
      unlikely to change the solution from its current value.
-
 
  -- Derivative Solver: gsl_multifit_fdfsolver_lmder
      This is an unscaled version of the LMDER algorithm.  The elements
@@ -1550,10 +2421,15 @@ initial guess must be sufficiently close to the minimum for it to work.
      converges too slowly, or the function is already scaled
      appropriately.
 
+   ---------- Footnotes ----------
+
+   (1) The return code `GSL_CONTINUE' was used for this case in
+versions prior to 1.14.
+
 
 File: gsl-ref.info,  Node: Minimization Algorithms without Derivatives,  Next: Computing the covariance matrix of best fit parameters,  Prev: Minimization Algorithms using Derivatives,  Up: Nonlinear Least-Squares Fitting
 
-37.7 Minimization Algorithms without Derivatives
+38.7 Minimization Algorithms without Derivatives
 ================================================
 
 There are no algorithms implemented in this section at the moment.
@@ -1561,7 +2437,7 @@ There are no algorithms implemented in this section at the moment.
 
 File: gsl-ref.info,  Node: Computing the covariance matrix of best fit parameters,  Next: Example programs for Nonlinear Least-Squares Fitting,  Prev: Minimization Algorithms without Derivatives,  Up: Nonlinear Least-Squares Fitting
 
-37.8 Computing the covariance matrix of best fit parameters
+38.8 Computing the covariance matrix of best fit parameters
 ===========================================================
 
  -- Function: int gsl_multifit_covar (const gsl_matrix * J, double
@@ -1586,7 +2462,7 @@ File: gsl-ref.info,  Node: Computing the covariance matrix of best fit parameter
      If the minimisation uses the weighted least-squares function f_i =
      (Y(x, t_i) - y_i) / \sigma_i then the covariance matrix above
      gives the statistical error on the best-fit parameters resulting
-     from the gaussian errors \sigma_i on the underlying data y_i.
+     from the Gaussian errors \sigma_i on the underlying data y_i.
      This can be verified from the relation \delta f = J \delta c and
      the fact that the fluctuations in f from the data y_i are
      normalised by \sigma_i and so satisfy <\delta f \delta f^T> = I.
@@ -1604,7 +2480,7 @@ File: gsl-ref.info,  Node: Computing the covariance matrix of best fit parameter
 
 File: gsl-ref.info,  Node: Example programs for Nonlinear Least-Squares Fitting,  Next: References and Further Reading for Nonlinear Least-Squares Fitting,  Prev: Computing the covariance matrix of best fit parameters,  Up: Nonlinear Least-Squares Fitting
 
-37.9 Examples
+38.9 Examples
 =============
 
 The following example program fits a weighted exponential model with
@@ -1696,7 +2572,7 @@ where x_0 = A, x_1 = \lambda and x_2 = b.
 
 The main part of the program sets up a Levenberg-Marquardt solver and
 some simulated random data. The data uses the known parameters
-(1.0,5.0,0.1) combined with gaussian noise (standard deviation = 0.1)
+(1.0,5.0,0.1) combined with Gaussian noise (standard deviation = 0.1)
 over a range of 40 timesteps. The initial guess for the parameters is
 chosen as (0.0, 1.0, 0.0).
 
@@ -1851,12 +2727,12 @@ small.  In the example program the error estimates are multiplied by
 \sqrt{\chi^2/dof} in this case, a common way of increasing the errors
 for a poor fit.  Note that a poor fit will result from the use an
 inappropriate model, and the scaled error estimates may then be outside
-the range of validity for gaussian errors.
+the range of validity for Gaussian errors.
 
 
 File: gsl-ref.info,  Node: References and Further Reading for Nonlinear Least-Squares Fitting,  Prev: Example programs for Nonlinear Least-Squares Fitting,  Up: Nonlinear Least-Squares Fitting
 
-37.10 References and Further Reading
+38.10 References and Further Reading
 ====================================
 
 The MINPACK algorithm is described in the following article,
@@ -1874,12 +2750,17 @@ section,
 
 File: gsl-ref.info,  Node: Basis Splines,  Next: Physical Constants,  Prev: Nonlinear Least-Squares Fitting,  Up: Top
 
-38 Basis Splines
+39 Basis Splines
 ****************
 
 This chapter describes functions for the computation of smoothing basis
-splines (B-splines). The header file `gsl_bspline.h' contains
-prototypes for the bspline functions and related declarations.
+splines (B-splines). A smoothing spline differs from an interpolating
+spline in that the resulting curve is not required to pass through each
+datapoint.  *Note Interpolation::, for information about interpolating
+splines.
+
+   The header file `gsl_bspline.h' contains the prototypes for the
+bspline functions and related declarations.
 
 * Menu:
 
@@ -1888,13 +2769,14 @@ prototypes for the bspline functions and related declarations.
 * Constructing the knots vector::
 * Evaluation of B-spline basis functions::
 * Evaluation of B-spline basis function derivatives::
+* Obtaining Greville abscissae for B-spline basis functions::
 * Example programs for B-splines::
 * References and Further Reading::
 
 
 File: gsl-ref.info,  Node: Overview of B-splines,  Next: Initializing the B-splines solver,  Up: Basis Splines
 
-38.1 Overview
+39.1 Overview
 =============
 
 B-splines are commonly used as basis functions to fit smoothing curves
@@ -1907,10 +2789,11 @@ t_{n+k-1}}, the n basis splines of order k are defined by
 
      B_(i,1)(x) = (1, t_i <= x < t_(i+1)
                   (0, else
-     B_(i,k)(x) = [(x - t_i)/(t_(i+k-1) - t_i)] B_(i,k-1)(x) + [(t_(i+k) - x)/(t_(i+k) - t_(i+1))] B_(i+1,k-1)(x)
+     B_(i,k)(x) = [(x - t_i)/(t_(i+k-1) - t_i)] B_(i,k-1)(x)
+                   + [(t_(i+k) - x)/(t_(i+k) - t_(i+1))] B_(i+1,k-1)(x)
 
-   for i = 0, ..., n-1. The common case of cubic B-splines is given by
-k = 4. The above recurrence relation can be evaluated in a numerically
+for i = 0, ..., n-1. The common case of cubic B-splines is given by k =
+4. The above recurrence relation can be evaluated in a numerically
 stable way by the de Boor algorithm.
 
    If we define appropriate knots on an interval [a,b] then the
@@ -1919,16 +2802,18 @@ Therefore we can expand a smoothing function as
 
      f(x) = \sum_i c_i B_(i,k)(x)
 
-   given enough (x_j, f(x_j)) data pairs. The c_i can be readily
-obtained from a least-squares fit.
+given enough (x_j, f(x_j)) data pairs. The coefficients c_i can be
+readily obtained from a least-squares fit.
 
 
 File: gsl-ref.info,  Node: Initializing the B-splines solver,  Next: Constructing the knots vector,  Prev: Overview of B-splines,  Up: Basis Splines
 
-38.2 Initializing the B-splines solver
+39.2 Initializing the B-splines solver
 ======================================
 
-Using B-splines requires a gsl_bspline_workspace:
+The computation of B-spline functions requires a preallocated workspace
+of type `gsl_bspline_workspace'. If B-spline derivatives are also
+required, an additional `gsl_bspline_deriv_workspace' is needed.
 
  -- Function: gsl_bspline_workspace * gsl_bspline_alloc (const size_t
           K, const size_t NBREAK)
@@ -1939,9 +2824,6 @@ Using B-splines requires a gsl_bspline_workspace:
 
  -- Function: void gsl_bspline_free (gsl_bspline_workspace * W)
      This function frees the memory associated with the workspace W.
-
-   Evaluation of B-spline basis function derivatives additionally
-requires a `gsl_bspline_deriv_workspace':
 
  -- Function: gsl_bspline_deriv_workspace * gsl_bspline_deriv_alloc
           (const size_t K)
@@ -1957,7 +2839,7 @@ requires a `gsl_bspline_deriv_workspace':
 
 File: gsl-ref.info,  Node: Constructing the knots vector,  Next: Evaluation of B-spline basis functions,  Prev: Initializing the B-splines solver,  Up: Basis Splines
 
-38.3 Constructing the knots vector
+39.3 Constructing the knots vector
 ==================================
 
  -- Function: int gsl_bspline_knots (const gsl_vector * BREAKPTS,
@@ -1965,8 +2847,8 @@ File: gsl-ref.info,  Node: Constructing the knots vector,  Next: Evaluation of B
      This function computes the knots associated with the given
      breakpoints and stores them internally in `w->knots'.
 
- -- Function: int gsl_bspline_knots_uniform (const double a, const
-          double b, gsl_bspline_workspace * W)
+ -- Function: int gsl_bspline_knots_uniform (const double A, const
+          double B, gsl_bspline_workspace * W)
      This function assumes uniformly spaced breakpoints on [a,b] and
      constructs the corresponding knot vector using the previously
      specified NBREAK parameter. The knots are stored in `w->knots'.
@@ -1974,38 +2856,39 @@ File: gsl-ref.info,  Node: Constructing the knots vector,  Next: Evaluation of B
 
 File: gsl-ref.info,  Node: Evaluation of B-spline basis functions,  Next: Evaluation of B-spline basis function derivatives,  Prev: Constructing the knots vector,  Up: Basis Splines
 
-38.4 Evaluation of B-splines
+39.4 Evaluation of B-splines
 ============================
 
  -- Function: int gsl_bspline_eval (const double X, gsl_vector * B,
           gsl_bspline_workspace * W)
      This function evaluates all B-spline basis functions at the
-     position X and stores them in B, so that the ith element of B is
-     B_i(x). B must be of length n = nbreak + k - 2. This value may
-     also be obtained by calling `gsl_bspline_ncoeffs'.  It is far more
-     efficient to compute all of the basis functions at once than to
-     compute them individually, due to the nature of the defining
-     recurrence relation.
+     position X and stores them in the vector B, so that the i-th
+     element is B_i(x). The vector B must be of length n = nbreak + k -
+     2.  This value may also be obtained by calling
+     `gsl_bspline_ncoeffs'.  Computing all the basis functions at once
+     is more efficient than computing them individually, due to the
+     nature of the defining recurrence relation.
 
  -- Function: int gsl_bspline_eval_nonzero (const double X, gsl_vector
           * BK, size_t * ISTART, size_t * IEND, gsl_bspline_workspace *
           W)
      This function evaluates all potentially nonzero B-spline basis
-     functions at the position X and stores them in BK, so that the ith
-     element of BK is B_(istart+i)(x).  The last element of BK is
-     B_(iend)(x).  BK must be of length k.  Only returning nonzero
-     basis functions allows users to more cheaply perform tasks
-     requiring linear combinations of the basis functions, e.g.  when
-     evaluating an interpolated function.
+     functions at the position X and stores them in the vector BK, so
+     that the i-th element is B_(istart+i)(x).  The last element of BK
+     is B_(iend)(x).  The vector BK must be of length k.  By returning
+     only the nonzero basis functions, this function allows quantities
+     involving linear combinations of the B_i(x) to be computed without
+     unnecessary terms (such linear combinations occur, for example,
+     when evaluating an interpolated function).
 
  -- Function: size_t gsl_bspline_ncoeffs (gsl_bspline_workspace * W)
      This function returns the number of B-spline coefficients given by
      n = nbreak + k - 2.
 
 
-File: gsl-ref.info,  Node: Evaluation of B-spline basis function derivatives,  Next: Example programs for B-splines,  Prev: Evaluation of B-spline basis functions,  Up: Basis Splines
+File: gsl-ref.info,  Node: Evaluation of B-spline basis function derivatives,  Next: Obtaining Greville abscissae for B-spline basis functions,  Prev: Evaluation of B-spline basis functions,  Up: Basis Splines
 
-38.5 Evaluation of B-spline derivatives
+39.5 Evaluation of B-spline derivatives
 =======================================
 
  -- Function: int gsl_bspline_deriv_eval (const double X, const size_t
@@ -2013,13 +2896,14 @@ File: gsl-ref.info,  Node: Evaluation of B-spline basis function derivatives,  N
           gsl_bspline_deriv_workspace * DW)
      This function evaluates all B-spline basis function derivatives of
      orders 0 through nderiv (inclusive) at the position X and stores
-     them in DB.  The (i,j)th element of DB is d^j/dx^j B_i(x).  DB
-     must be of size n = nbreak + k - 2 by nderiv + 1.  The value n may
-     also be obtained by calling `gsl_bspline_ncoeffs'.  Note that
-     function evaluations are included as the 0th order derivatives in
-     DB.  It is far more efficient to compute all of the basis
-     functions derivatives at once than to compute them individually,
-     due to the nature of the defining recurrence relation.
+     them in the matrix DB.  The (i,j)-th element of DB is
+     d^jB_i(x)/dx^j.  The matrix DB must be of size n = nbreak + k - 2
+     by nderiv + 1.  The value n may also be obtained by calling
+     `gsl_bspline_ncoeffs'.  Note that function evaluations are
+     included as the zeroth order derivatives in DB.  Computing all the
+     basis function derivatives at once is more efficient than
+     computing them individually, due to the nature of the defining
+     recurrence relation.
 
  -- Function: int gsl_bspline_deriv_eval_nonzero (const double X, const
           size_t NDERIV, gsl_matrix * DB, size_t * ISTART, size_t *
@@ -2027,25 +2911,47 @@ File: gsl-ref.info,  Node: Evaluation of B-spline basis function derivatives,  N
           * DW)
      This function evaluates all potentially nonzero B-spline basis
      function derivatives of orders 0 through nderiv (inclusive) at the
-     position X and stores them in DB.  The (i,j)th element of DB is
-     d^j/dx^j B_(istart+i)(x).  The last row of DB contains d^j/dx^j
-     B_(iend)(x).  DB must be of size k by at least nderiv + 1.  Note
-     that function evaluations are included as the 0th order
-     derivatives in DB.  Only returning nonzero basis functions allows
-     users to more cheaply perform tasks requiring linear combinations
-     of the basis functions, e.g.  when evaluating an interpolated
-     function.
+     position X and stores them in the matrix DB.  The (i,j)-th element
+     of DB is d^j/dx^j B_(istart+i)(x).  The last row of DB contains
+     d^j/dx^j B_(iend)(x).  The matrix DB must be of size k by at least
+     nderiv + 1.  Note that function evaluations are included as the
+     zeroth order derivatives in DB.  By returning only the nonzero
+     basis functions, this function allows quantities involving linear
+     combinations of the B_i(x) and their derivatives to be computed
+     without unnecessary terms.
 
 
-File: gsl-ref.info,  Node: Example programs for B-splines,  Next: References and Further Reading,  Prev: Evaluation of B-spline basis function derivatives,  Up: Basis Splines
+File: gsl-ref.info,  Node: Obtaining Greville abscissae for B-spline basis functions,  Next: Example programs for B-splines,  Prev: Evaluation of B-spline basis function derivatives,  Up: Basis Splines
 
-38.6 Example programs for B-splines
-===================================
+39.6 Greville abscissae
+=======================
+
+The Greville abscissae are defined to be the mean location of k-1
+consecutive knots in the knot vector for each basis spline function of
+order k.  Note that the first and last knots in the knot vector are
+excluded when applying this definition; consequently there are
+`gsl_bspline_ncoeffs' Greville abscissa.  They are often used in
+B-spline collocation applications and may also be called
+Marsden-Schoenberg points.
+
+   The above definition is undefined for k=1.  The implementation
+chooses to return interval midpoints in the degenerate k=1 case.
+
+ -- Function: double gsl_bspline_greville_abscissa (size_t I,
+          gsl_bspline_workspace *W);
+     Returns the location of the i-th Greville abscissa for the given
+     spline basis.  Here, i = 0, ..., `gsl_bspline_ncoeffs(w) - 1'.
+
+
+File: gsl-ref.info,  Node: Example programs for B-splines,  Next: References and Further Reading,  Prev: Obtaining Greville abscissae for B-spline basis functions,  Up: Basis Splines
+
+39.7 Examples
+=============
 
 The following program computes a linear least squares fit to data using
 cubic B-spline basis functions with uniform breakpoints. The data is
-generated from the curve y(x) = \cos(x) \exp(-x/10) on [0, 15] with
-gaussian noise added.
+generated from the curve y(x) = \cos(x) \exp(-x/10) on the interval [0,
+15] with Gaussian noise added.
 
      #include <stdio.h>
      #include <stdlib.h>
@@ -2080,9 +2986,7 @@ gaussian noise added.
        gsl_vector *x, *y;
        gsl_matrix *X, *cov;
        gsl_multifit_linear_workspace *mw;
-       double chisq;
-       double Rsq;
-       double dof;
+       double chisq, Rsq, dof, tss;
 
        gsl_rng_env_setup();
        r = gsl_rng_alloc(gsl_rng_default);
@@ -2141,9 +3045,11 @@ gaussian noise added.
        gsl_multifit_wlinear(X, w, y, c, cov, &chisq, mw);
 
        dof = n - ncoeffs;
-       Rsq = 1.0 - chisq / gsl_stats_wtss(w->data, 1, y->data, 1, y->size);
+       tss = gsl_stats_wtss(w->data, 1, y->data, 1, y->size);
+       Rsq = 1.0 - chisq / tss;
 
-       fprintf(stderr, "chisq/dof = %e, Rsq = %f\n", chisq / dof, Rsq);
+       fprintf(stderr, "chisq/dof = %e, Rsq = %f\n",
+                        chisq / dof, Rsq);
 
        /* output the smoothed curve */
        {
@@ -2181,7 +3087,7 @@ gaussian noise added.
 
 File: gsl-ref.info,  Node: References and Further Reading,  Prev: Example programs for B-splines,  Up: Basis Splines
 
-38.7 References and Further Reading
+39.8 References and Further Reading
 ===================================
 
 Further information on the algorithms described in this section can be
@@ -2190,6 +3096,13 @@ found in the following book,
      C. de Boor, `A Practical Guide to Splines' (1978), Springer-Verlag,
      ISBN 0-387-90356-9.
 
+   Further information of Greville abscissae and B-spline collocation
+can be found in the following paper,
+
+     Richard W. Johnson, Higher order B-spline collocation at the
+     Greville abscissae.  `Applied Numerical Mathematics'. vol. 52,
+     2005, 63-75.
+
 A large collection of B-spline routines is available in the PPPACK
 library available at `http://www.netlib.org/pppack', which is also part
 of SLATEC.
@@ -2197,7 +3110,7 @@ of SLATEC.
 
 File: gsl-ref.info,  Node: Physical Constants,  Next: IEEE floating-point arithmetic,  Prev: Basis Splines,  Up: Top
 
-39 Physical Constants
+40 Physical Constants
 *********************
 
 This chapter describes macros for the values of physical constants, such
@@ -2241,7 +3154,7 @@ library.
 
 File: gsl-ref.info,  Node: Fundamental Constants,  Next: Astronomy and Astrophysics,  Up: Physical Constants
 
-39.1 Fundamental Constants
+40.1 Fundamental Constants
 ==========================
 
 `GSL_CONST_MKSA_SPEED_OF_LIGHT'
@@ -2285,7 +3198,7 @@ File: gsl-ref.info,  Node: Fundamental Constants,  Next: Astronomy and Astrophys
 
 File: gsl-ref.info,  Node: Astronomy and Astrophysics,  Next: Atomic and Nuclear Physics,  Prev: Fundamental Constants,  Up: Physical Constants
 
-39.2 Astronomy and Astrophysics
+40.2 Astronomy and Astrophysics
 ===============================
 
 `GSL_CONST_MKSA_ASTRONOMICAL_UNIT'
@@ -2309,7 +3222,7 @@ File: gsl-ref.info,  Node: Astronomy and Astrophysics,  Next: Atomic and Nuclear
 
 File: gsl-ref.info,  Node: Atomic and Nuclear Physics,  Next: Measurement of Time,  Prev: Astronomy and Astrophysics,  Up: Physical Constants
 
-39.3 Atomic and Nuclear Physics
+40.3 Atomic and Nuclear Physics
 ===============================
 
 `GSL_CONST_MKSA_ELECTRON_CHARGE'
@@ -2338,7 +3251,7 @@ File: gsl-ref.info,  Node: Atomic and Nuclear Physics,  Next: Measurement of Tim
 
 `GSL_CONST_MKSA_RYDBERG'
      The Rydberg constant, Ry, in units of energy.  This is related to
-     the Rydberg inverse wavelength R by Ry = h c R.
+     the Rydberg inverse wavelength R_\infty by Ry = h c R_\infty.
 
 `GSL_CONST_MKSA_BOHR_RADIUS'
      The Bohr radius, a_0.
@@ -2371,7 +3284,7 @@ File: gsl-ref.info,  Node: Atomic and Nuclear Physics,  Next: Measurement of Tim
 
 File: gsl-ref.info,  Node: Measurement of Time,  Next: Imperial Units,  Prev: Atomic and Nuclear Physics,  Up: Physical Constants
 
-39.4 Measurement of Time
+40.4 Measurement of Time
 ========================
 
 `GSL_CONST_MKSA_MINUTE'
@@ -2389,7 +3302,7 @@ File: gsl-ref.info,  Node: Measurement of Time,  Next: Imperial Units,  Prev: At
 
 File: gsl-ref.info,  Node: Imperial Units,  Next: Speed and Nautical Units,  Prev: Measurement of Time,  Up: Physical Constants
 
-39.5 Imperial Units
+40.5 Imperial Units
 ===================
 
 `GSL_CONST_MKSA_INCH'
@@ -2410,7 +3323,7 @@ File: gsl-ref.info,  Node: Imperial Units,  Next: Speed and Nautical Units,  Pre
 
 File: gsl-ref.info,  Node: Speed and Nautical Units,  Next: Printers Units,  Prev: Imperial Units,  Up: Physical Constants
 
-39.6 Speed and Nautical Units
+40.6 Speed and Nautical Units
 =============================
 
 `GSL_CONST_MKSA_KILOMETERS_PER_HOUR'
@@ -2431,7 +3344,7 @@ File: gsl-ref.info,  Node: Speed and Nautical Units,  Next: Printers Units,  Pre
 
 File: gsl-ref.info,  Node: Printers Units,  Next: Volume Area and Length,  Prev: Speed and Nautical Units,  Up: Physical Constants
 
-39.7 Printers Units
+40.7 Printers Units
 ===================
 
 `GSL_CONST_MKSA_POINT'
@@ -2443,7 +3356,7 @@ File: gsl-ref.info,  Node: Printers Units,  Next: Volume Area and Length,  Prev:
 
 File: gsl-ref.info,  Node: Volume Area and Length,  Next: Mass and Weight,  Prev: Printers Units,  Up: Physical Constants
 
-39.8 Volume, Area and Length
+40.8 Volume, Area and Length
 ============================
 
 `GSL_CONST_MKSA_MICRON'
@@ -2476,7 +3389,7 @@ File: gsl-ref.info,  Node: Volume Area and Length,  Next: Mass and Weight,  Prev
 
 File: gsl-ref.info,  Node: Mass and Weight,  Next: Thermal Energy and Power,  Prev: Volume Area and Length,  Up: Physical Constants
 
-39.9 Mass and Weight
+40.9 Mass and Weight
 ====================
 
 `GSL_CONST_MKSA_POUND_MASS'
@@ -2515,7 +3428,7 @@ File: gsl-ref.info,  Node: Mass and Weight,  Next: Thermal Energy and Power,  Pr
 
 File: gsl-ref.info,  Node: Thermal Energy and Power,  Next: Pressure,  Prev: Mass and Weight,  Up: Physical Constants
 
-39.10 Thermal Energy and Power
+40.10 Thermal Energy and Power
 ==============================
 
 `GSL_CONST_MKSA_CALORIE'
@@ -2533,7 +3446,7 @@ File: gsl-ref.info,  Node: Thermal Energy and Power,  Next: Pressure,  Prev: Mas
 
 File: gsl-ref.info,  Node: Pressure,  Next: Viscosity,  Prev: Thermal Energy and Power,  Up: Physical Constants
 
-39.11 Pressure
+40.11 Pressure
 ==============
 
 `GSL_CONST_MKSA_BAR'
@@ -2560,7 +3473,7 @@ File: gsl-ref.info,  Node: Pressure,  Next: Viscosity,  Prev: Thermal Energy and
 
 File: gsl-ref.info,  Node: Viscosity,  Next: Light and Illumination,  Prev: Pressure,  Up: Physical Constants
 
-39.12 Viscosity
+40.12 Viscosity
 ===============
 
 `GSL_CONST_MKSA_POISE'
@@ -2572,7 +3485,7 @@ File: gsl-ref.info,  Node: Viscosity,  Next: Light and Illumination,  Prev: Pres
 
 File: gsl-ref.info,  Node: Light and Illumination,  Next: Radioactivity,  Prev: Viscosity,  Up: Physical Constants
 
-39.13 Light and Illumination
+40.13 Light and Illumination
 ============================
 
 `GSL_CONST_MKSA_STILB'
@@ -2599,7 +3512,7 @@ File: gsl-ref.info,  Node: Light and Illumination,  Next: Radioactivity,  Prev: 
 
 File: gsl-ref.info,  Node: Radioactivity,  Next: Force and Energy,  Prev: Light and Illumination,  Up: Physical Constants
 
-39.14 Radioactivity
+40.14 Radioactivity
 ===================
 
 `GSL_CONST_MKSA_CURIE'
@@ -2614,7 +3527,7 @@ File: gsl-ref.info,  Node: Radioactivity,  Next: Force and Energy,  Prev: Light 
 
 File: gsl-ref.info,  Node: Force and Energy,  Next: Prefixes,  Prev: Radioactivity,  Up: Physical Constants
 
-39.15 Force and Energy
+40.15 Force and Energy
 ======================
 
 `GSL_CONST_MKSA_NEWTON'
@@ -2632,7 +3545,7 @@ File: gsl-ref.info,  Node: Force and Energy,  Next: Prefixes,  Prev: Radioactivi
 
 File: gsl-ref.info,  Node: Prefixes,  Next: Physical Constant Examples,  Prev: Force and Energy,  Up: Physical Constants
 
-39.16 Prefixes
+40.16 Prefixes
 ==============
 
 These constants are dimensionless scaling factors.
@@ -2688,7 +3601,7 @@ These constants are dimensionless scaling factors.
 
 File: gsl-ref.info,  Node: Physical Constant Examples,  Next: Physical Constant References and Further Reading,  Prev: Prefixes,  Up: Physical Constants
 
-39.17 Examples
+40.17 Examples
 ==============
 
 The following program demonstrates the use of the physical constants in
@@ -2740,18 +3653,17 @@ Here is the output from the program,
 
 File: gsl-ref.info,  Node: Physical Constant References and Further Reading,  Prev: Physical Constant Examples,  Up: Physical Constants
 
-39.18 References and Further Reading
+40.18 References and Further Reading
 ====================================
 
-The authoritative sources for physical constants are the 2002 CODATA
-recommended values, published in the articles below. Further information
-on the values of physical constants is also available from the cited
-articles and the NIST website.
+The authoritative sources for physical constants are the 2006 CODATA
+recommended values, published in the article below. Further information
+on the values of physical constants is also available from the NIST
+website.
 
-     Journal of Physical and Chemical Reference Data, 28(6), 1713-1852,
-     1999
-
-     Reviews of Modern Physics, 72(2), 351-495, 2000
+     P.J. Mohr, B.N. Taylor, D.B. Newell, "CODATA Recommended Values of
+     the Fundamental Physical Constants: 2006", Reviews of Modern
+     Physics, 80(2), pp. 633-730 (2008).
 
      `http://www.physics.nist.gov/cuu/Constants/index.html'
 
@@ -2760,7 +3672,7 @@ articles and the NIST website.
 
 File: gsl-ref.info,  Node: IEEE floating-point arithmetic,  Next: Debugging Numerical Programs,  Prev: Physical Constants,  Up: Top
 
-40 IEEE floating-point arithmetic
+41 IEEE floating-point arithmetic
 *********************************
 
 This chapter describes functions for examining the representation of
@@ -2777,7 +3689,7 @@ the header file `gsl_ieee_utils.h'.
 
 File: gsl-ref.info,  Node: Representation of floating point numbers,  Next: Setting up your IEEE environment,  Up: IEEE floating-point arithmetic
 
-40.1 Representation of floating point numbers
+41.1 Representation of floating point numbers
 =============================================
 
 The IEEE Standard for Binary Floating-Point Arithmetic defines binary
@@ -2903,7 +3815,7 @@ double-precision by adding zeros in the binary representation.
 
 File: gsl-ref.info,  Node: Setting up your IEEE environment,  Next: IEEE References and Further Reading,  Prev: Representation of floating point numbers,  Up: IEEE floating-point arithmetic
 
-40.2 Setting up your IEEE environment
+41.2 Setting up your IEEE environment
 =====================================
 
 The IEEE standard defines several "modes" for controlling the behavior
@@ -3094,7 +4006,7 @@ rounded to the same value.
 
 File: gsl-ref.info,  Node: IEEE References and Further Reading,  Prev: Setting up your IEEE environment,  Up: IEEE floating-point arithmetic
 
-40.3 References and Further Reading
+41.3 References and Further Reading
 ===================================
 
 The reference for the IEEE standard is,
@@ -3340,11 +4252,6 @@ these options catch.
      prototypes it is harder to detect problems with incorrect
      arguments.
 
-`-Wtraditional'
-     This warns about certain constructs that behave differently in
-     traditional and ANSI C. Whether the traditional or ANSI
-     interpretation is used might be unpredictable on other compilers.
-
 `-Wconversion'
      The main use of this option is to warn about conversions from
      signed to unsigned integers.  For example, `unsigned int x = -1'.
@@ -3459,7 +4366,7 @@ Appendix B Contributors to GSL
      Wrote the initial complex arithmetic functions.
 
 *Thomas Walter*
-     Wrote the initial heapsort routines and cholesky decomposition.
+     Wrote the initial heapsort routines and Cholesky decomposition.
 
 *Fabrice Rossi*
      Multidimensional minimization.
@@ -3482,7 +4389,8 @@ Appendix B Contributors to GSL
      Wrote the routines for wavelet transforms.
 
 *Tuomo Keskitalo*
-     Improved the implementation of the ODE solvers.
+     Improved the implementation of the ODE solvers and wrote the
+     ode-initval2 routines.
 
 *Lowell Johnson*
      Implementation of the Mathieu functions.
@@ -3490,6 +4398,15 @@ Appendix B Contributors to GSL
 *Patrick Alken*
      Implementation of non-symmetric and generalized eigensystems and
      B-splines.
+
+*Rhys Ulerich*
+     Wrote the multiset routines.
+
+*Pavel Holoborodko*
+     Wrote the fixed order Gauss-Legendre quadrature routines.
+
+*Pedro Gonnet*
+     Wrote the CQUAD integration routines.
 
 
    Thanks to Nigel Lowry for help in proofreading the manual.

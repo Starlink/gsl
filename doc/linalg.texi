@@ -467,6 +467,7 @@ algorithm, which is faster for @c{$M \gg N$}
 @end deftypefun
 
 @deftypefun int gsl_linalg_SV_decomp_jacobi (gsl_matrix * @var{A}, gsl_matrix * @var{V}, gsl_vector * @var{S})
+@cindex Jacobi orthogonalization
 This function computes the SVD of the @math{M}-by-@math{N} matrix @var{A}
 using one-sided Jacobi orthogonalization for @c{$M \ge N$} 
 @math{M >= N}.  The Jacobi method can compute singular values to higher
@@ -474,10 +475,10 @@ relative accuracy than Golub-Reinsch algorithms (see references for
 details).
 @end deftypefun
 
-@deftypefun int gsl_linalg_SV_solve (gsl_matrix * @var{U}, gsl_matrix * @var{V}, gsl_vector * @var{S}, const gsl_vector * @var{b}, gsl_vector * @var{x})
+@deftypefun int gsl_linalg_SV_solve (const gsl_matrix * @var{U}, const gsl_matrix * @var{V}, const gsl_vector * @var{S}, const gsl_vector * @var{b}, gsl_vector * @var{x})
 This function solves the system @math{A x = b} using the singular value
-decomposition (@var{U}, @var{S}, @var{V}) held in @math{A} which must 
-have been computed previously by @code{gsl_linalg_SV_decomp}.
+decomposition (@var{U}, @var{S}, @var{V}) of @math{A} which must 
+have been computed previously with @code{gsl_linalg_SV_decomp}.
 
 Only non-zero singular values are used in computing the solution. The
 parts of the solution corresponding to singular values of zero are
@@ -549,7 +550,7 @@ have been previously computed by @code{gsl_linalg_cholesky_decomp} or
 @deftypefunx int gsl_linalg_complex_cholesky_svx (const gsl_matrix_complex * @var{cholesky}, gsl_vector_complex * @var{x})
 These functions solve the system @math{A x = b} in-place using the
 Cholesky decomposition of @math{A} held in the matrix @var{cholesky}
-which must have been previously computed by by
+which must have been previously computed by
 @code{gsl_linalg_cholesky_decomp} or
 @code{gsl_linalg_complex_cholesky_decomp}. On input @var{x} should
 contain the right-hand side @math{b}, which is replaced by the
@@ -557,10 +558,12 @@ solution on output.
 @end deftypefun
 
 @deftypefun int gsl_linalg_cholesky_invert (gsl_matrix * @var{cholesky})
-This function computes the inverse of the matrix @var{cholesky} which
-must have been previously computed by @code{gsl_linalg_cholesky_decomp}.
-The inverse of the original matrix @math{A} is stored in @var{cholesky}
-on output.
+@deftypefunx int gsl_linalg_complex_cholesky_invert (gsl_matrix_complex * @var{cholesky})
+These functions compute the inverse of a matrix from its Cholesky
+decomposition @var{cholesky}, which must have been previously computed
+by @code{gsl_linalg_cholesky_decomp} or
+@code{gsl_linalg_complex_cholesky_decomp}.  On output, the inverse is
+stored in-place in @var{cholesky}.
 @end deftypefun
 
 @node Tridiagonal Decomposition of Real Symmetric Matrices
@@ -642,13 +645,13 @@ tridiagonal decomposition @math{U T U^T}.  On output the real parts of
 the diagonal and subdiagonal part of the input matrix @var{A} contain
 the tridiagonal matrix @math{T}.  The remaining lower triangular part of
 the input matrix contains the Householder vectors which, together with
-the Householder coefficients @var{tau}, encode the orthogonal matrix
-@math{Q}. This storage scheme is the same as used by @sc{lapack}.  The
+the Householder coefficients @var{tau}, encode the unitary matrix
+@math{U}. This storage scheme is the same as used by @sc{lapack}.  The
 upper triangular part of @var{A} and imaginary parts of the diagonal are
 not referenced.
 @end deftypefun
 
-@deftypefun int gsl_linalg_hermtd_unpack (const gsl_matrix_complex * @var{A}, const gsl_vector_complex * @var{tau}, gsl_matrix_complex * @var{Q}, gsl_vector * @var{diag}, gsl_vector * @var{subdiag})
+@deftypefun int gsl_linalg_hermtd_unpack (const gsl_matrix_complex * @var{A}, const gsl_vector_complex * @var{tau}, gsl_matrix_complex * @var{U}, gsl_vector * @var{diag}, gsl_vector * @var{subdiag})
 This function unpacks the encoded tridiagonal decomposition (@var{A},
 @var{tau}) obtained from @code{gsl_linalg_hermtd_decomp} into the
 unitary matrix @var{U}, the real vector of diagonal elements @var{diag} and
@@ -664,7 +667,7 @@ tridiagonal decomposition (@var{A}, @var{tau}) obtained from the
 
 @node Hessenberg Decomposition of Real Matrices
 @section Hessenberg Decomposition of Real Matrices
-@cindex hessenberg decomposition
+@cindex Hessenberg decomposition
 
 A general real matrix @math{A} can be decomposed by orthogonal
 similarity transformations into the form
@@ -724,7 +727,7 @@ Householder vectors after calling @code{gsl_linalg_hessenberg_decomp}.
 
 @node Hessenberg-Triangular Decomposition of Real Matrices
 @section Hessenberg-Triangular Decomposition of Real Matrices
-@cindex hessenberg triangular decomposition
+@cindex Hessenberg triangular decomposition
 
 A general real matrix pair (@math{A}, @math{B}) can be decomposed by
 orthogonal similarity transformations into the form
@@ -857,22 +860,22 @@ the first.  On output the transformation is stored in the vector @var{v}
 and the scalar @math{\tau} is returned.
 @end deftypefun
 
-@deftypefun int gsl_linalg_householder_hm (double tau, const gsl_vector * v, gsl_matrix * A)
-@deftypefunx int gsl_linalg_complex_householder_hm (gsl_complex tau, const gsl_vector_complex * v, gsl_matrix_complex * A)
+@deftypefun int gsl_linalg_householder_hm (double @var{tau}, const gsl_vector * @var{v}, gsl_matrix * @var{A})
+@deftypefunx int gsl_linalg_complex_householder_hm (gsl_complex @var{tau}, const gsl_vector_complex * @var{v}, gsl_matrix_complex * @var{A})
 This function applies the Householder matrix @math{P} defined by the
 scalar @var{tau} and the vector @var{v} to the left-hand side of the
 matrix @var{A}. On output the result @math{P A} is stored in @var{A}.
 @end deftypefun
 
-@deftypefun int gsl_linalg_householder_mh (double tau, const gsl_vector * v, gsl_matrix * A)
-@deftypefunx int gsl_linalg_complex_householder_mh (gsl_complex tau, const gsl_vector_complex * v, gsl_matrix_complex * A)
+@deftypefun int gsl_linalg_householder_mh (double @var{tau}, const gsl_vector * @var{v}, gsl_matrix * @var{A})
+@deftypefunx int gsl_linalg_complex_householder_mh (gsl_complex @var{tau}, const gsl_vector_complex * @var{v}, gsl_matrix_complex * @var{A})
 This function applies the Householder matrix @math{P} defined by the
 scalar @var{tau} and the vector @var{v} to the right-hand side of the
 matrix @var{A}. On output the result @math{A P} is stored in @var{A}.
 @end deftypefun
 
-@deftypefun int gsl_linalg_householder_hv (double tau, const gsl_vector * v, gsl_vector * w)
-@deftypefunx int gsl_linalg_complex_householder_hv (gsl_complex tau, const gsl_vector_complex * v, gsl_vector_complex * w)
+@deftypefun int gsl_linalg_householder_hv (double @var{tau}, const gsl_vector * @var{v}, gsl_vector * @var{w})
+@deftypefunx int gsl_linalg_complex_householder_hv (gsl_complex @var{tau}, const gsl_vector_complex * @var{v}, gsl_vector_complex * @var{w})
 This function applies the Householder transformation @math{P} defined by
 the scalar @var{tau} and the vector @var{v} to the vector @var{w}.  On
 output the result @math{P w} is stored in @var{w}.
@@ -1143,7 +1146,7 @@ accordance with the equation @math{A x = b}.
 Further information on the algorithms described in this section can be
 found in the following book,
 
-@itemize @asis
+@itemize @w{}
 @item
 G. H. Golub, C. F. Van Loan, @cite{Matrix Computations} (3rd Ed, 1996),
 Johns Hopkins University Press, ISBN 0-8018-5414-8.
@@ -1152,7 +1155,7 @@ Johns Hopkins University Press, ISBN 0-8018-5414-8.
 @noindent
 The @sc{lapack} library is described in the following manual,
 
-@itemize @asis
+@itemize @w{}
 @item
 @cite{LAPACK Users' Guide} (Third Edition, 1999), Published by SIAM,
 ISBN 0-89871-447-8.
@@ -1167,7 +1170,7 @@ with an online copy of the users guide.
 @noindent
 The Modified Golub-Reinsch algorithm is described in the following paper,
 
-@itemize @asis
+@itemize @w{}
 @item
 T.F. Chan, ``An Improved Algorithm for Computing the Singular Value
 Decomposition'', @cite{ACM Transactions on Mathematical Software}, 8
@@ -1178,7 +1181,7 @@ Decomposition'', @cite{ACM Transactions on Mathematical Software}, 8
 The Jacobi algorithm for singular value decomposition is described in
 the following papers,
 
-@itemize @asis
+@itemize @w{}
 @item
 J.C. Nash, ``A one-sided transformation method for the singular value
 decomposition and algebraic eigenproblem'', @cite{Computer Journal},
@@ -1190,7 +1193,7 @@ value decomposition'', @cite{Computer Journal}, Volume 30 (1987), p
 268--275.
 
 @item
-James Demmel, Kresimir Veselic, ``Jacobi's Method is more accurate than
+James Demmel, Kre@v{s}imir Veseli@'c, ``Jacobi's Method is more accurate than
 QR'', @cite{Lapack Working Note 15} (LAWN-15), October 1989. Available
 from netlib, @uref{http://www.netlib.org/lapack/} in the @code{lawns} or
 @code{lawnspdf} directories.

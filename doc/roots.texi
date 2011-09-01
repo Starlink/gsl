@@ -116,6 +116,8 @@ the function visually by plotting before searching for a root.
 @section Initializing the Solver
 
 @deftypefun {gsl_root_fsolver *} gsl_root_fsolver_alloc (const gsl_root_fsolver_type * @var{T})
+@tpindex gsl_root_fsolver
+@tpindex gsl_root_fsolver_type
 This function returns a pointer to a newly allocated instance of a
 solver of type @var{T}.  For example, the following code creates an
 instance of a bisection solver,
@@ -133,6 +135,8 @@ code of @code{GSL_ENOMEM}.
 @end deftypefun
 
 @deftypefun {gsl_root_fdfsolver *} gsl_root_fdfsolver_alloc (const gsl_root_fdfsolver_type * @var{T})
+@tpindex gsl_root_fdfsolver
+@tpindex gsl_root_fdfsolver_type
 This function returns a pointer to a newly allocated instance of a
 derivative-based solver of type @var{T}.  For example, the following
 code creates an instance of a Newton-Raphson solver,
@@ -221,7 +225,7 @@ f(x) = a x^2 + b x + c
 @noindent
 with @math{a = 3}, @math{b = 2}, @math{c = 1}.  The following code
 defines a @code{gsl_function} @code{F} which you could pass to a root
-finder:
+finder as a function pointer:
 
 @example
 struct my_f_params @{ double a; double b; double c; @};
@@ -245,12 +249,8 @@ F.params = &params;
 @end example
 
 @noindent
-The function @math{f(x)} can be evaluated using the following macro,
-
-@example
-#define GSL_FN_EVAL(F,x) 
-    (*((F)->function))(x,(F)->params)
-@end example
+The function @math{f(x)} can be evaluated using the macro
+@code{GSL_FN_EVAL(&F,x)} defined in @file{gsl_math.h}.
 
 @deftp {Data Type} gsl_function_fdf
 This data type defines a general function with parameters and its first
@@ -268,7 +268,7 @@ respect to @var{x},
 @c{$f'(x,\hbox{\it params})$}
 @math{f'(x,params)}, for argument @var{x} and parameters @var{params}
 
-@item void (* fdf) (double @var{x}, void * @var{params}, double * @var{f}, double * @var{d}f)
+@item void (* fdf) (double @var{x}, void * @var{params}, double * @var{f}, double * @var{df})
 this function should set the values of the function @var{f} to 
 @c{$f(x,\hbox{\it params})$}
 @math{f(x,params)}
@@ -321,34 +321,14 @@ FDF.params = 0;
 @end example
 
 @noindent
-The function @math{f(x)} can be evaluated using the following macro,
-
-@example
-#define GSL_FN_FDF_EVAL_F(FDF,x) 
-     (*((FDF)->f))(x,(FDF)->params)
-@end example
-
-@noindent
-The derivative @math{f'(x)} can be evaluated using the following macro,
-
-@example
-#define GSL_FN_FDF_EVAL_DF(FDF,x) 
-     (*((FDF)->df))(x,(FDF)->params)
-@end example
-
-@noindent
-and both the function @math{y = f(x)} and its derivative @math{dy = f'(x)}
-can be evaluated at the same time using the following macro,
-
-@example
-#define GSL_FN_FDF_EVAL_F_DF(FDF,x,y,dy) 
-     (*((FDF)->fdf))(x,(FDF)->params,(y),(dy))
-@end example
-
-@noindent
-The macro stores @math{f(x)} in its @var{y} argument and @math{f'(x)} in
-its @var{dy} argument---both of these should be pointers to
-@code{double}.
+The function @math{f(x)} can be evaluated using the macro
+@code{GSL_FN_FDF_EVAL_F(&FDF,x)} and the derivative @math{f'(x)} can
+be evaluated using the macro @code{GSL_FN_FDF_EVAL_DF(&FDF,x)}.  Both
+the function @math{y = f(x)} and its derivative @math{dy = f'(x)} can
+be evaluated at the same time using the macro
+@code{GSL_FN_FDF_EVAL_F_DF(&FDF,x,y,dy)}.  The macro stores
+@math{f(x)} in its @var{y} argument and @math{f'(x)} in its @var{dy}
+argument---both of these should be pointers to @code{double}.
 
 @node Search Bounds and Guesses
 @section Search Bounds and Guesses
@@ -362,7 +342,7 @@ control them.
 A guess is simply an @math{x} value which is iterated until it is within
 the desired precision of a root.  It takes the form of a @code{double}.
 
-Search bounds are the endpoints of a interval which is iterated until
+Search bounds are the endpoints of an interval which is iterated until
 the length of the interval is smaller than the requested precision.  The
 interval is defined by two values, the lower limit and the upper limit.
 Whether the endpoints are intended to be included in the interval or not
@@ -765,10 +745,13 @@ roots.
 @cindex Steffenson's method for finding roots
 @cindex root finding, Steffenson's method
 
-The @dfn{Steffenson Method} provides the fastest convergence of all the
-routines.  It combines the basic Newton algorithm with an Aitken
-``delta-squared'' acceleration.  If the Newton iterates are @math{x_i}
-then the acceleration procedure generates a new sequence @math{R_i},
+The @dfn{Steffenson Method}@footnote{J.F. Steffensen (1873--1961). The
+spelling used in the name of the function is slightly incorrect, but
+has been preserved to avoid incompatibility.} provides the fastest
+convergence of all the routines.  It combines the basic Newton
+algorithm with an Aitken ``delta-squared'' acceleration.  If the
+Newton iterates are @math{x_i} then the acceleration procedure
+generates a new sequence @math{R_i},
 @tex
 \beforedisplay
 $$
@@ -915,7 +898,7 @@ changing @code{gsl_root_fdfsolver_newton} to
 For information on the Brent-Dekker algorithm see the following two
 papers,
 
-@itemize @asis
+@itemize @w{}
 @item
 R. P. Brent, ``An algorithm with guaranteed convergence for finding a
 zero of a function'', @cite{Computer Journal}, 14 (1971) 422--425

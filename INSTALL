@@ -41,7 +41,8 @@ with the command,
 
 to allow any errors to be examined in detail.  By default, only test
 failures are shown.  To see the complete output, set the environment
-variable GSL_TEST_VERBOSE=1.
+variable GSL_TEST_VERBOSE=1.  Use "make -k check" to continue running
+the remaining tests in the event of failures.
 
 If you run the tests and get some failures, please see the notes on
 platform specific problems below.  If you find failures that are not
@@ -59,6 +60,11 @@ The installation directory can be changed with the --prefix option to
 configure.  Consult the "Further Information" section below for
 instructions on installing the library in another location or changing
 other default compilation options.
+
+When building from source, GNU packages are compiled with debugging
+symbols enabled by default (CFLAGS="-g -O2").  It's part of the
+philosophy that anyone should be able to examine any program on the
+system.
 
                     ------------------------------
 
@@ -84,21 +90,29 @@ Hints for any platform
 
 1) If there are problems building the library try using
 
-        ./configure --disable-shared
+        ./configure --disable-shared --disable-dependency-tracking
 
-This will turn off the compilation of shared libraries and may allow
-the build process to complete successfully.  
+This will turn off the compilation of shared libraries and dependency
+tracking and may allow the build process to complete successfully.
 
 If you get any problems try this first.
 
-2) If you want to pass C++ functions with exceptions to GSL, the
+2) If your compiler uses the C99-style inline keyword, use
+
+    ./configure CFLAGS="-DGSL_C99_INLINE -g -O2"
+
+to avoid problems with duplicate function definitions.  For gcc this
+is handled automatically.  See the file gsl_inline.h for the
+preprocessor definitions that are used.
+
+3) If you want to pass C++ functions with exceptions to GSL, the
 library needs to be compiled with the GCC option -fexceptions
 
     ./confugire CFLAGS="-fexceptions ..."
 
 to allow C++ exceptions to be handled.
 
-3) With gcc-4.3.2 the tests in the poly/ directory fail due to a
+4) With gcc-4.3.2 the tests in the poly/ directory fail due to a
 compiler optimization bug which is fixed in later versions of GCC
 (http://gcc.gnu.org/bugzilla/show_bug.cgi?id=38478).
 
@@ -111,7 +125,7 @@ manipulation of complex numbers.
 
 If you encounter these problems, install a different version of gcc.
 
-4) Attempts to run 'strip' on the static library libgsl.a will probably
+5) Attempts to run 'strip' on the static library libgsl.a will probably
 produce a broken library (it is known to happen with GNU binutils
 strip, and probably affects others too). The libgsl.a ar archive made
 by libtool contains files with the same filenames from different
@@ -123,7 +137,7 @@ make install-strip does not work, due to a minor problem with autoconf
 which is fixed in the 2.5 development version of autoconf.  In the
 meantime compile without -g instead if you need to reduce the file size.
 
-5) The configure script can fail with a segmentation fault on bash-2.01
+6) The configure script can fail with a segmentation fault on bash-2.01
 
     $ ./configure
     Segmentation fault
@@ -152,6 +166,18 @@ If you compile with higher optimisation -O3 you will also need
 enabled. This affects the accuracy of the results and causes some of
 the tests to fail.
 
+If you get errors like
+
+ ld: 0711-593 SEVERE ERROR: Symbol C_BSTAT (entry 635) in object siman_tsp.o:
+          The symbol refers to a csect with symbol number 0, which was not
+          found. The new symbol cannot be associated with a csect and
+          is being ignored.
+
+this is due to problems with some versions of the IBM assembler.  Try
+compiling with CFLAGS="-g0" as a workaround.  For details and other
+solutions see https://www-304.ibm.com/support/docview.wss?uid=isg1IZ98134 and
+http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46072
+
 If you get the error,
 
    ld: 0711-781 ERROR: TOC overflow. 
@@ -173,17 +199,6 @@ On more recent versions of AIX (e.g >= 5.1) use
 
 to increase the allowed number of arguments. NNN is the amount of
 space measured in 4k blocks (default 6, maximum 1024)
-
-If compiling with GCC the following error
-
-  fp-aix.c: In function `gsl_ieee_set_mode':
-  fp-aix.c:30: error: `fprnd_t' undeclared (first use in this function)
-
-can occur if /usr/includes/float.h is not used, and instead the
-float.h of the installed gcc is picked up instead -- it may be missing
-the necessary structs.  To work around it copy the missing parts
-(between #ifdef _ALL_SOURCE and its #endif) from /usr/includes/float.h
-into a new header file and #include that in fp-aix.c
 
 Hints for Compaq/DEC Alpha
 ==========================
@@ -264,7 +279,7 @@ unpack the distribution.
 There are problems with dynamic linker, so the library should be
 compiled with,
 
-  ./configure --disable-shared
+  ./configure --disable-shared --disable-dependency-tracking
 
 It has been reported that shared libraries can be built if MacOS X
 specific versions of libtool, automake and autoconf from
@@ -346,6 +361,9 @@ or the Sun linker and assembler.
 There may be some warnings about "end of loop code not reached". These
 can be ignored -- they come from the do { ... ; return ; } while(0)
 statement in the GSL_ERROR macro.
+
+If you get errors such as symbol `gsl_complex_rect' is	multiply-defined
+you will need to use ./configure CFLAGS="-DGSL_C99_INLINE -g -O2"
 
                     ------------------------------
 

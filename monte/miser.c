@@ -1,6 +1,7 @@
 /* monte/miser.c
  * 
  * Copyright (C) 1996, 1997, 1998, 1999, 2000 Michael Booth
+ * Copyright (C) 2009 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -549,6 +550,7 @@ gsl_monte_miser_init (gsl_monte_miser_state * s)
 void
 gsl_monte_miser_free (gsl_monte_miser_state * s)
 {
+  RETURN_IF_NULL (s);
   free (s->hits_r);
   free (s->hits_l);
   free (s->fsum2_r);
@@ -564,6 +566,26 @@ gsl_monte_miser_free (gsl_monte_miser_state * s)
   free (s->xmid);
   free (s->x);
   free (s);
+}
+
+void
+gsl_monte_miser_params_get (const gsl_monte_miser_state * s, gsl_monte_miser_params * p)
+{
+  p->estimate_frac = s->estimate_frac;
+  p->min_calls = s->min_calls;
+  p->min_calls_per_bisection = s->min_calls_per_bisection;
+  p->alpha = s->alpha;
+  p->dither = s->dither;  
+}
+
+void
+gsl_monte_miser_params_set (gsl_monte_miser_state * s, const gsl_monte_miser_params * p)
+{
+  s->estimate_frac = p->estimate_frac;
+  s->min_calls = p->min_calls;
+  s->min_calls_per_bisection = p->min_calls_per_bisection;
+  s->alpha = p->alpha;
+  s->dither = p->dither;  
 }
 
 static int

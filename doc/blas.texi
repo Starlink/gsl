@@ -13,22 +13,30 @@ The library provides a low-level layer which corresponds directly to the
 C-language @sc{blas} standard, referred to here as ``@sc{cblas}'', and a
 higher-level interface for operations on GSL vectors and matrices.
 Users who are interested in simple operations on GSL vector and matrix
-objects should use the high-level layer, which is declared in the file
-@code{gsl_blas.h}.  This should satisfy the needs of most users.  Note
-that GSL matrices are implemented using dense-storage so the interface
-only includes the corresponding dense-storage @sc{blas} functions.  The full
-@sc{blas} functionality for band-format and packed-format matrices is
-available through the low-level @sc{cblas} interface.
+objects should use the high-level layer described
+in this chapter.  The functions are declared in the file
+@file{gsl_blas.h} and should satisfy the needs of most users.  
 
+Note that GSL matrices are implemented using dense-storage so the
+interface only includes the corresponding dense-storage @sc{blas}
+functions.  The full @sc{blas} functionality for band-format and
+packed-format matrices is available through the low-level @sc{cblas}
+interface.  Similarly, GSL vectors are restricted to positive strides,
+whereas the low-level @sc{cblas} interface supports negative
+strides as specified in the @sc{blas} standard.@footnote{In the low-level
+@sc{cblas} interface, a negative stride accesses the vector elements
+in reverse order, i.e. the @math{i}-th element is given by
+@math{(N-i)*|incx|} for @math{incx < 0}.}
+ 
 The interface for the @code{gsl_cblas} layer is specified in the file
-@code{gsl_cblas.h}.  This interface corresponds to the @sc{blas} Technical
-Forum's draft standard for the C interface to legacy @sc{blas}
+@file{gsl_cblas.h}.  This interface corresponds to the @sc{blas} Technical
+Forum's standard for the C interface to legacy @sc{blas}
 implementations. Users who have access to other conforming @sc{cblas}
 implementations can use these in place of the version provided by the
 library.  Note that users who have only a Fortran @sc{blas} library can
 use a @sc{cblas} conformant wrapper to convert it into a @sc{cblas}
 library.  A reference @sc{cblas} wrapper for legacy Fortran
-implementations exists as part of the draft @sc{cblas} standard and can
+implementations exists as part of the @sc{cblas} standard and can
 be obtained from Netlib.  The complete set of @sc{cblas} functions is
 listed in an appendix (@pxref{GSL CBLAS Library}).
 
@@ -126,7 +134,7 @@ overlap (@pxref{Aliasing of arrays}).
 GSL provides dense vector and matrix objects, based on the relevant
 built-in types.  The library provides an interface to the @sc{blas}
 operations which apply to these objects.  The interface to this
-functionality is given in the file @code{gsl_blas.h}.
+functionality is given in the file @file{gsl_blas.h}.
 
 @comment CblasNoTrans, CblasTrans, CblasConjTrans
 @comment CblasUpper, CblasLower
@@ -158,14 +166,14 @@ These functions compute the scalar product @math{x^T y} for the vectors
 @deftypefun int gsl_blas_cdotu (const gsl_vector_complex_float * @var{x}, const gsl_vector_complex_float * @var{y}, gsl_complex_float * @var{dotu})
 @deftypefunx int gsl_blas_zdotu (const gsl_vector_complex * @var{x}, const gsl_vector_complex * @var{y}, gsl_complex * @var{dotu})
 These functions compute the complex scalar product @math{x^T y} for the
-vectors @var{x} and @var{y}, returning the result in @var{result}
+vectors @var{x} and @var{y}, returning the result in @var{dotu}
 @end deftypefun
 
 @deftypefun int gsl_blas_cdotc (const gsl_vector_complex_float * @var{x}, const gsl_vector_complex_float * @var{y}, gsl_complex_float * @var{dotc})
 @deftypefunx int gsl_blas_zdotc (const gsl_vector_complex * @var{x}, const gsl_vector_complex * @var{y}, gsl_complex * @var{dotc})
 These functions compute the complex conjugate scalar product @math{x^H
 y} for the vectors @var{x} and @var{y}, returning the result in
-@var{result}
+@var{dotc}
 @end deftypefun
 
 @deftypefun float gsl_blas_snrm2 (const gsl_vector_float * @var{x})
@@ -450,7 +458,7 @@ used.
 @deftypefunx int gsl_blas_zher2 (CBLAS_UPLO_t @var{Uplo}, const gsl_complex @var{alpha}, const gsl_vector_complex * @var{x}, const gsl_vector_complex * @var{y}, gsl_matrix_complex * @var{A})
 @cindex HER2, Level-2 BLAS
 These functions compute the hermitian rank-2 update @math{A = \alpha x
-y^H + \alpha^* y x^H A} of the hermitian matrix @var{A}.  Since the
+y^H + \alpha^* y x^H + A} of the hermitian matrix @var{A}.  Since the
 matrix @var{A} is hermitian only its upper half or lower half need to be
 stored.  When @var{Uplo} is @code{CblasUpper} then the upper triangle
 and diagonal of @var{A} are used, and when @var{Uplo} is
@@ -651,23 +659,23 @@ $ ./a.out
 @section References and Further Reading
 
 Information on the @sc{blas} standards, including both the legacy and
-draft interface standards, is available online from the @sc{blas}
+updated interface standards, is available online from the @sc{blas}
 Homepage and @sc{blas} Technical Forum web-site.
 
-@itemize @asis
+@itemize @w{}
 @item
 @cite{BLAS Homepage} @*
 @uref{http://www.netlib.org/blas/}
 @item
 @cite{BLAS Technical Forum} @*
-@uref{http://www.netlib.org/cgi-bin/checkout/blast/blast.pl}
+@uref{http://www.netlib.org/blas/blast-forum/}
 @end itemize
 
 @noindent
 The following papers contain the specifications for Level 1, Level 2 and
 Level 3 @sc{blas}.
 
-@itemize @asis
+@itemize @w{}
 @item
 C. Lawson, R. Hanson, D. Kincaid, F. Krogh, ``Basic Linear Algebra
 Subprograms for Fortran Usage'', @cite{ACM Transactions on Mathematical

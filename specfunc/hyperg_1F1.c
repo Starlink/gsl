@@ -1,6 +1,7 @@
 /* specfunc/hyperg_1F1.c
  * 
  * Copyright (C) 1996, 1997, 1998, 1999, 2000 Gerard Jungman
+ * Copyright (C) 2010 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1943,7 +1944,7 @@ gsl_sf_hyperg_1F1_e(const double a, const double b, const double x,
                                             result);
       return GSL_ERROR_SELECT_2(stat_e, stat_K);
     }
-    else if(a < 0.0 && fabs(x) < 100.0) {
+    else if(a < 0.0 && fabs(x) < 2*GSL_LOG_DBL_MAX) {
       /* Use Kummer to reduce it to the generic positive case.
        * Note that b > a, strictly, since we already trapped b = a.
        * Also b-(b-a)=a, and a is not a negative integer here,

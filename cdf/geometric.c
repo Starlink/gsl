@@ -1,6 +1,7 @@
 /* cdf/geometric.c
  *
  * Copyright (C) 2004 Jason H. Stover.
+ * Copyright (C) 2010 Brian Gough
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,7 +71,7 @@ gsl_cdf_geometric_Q (const unsigned int k, const double p)
 
   if (k < 1)
     {
-      Q = 1.0;
+      return 1.0;
     }
 
   q = 1.0 - p;

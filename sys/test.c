@@ -286,8 +286,34 @@ main (void)
       {
         y = gsl_pow_int (-3.14, n);
         y_expected = pow (-3.14, n);
-        gsl_test_rel (y, y_expected, 1e-15, "gsl_pow_n(-3.14,%d)", n);
+        gsl_test_rel (y, y_expected, 1e-15, "gsl_pow_int(-3.14,%d)", n);
       }
+  }
+
+
+  {
+    unsigned int n;
+    for (n = 0; n < 10; n++)
+      {
+        y = gsl_pow_uint (-3.14, n);
+        y_expected = pow (-3.14, n);
+        gsl_test_rel (y, y_expected, 1e-15, "gsl_pow_uint(-3.14,%d)", n);
+      }
+  }
+
+  /* Test case for n at INT_MAX, INT_MIN */
+
+  {
+    double u = 1.0000001;
+    int n = INT_MAX;
+    y = gsl_pow_int (u, n);
+    y_expected = pow (u, n);
+    gsl_test_rel (y, y_expected, 1e-6, "gsl_pow_int(%.7f,%d)", u, n);
+
+    n = INT_MIN;
+    y = gsl_pow_int (u, n);
+    y_expected = pow (u, n);
+    gsl_test_rel (y, y_expected, 1e-6, "gsl_pow_int(%.7f,%d)", u, n);
   }
 
   /* Test for ldexp */
@@ -323,11 +349,13 @@ main (void)
     volatile double x = GSL_DBL_MIN;
     y_expected = 2.554675596204441378334779940e294;
     
-    while ((x /= 2) > 0)
+    x /= 2;
+    while (x > 0)
       {
         i++ ;
         y = gsl_ldexp (x, 2000 + i);
         gsl_test_rel (y, y_expected, 1e-15, "gsl_ldexp(DBL_MIN/2**%d,%d)",i,2000+i);
+        x /= 2;
       }
   }
 
@@ -396,7 +424,9 @@ main (void)
     y_expected = 0.5;
     e_expected = -1021;
     
-    while ((x /= 2) > 0)
+    x /= 2;
+
+    while (x > 0)
       {
         e_expected--;
         i++ ;
@@ -404,6 +434,7 @@ main (void)
         y = gsl_frexp (x, &e);
         gsl_test_rel (y, y_expected, 1e-15, "gsl_frexp(DBL_MIN/2**%d) fraction",i);
         gsl_test_int (e, e_expected, "gsl_frexp(DBL_MIN/2**%d) exponent", i);
+        x /= 2;
       }
   }
 

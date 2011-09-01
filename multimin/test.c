@@ -53,7 +53,7 @@ main (void)
     fdfminimizers[3] = gsl_multimin_fdfminimizer_vector_bfgs;
     fdfminimizers[4] = gsl_multimin_fdfminimizer_vector_bfgs2;
     fdfminimizers[5] = 0;
-    
+
     T = fdfminimizers;
     
     while (*T != 0) 
@@ -61,6 +61,8 @@ main (void)
         test_fdf("Roth", &roth, roth_initpt,*T);
         test_fdf("Wood", &wood, wood_initpt,*T);
         test_fdf("Rosenbrock", &rosenbrock, rosenbrock_initpt,*T);
+        test_fdf("Rosenbrock1", &rosenbrock, rosenbrock_initpt1,*T);
+        test_fdf("SimpleAbs", &simpleabs, simpleabs_initpt,*T);
         T++;
       }
     
@@ -77,12 +79,13 @@ main (void)
 
 
   {
-    const gsl_multimin_fminimizer_type *fminimizers[3];
+    const gsl_multimin_fminimizer_type *fminimizers[4];
     const gsl_multimin_fminimizer_type ** T;
 
     fminimizers[0] = gsl_multimin_fminimizer_nmsimplex;
     fminimizers[1] = gsl_multimin_fminimizer_nmsimplex2;
-    fminimizers[2] = 0;
+    fminimizers[2] = gsl_multimin_fminimizer_nmsimplex2rand;
+    fminimizers[3] = 0;
     
     T = fminimizers;
     
@@ -91,6 +94,7 @@ main (void)
         test_f("Roth", &roth_fmin, roth_initpt,*T);
         test_f("Wood", &wood_fmin, wood_initpt,*T);
         test_f("Rosenbrock", &rosenbrock_fmin, rosenbrock_initpt,*T);
+        test_f("Spring", &spring_fmin, spring_initpt,*T);
         T++;
       }
   }
@@ -138,14 +142,19 @@ test_fdf(const char * desc,
       printf("g "); gsl_vector_fprintf (stdout, s->gradient, "%g"); 
       printf("f(x) %g\n",s->f);
       printf("dx %g\n",gsl_blas_dnrm2(s->dx));
+      printf("status=%d\n", status);
       printf("\n");
 #endif
+      if (status == GSL_ENOPROG)
+        break;
 
       status = gsl_multimin_test_gradient(s->gradient,1e-3);
     }
   while (iter < 5000 && status == GSL_CONTINUE);
 
-  status |= (fabs(s->f) > 1e-5);
+  /* If no error in iteration, test for numerical convergence */
+  if (status == GSL_CONTINUE || status == GSL_ENOPROG) 
+    status = (fabs(s->f) > 1e-5);
 
   gsl_test(status, "%s, on %s: %i iters (fn+g=%d+%d), f(x)=%g",
            gsl_multimin_fdfminimizer_name(s),desc, iter, fcount, gcount, s->f);

@@ -22,7 +22,9 @@ floating-point and integer types.  The versions for double precision
 floating-point data have the prefix @code{gsl_stats} and are declared in
 the header file @file{gsl_statistics_double.h}.  The versions for integer
 data have the prefix @code{gsl_stats_int} and are declared in the header
-file @file{gsl_statistics_int.h}. 
+file @file{gsl_statistics_int.h}.   All the functions operate on C 
+arrays with a @var{stride} parameter specifying the spacing between 
+elements.  
 
 @menu
 * Mean and standard deviation and variance::  
@@ -87,7 +89,7 @@ $$
 where @math{x_i} are the elements of the dataset @var{data}.  Note that
 the normalization factor of @math{1/(N-1)} results from the derivation
 of @math{\Hat\sigma^2} as an unbiased estimator of the population
-variance @math{\sigma^2}.  For samples drawn from a gaussian distribution
+variance @math{\sigma^2}.  For samples drawn from a Gaussian distribution
 the variance of @math{\Hat\sigma^2} itself is @math{2 \sigma^4 / N}.
 
 This function computes the mean via a call to @code{gsl_stats_mean}.  If
@@ -127,7 +129,6 @@ These functions return the total sum of squares (TSS) of @var{data} about
 the mean.  For @code{gsl_stats_tss_m} the user-supplied value of
 @var{mean} is used, and for @code{gsl_stats_tss} it is computed using
 @code{gsl_stats_mean}.
-
 @tex
 \beforedisplay
 $$
@@ -225,6 +226,8 @@ median).
 
 @node Higher moments (skewness and kurtosis)
 @section Higher moments (skewness and kurtosis)
+@cindex skewness
+@cindex kurtosis
 
 @deftypefun double gsl_stats_skew (const double @var{data}[], size_t @var{stride}, size_t @var{n})
 This function computes the skewness of @var{data}, a dataset of length
@@ -297,7 +300,7 @@ kurtosis = ((1/N) \sum ((x_i - \Hat\mu)/\Hat\sigma)^4)  - 3
 @end ifinfo
 @noindent
 The kurtosis measures how sharply peaked a distribution is, relative to
-its width.  The kurtosis is normalized to zero for a gaussian
+its width.  The kurtosis is normalized to zero for a Gaussian
 distribution.
 @end deftypefun
 
@@ -452,7 +455,7 @@ $$
 This function returns the estimated variance of the dataset @var{data}
 with stride @var{stride} and length @var{n}, using the set of weights
 @var{w} with stride @var{wstride} and length @var{n}.  The estimated
-variance of a weighted dataset is defined as,
+variance of a weighted dataset is calculated as,
 @tex
 \beforedisplay
 $$
@@ -492,7 +495,7 @@ function @code{gsl_stats_wvariance_m} above.
 @end deftypefun
 
 @deftypefun double gsl_stats_wvariance_with_fixed_mean (const double @var{w}[], size_t @var{wstride}, const double @var{data}[], size_t @var{stride}, size_t @var{n}, const double @var{mean})
-This function computes an unbiased estimate of the variance of weighted
+This function computes an unbiased estimate of the variance of the weighted
 dataset @var{data} when the population mean @var{mean} of the underlying
 distribution is known @emph{a priori}.  In this case the estimator for
 the variance replaces the sample mean @math{\Hat\mu} by the known
@@ -524,7 +527,6 @@ These functions return the weighted total sum of squares (TSS) of
 @var{data} about the weighted mean.  For @code{gsl_stats_wtss_m} the
 user-supplied value of @var{wmean} is used, and for @code{gsl_stats_wtss}
 it is computed using @code{gsl_stats_wmean}.
-
 @tex
 \beforedisplay
 $$
@@ -568,14 +570,14 @@ This function computes the weighted skewness of the dataset @var{data}.
 @tex
 \beforedisplay
 $$
-skew = {{\sum w_i ((x_i - xbar)/\sigma)^3} \over {\sum w_i}}
+skew = {{\sum w_i ((x_i - {\Hat x})/{\Hat \sigma})^3} \over {\sum w_i}}
 $$
 \afterdisplay
 @end tex
 @ifinfo
 
 @example
-skew = (\sum w_i ((x_i - xbar)/\sigma)^3) / (\sum w_i)
+skew = (\sum w_i ((x_i - \Hat x)/\Hat \sigma)^3) / (\sum w_i)
 @end example
 @end ifinfo
 @end deftypefun
@@ -588,18 +590,17 @@ deviation, @var{wmean} and @var{wsd}.
 
 @deftypefun double gsl_stats_wkurtosis (const double @var{w}[], size_t @var{wstride}, const double @var{data}[], size_t @var{stride}, size_t @var{n})
 This function computes the weighted kurtosis of the dataset @var{data}.
-
 @tex
 \beforedisplay
 $$
-kurtosis = {{\sum w_i ((x_i - xbar)/sigma)^4} \over {\sum w_i}} - 3
+kurtosis = {{\sum w_i ((x_i - {\Hat x})/{\Hat \sigma})^4} \over {\sum w_i}} - 3
 $$
 \afterdisplay
 @end tex
 @ifinfo
 
 @example
-kurtosis = ((\sum w_i ((x_i - xbar)/sigma)^4) / (\sum w_i)) - 3
+kurtosis = ((\sum w_i ((x_i - \Hat x)/\Hat \sigma)^4) / (\sum w_i)) - 3
 @end example
 @end ifinfo
 @end deftypefun
@@ -778,7 +779,7 @@ This program should produce the following output,
 The standard reference for almost any topic in statistics is the
 multi-volume @cite{Advanced Theory of Statistics} by Kendall and Stuart.
 
-@itemize @asis
+@itemize @w{}
 @item
 Maurice Kendall, Alan Stuart, and J. Keith Ord.
 @cite{The Advanced Theory of Statistics} (multiple volumes)
@@ -791,7 +792,7 @@ Many statistical concepts can be more easily understood by a Bayesian
 approach.  The following book by Gelman, Carlin, Stern and Rubin gives a
 comprehensive coverage of the subject.
 
-@itemize @asis
+@itemize @w{}
 @item
 Andrew Gelman, John B. Carlin, Hal S. Stern, Donald B. Rubin.
 @cite{Bayesian Data Analysis}.
@@ -803,7 +804,7 @@ For physicists the Particle Data Group provides useful reviews of
 Probability and Statistics in the ``Mathematical Tools'' section of its
 Annual Review of Particle Physics. 
 
-@itemize @asis
+@itemize @w{}
 @item
 @cite{Review of Particle Properties}
 R.M. Barnett et al., Physical Review D54, 1 (1996)

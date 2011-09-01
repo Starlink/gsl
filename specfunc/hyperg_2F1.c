@@ -1,6 +1,7 @@
 /* specfunc/hyperg_2F1.c
  * 
  * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2004 Gerard Jungman
+ * Copyright (C) 2009 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -667,8 +668,12 @@ gsl_sf_hyperg_2F1_e(double a, double b, const double c,
   }
 
   if(c_neg_integer) {
-    if(! (a_neg_integer && a > c + 0.1)) DOMAIN_ERROR(result);
-    if(! (b_neg_integer && b > c + 0.1)) DOMAIN_ERROR(result);
+    /* If c is a negative integer, then either a or b must be a
+       negative integer of smaller magnitude than c to ensure
+       cancellation of the series. */
+    if(! (a_neg_integer && a > c + 0.1) && ! (b_neg_integer && b > c + 0.1)) {
+      DOMAIN_ERROR(result);
+    }
   }
 
   if(fabs(c-b) < locEPS || fabs(c-a) < locEPS) {
@@ -729,17 +734,17 @@ gsl_sf_hyperg_2F1_e(double a, double b, const double c,
       return hyperg_2F1_luke(a, b, c, x, result);
     }
 
-    if(GSL_MAX_DBL(fabs(a),1.0)*fabs(bp)*fabs(x) < 2.0*fabs(c)) {
+    if(GSL_MAX_DBL(fabs(ap),1.0)*fabs(bp)*fabs(x) < 2.0*fabs(c)) {
       /* If c is large enough or x is small enough,
        * we can attempt the series anyway.
        */
       return hyperg_2F1_series(a, b, c, x, result);
     }
 
-    if(fabs(bp*bp*x*x) < 0.001*fabs(bp) && fabs(a) < 10.0) {
+    if(fabs(bp*bp*x*x) < 0.001*fabs(bp) && fabs(ap) < 10.0) {
       /* The famous but nearly worthless "large b" asymptotic.
        */
-      int stat = gsl_sf_hyperg_1F1_e(a, c, bp*x, result);
+      int stat = gsl_sf_hyperg_1F1_e(ap, c, bp*x, result);
       result->err = 0.001 * fabs(result->val);
       return stat;
     }

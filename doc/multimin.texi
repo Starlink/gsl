@@ -109,13 +109,16 @@ minimum of the function in question.
 
 @node Initializing the Multidimensional Minimizer
 @section Initializing the Multidimensional Minimizer
-
 The following function initializes a multidimensional minimizer.  The
 minimizer itself depends only on the dimension of the problem and the
 algorithm and can be reused for different problems.
 
 @deftypefun {gsl_multimin_fdfminimizer *} gsl_multimin_fdfminimizer_alloc (const gsl_multimin_fdfminimizer_type * @var{T}, size_t @var{n})
 @deftypefunx {gsl_multimin_fminimizer *} gsl_multimin_fminimizer_alloc (const gsl_multimin_fminimizer_type * @var{T}, size_t @var{n})
+@tpindex gsl_multimin_fdfminimizer
+@tpindex gsl_multimin_fminimizer
+@tpindex gsl_multimin_fdfminimizer_type
+@tpindex gsl_multimin_fminimizer_type
 This function returns a pointer to a newly allocated instance of a
 minimizer of type @var{T} for an @var{n}-dimension function.  If there
 is insufficient memory to create the minimizer then the function returns
@@ -264,9 +267,12 @@ be substituted at runtime without modifications to the code.
 
 @deftypefun int gsl_multimin_fdfminimizer_iterate (gsl_multimin_fdfminimizer * @var{s})
 @deftypefunx int gsl_multimin_fminimizer_iterate (gsl_multimin_fminimizer * @var{s})
-These functions perform a single iteration of the minimizer @var{s}.  If
-the iteration encounters an unexpected problem then an error code will
-be returned.
+These functions perform a single iteration of the minimizer @var{s}.
+If the iteration encounters an unexpected problem then an error code
+will be returned.  The error code @code{GSL_ENOPROG} signifies that
+the minimizer is unable to improve on its current estimate, either due
+to numerical difficulty or because a genuine local minimum has been
+reached.
 @end deftypefun
 
 @noindent
@@ -399,7 +405,7 @@ function minimum, assuming quadratic behavior in that region.
 The @code{bfgs2} version of this minimizer is the most efficient
 version available, and is a faithful implementation of the line
 minimization scheme described in Fletcher's @cite{Practical Methods of
-Optimization}, Algorithms 2.6.2 and 2.6.4.  It supercedes the original
+Optimization}, Algorithms 2.6.2 and 2.6.4.  It supersedes the original
 @code{bfgs} routine and requires substantially fewer function and
 gradient evaluations.  The user-supplied tolerance @var{tol}
 corresponds to the parameter @math{\sigma} used by Fletcher.  A value
@@ -431,18 +437,20 @@ at each evaluation point.
 @cindex Nelder-Mead simplex algorithm for minimization
 @cindex simplex algorithm, minimization
 @cindex minimization, simplex algorithm
-These methods use the Simplex algorithm of Nelder and Mead. They construct
-@math{n} vectors @math{p_i} from the
-starting vector @var{x} and the vector @var{step_size} as follows:
+These methods use the Simplex algorithm of Nelder and Mead. 
+Starting from the initial vector @math{@var{x} = p_0}, the algorithm
+constructs an additional @math{n} vectors @math{p_i}
+using the step size vector @c{$s = \var{step\_size}$} 
+@math{s = @var{step_size}} as follows:
 @tex
 \beforedisplay
 $$
 \eqalign{
 p_0 & = (x_0, x_1, \cdots , x_n) \cr
-p_1 & = (x_0 + step\_size_0, x_1, \cdots , x_n) \cr
-p_2 & = (x_0, x_1 + step\_size_1, \cdots , x_n) \cr
+p_1 & = (x_0 + s_0, x_1, \cdots , x_n) \cr
+p_2 & = (x_0, x_1 + s_1, \cdots , x_n) \cr
 \dots &= \dots \cr
-p_n & = (x_0, x_1, \cdots , x_n+step\_size_n) \cr
+p_n & = (x_0, x_1, \cdots , x_n + s_n) \cr
 }
 $$
 \afterdisplay
@@ -451,21 +459,21 @@ $$
 
 @example
 p_0 = (x_0, x_1, ... , x_n) 
-p_1 = (x_0 + step_size_0, x_1, ... , x_n) 
-p_2 = (x_0, x_1 + step_size_1, ... , x_n) 
+p_1 = (x_0 + s_0, x_1, ... , x_n) 
+p_2 = (x_0, x_1 + s_1, ... , x_n) 
 ... = ...
-p_n = (x_0, x_1, ... , x_n+step_size_n)
+p_n = (x_0, x_1, ... , x_n + s_n)
 @end example
 
 @end ifinfo
 @noindent
 These vectors form the @math{n+1} vertices of a simplex in @math{n}
-dimensions.  On each iteration the algorithm tries to improve
-the parameter vector @math{p_i} corresponding to the highest
-function value by simple geometrical transformations.  These
-are reflection, reflection followed by expansion, contraction and multiple
-contraction. Using these transformations the simplex moves through 
-the parameter space towards the minimum, where it contracts itself.  
+dimensions.  On each iteration the algorithm uses simple geometrical
+transformations to update the vector corresponding to the highest
+function value.  The geometric transformations are reflection,
+reflection followed by expansion, contraction and multiple
+contraction.  Using these transformations the simplex moves through
+the space towards the minimum, where it contracts itself.
 
 After each iteration, the best vertex is returned.  Note, that due to
 the nature of the algorithm not every step improves the current
@@ -477,11 +485,24 @@ vertices.  This size can be used as a stopping criteria, as the
 simplex contracts itself near the minimum. The size is returned by the
 function @code{gsl_multimin_fminimizer_size}.
 
-The @code{nmsimplex2} version of this minimiser is a new @math{O(N)}
-implementation of the earlier @math{O(N^2)} @code{nmsimplex}
-minimiser.  It calculates the size of simplex as the @sc{rms} distance
-of each vertex from the center rather than the mean distance, which
-has the advantage of allowing a linear update.
+The @code{nmsimplex2} version of this minimiser is a new @math{O(N)} operations
+implementation of the earlier @math{O(N^2)} operations @code{nmsimplex}
+minimiser.  It uses the same underlying algorithm, but the simplex
+updates are computed more efficiently for high-dimensional problems.
+In addition, the size of simplex is calculated as the @sc{rms}
+distance of each vertex from the center rather than the mean distance,
+allowing a linear update of this quantity on each step.  The memory usage is
+@math{O(N^2)} for both algorithms.
+@end deffn
+
+@deffn {Minimizer} gsl_multimin_fminimizer_nmsimplex2rand
+This method is a variant of @code{nmsimplex2} which initialises the
+simplex around the starting point @var{x} using a randomly-oriented
+set of basis vectors instead of the fixed coordinate axes. The
+final dimensions of the simplex are scaled along the coordinate axes by the
+vector @var{step_size}.  The randomisation uses a simple deterministic
+generator so that repeated calls to @code{gsl_multimin_fminimizer_set} for
+a given solver object will vary the orientation in a well-defined way.
 @end deffn
 
 @node Multimin Examples
@@ -548,7 +569,7 @@ contracts around the minimum.
 The conjugate gradient and BFGS methods are described in detail in the
 following book,
 
-@itemize @asis
+@itemize @w{}
 @item R. Fletcher,
 @cite{Practical Methods of Optimization (Second Edition)} Wiley
 (1987), ISBN 0471915475.
@@ -557,7 +578,7 @@ following book,
 A brief description of multidimensional minimization algorithms and
 more recent references can be found in,
 
-@itemize @asis
+@itemize @w{}
 @item C.W. Ueberhuber,
 @cite{Numerical Computation (Volume 2)}, Chapter 14, Section 4.4
 ``Minimization Methods'', p.@: 325--335, Springer (1997), ISBN
@@ -567,10 +588,10 @@ more recent references can be found in,
 @noindent
 The simplex algorithm is described in the following paper, 
 
-@itemize @asis
+@itemize @w{}
 @item J.A. Nelder and R. Mead,
 @cite{A simplex method for function minimization}, Computer Journal
-vol.@: 7 (1965), 308--315.
+vol.@: 7 (1965), 308--313.
 @end itemize
 
 @noindent

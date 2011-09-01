@@ -247,6 +247,77 @@ int gsl_integration_qawf (gsl_function * f,
                           gsl_integration_qawo_table * wf,
                           double *result, double *abserr);
 
+/* Workspace for fixed-order Gauss-Legendre integration */
+
+typedef struct
+  {
+    size_t n;         /* number of points */
+    double *x;        /* Gauss abscissae/points */
+    double *w;        /* Gauss weights for each abscissae */
+    int precomputed;  /* high precision abscissae/weights precomputed? */
+  }
+gsl_integration_glfixed_table;
+
+
+gsl_integration_glfixed_table *
+  gsl_integration_glfixed_table_alloc (size_t n);
+
+void
+  gsl_integration_glfixed_table_free (gsl_integration_glfixed_table * t);
+
+/* Routine for fixed-order Gauss-Legendre integration */
+
+double
+  gsl_integration_glfixed (const gsl_function *f,
+                           double a,
+                           double b,
+                           const gsl_integration_glfixed_table * t);
+
+/* Routine to retrieve the i-th Gauss-Legendre point and weight from t */
+
+int
+  gsl_integration_glfixed_point (double a,
+                                 double b,
+                                 size_t i,
+                                 double *xi,
+                                 double *wi,
+                                 const gsl_integration_glfixed_table * t);
+
+
+/* Cquad integration - Pedro Gonnet */
+
+/* Data of a single interval */
+typedef struct
+{
+  double a, b;
+  double c[64];
+  double fx[33];
+  double igral, err;
+  int depth, rdepth, ndiv;
+} gsl_integration_cquad_ival;
+
+
+/* The workspace is just a collection of intervals */
+typedef struct
+{
+  size_t size;
+  gsl_integration_cquad_ival *ivals;
+  size_t *heap;
+} gsl_integration_cquad_workspace;
+
+gsl_integration_cquad_workspace *
+gsl_integration_cquad_workspace_alloc (const size_t n);
+
+void
+gsl_integration_cquad_workspace_free (gsl_integration_cquad_workspace * w);
+
+int
+gsl_integration_cquad (const gsl_function * f, double a, double b,
+		       double epsabs, double epsrel,
+		       gsl_integration_cquad_workspace * ws,
+		       double *result, double *abserr, size_t * nevals);
+
+
 __END_DECLS
 
 #endif /* __GSL_INTEGRATION_H__ */

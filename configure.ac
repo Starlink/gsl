@@ -1,13 +1,13 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([gsl],[1.12])
+AC_INIT([gsl],[1.15])
 AC_CONFIG_SRCDIR(gsl_math.h)
 
-AM_INIT_AUTOMAKE([gnu no-dependencies])
+AM_INIT_AUTOMAKE([gnu])
 AC_CONFIG_HEADERS([config.h])
 AM_MAINTAINER_MODE
 
-dnl Library versioning (current:revision:age)
+dnl Library versioning (C:R:A == current:revision:age)
 dnl See the libtool manual for an explanation of the numbers
 dnl
 dnl gsl-1.0    libgsl 0:0:0  libgslcblas 0:0:0
@@ -24,6 +24,9 @@ dnl gsl-1.9    libgsl 10:0:10 libgslcblas 0:0:0
 dnl gsl-1.10   libgsl 10:0:10 (*) libgslcblas 0:0:0 
 dnl gsl-1.11   libgsl 12:0:12  libgslcblas 0:0:0 
 dnl gsl-1.12   libgsl 13:0:13  libgslcblas 0:0:0 
+dnl gsl-1.13   libgsl 14:0:14  libgslcblas 0:0:0 
+dnl gsl-1.14   libgsl 15:0:15  libgslcblas 0:0:0 
+dnl gsl-1.15   libgsl 16:0:16  libgslcblas 0:0:0 
 dnl 
 dnl (*) There was an error on this release.  Firstly, the versioning
 dnl numbers were not updated.  Secondly, 2 functions were removed, but
@@ -44,9 +47,9 @@ dnl interfaces have been removed. removal has precedence over adding,
 dnl so set to 0 if both happened.
 
 dnl
-GSL_CURRENT=13
+GSL_CURRENT=16
 GSL_REVISION=0
-GSL_AGE=13
+GSL_AGE=16
 dnl
 CBLAS_CURRENT=0
 CBLAS_REVISION=0
@@ -65,6 +68,15 @@ case "$VERSION" in
         AC_DEFINE(RELEASED,[],[Defined if this is an official release])
         ;;
 esac
+
+dnl Split VERSION into GSL_VERSION_MAJOR and GSL_VERSION_MINOR
+dnl Follows AX_SPLIT_VERSION macro from AC-Archive
+dnl Rhys Ulerich <rhys.ulerich@gmail.com>
+AC_PROG_SED
+GSL_MAJOR_VERSION=`echo "$VERSION" | $SED 's/\([[^.]][[^.]]*\).*/\1/'`
+GSL_MINOR_VERSION=`echo "$VERSION" | $SED 's/[[^.]][[^.]]*.\([[^.]][[^.]]*\).*/\1/'`
+AC_SUBST(GSL_MAJOR_VERSION)
+AC_SUBST(GSL_MINOR_VERSION)
 
 dnl things required by automake
 dnl AC_ARG_PROGRAM
@@ -90,34 +102,43 @@ AC_C_CHAR_UNSIGNED
 
 GSL_CFLAGS="-I$includedir"
 GSL_LIBS="-L$libdir -lgsl"
+dnl macro from libtool - can be replaced with LT_LIB_M when we require libtool 2
+AC_CHECK_LIBM
+GSL_LIBM=$LIBM
 
 AC_SUBST(GSL_CFLAGS)
 AC_SUBST(GSL_LIBS)
+AC_SUBST(GSL_LIBM)
 
+if test "$ac_cv_c_inline" != no ; then 
 dnl Check for "extern inline", using a modified version of the test
 dnl for AC_C_INLINE from acspecific.mt
 dnl
-AC_CACHE_CHECK([for GNU-style extern inline], ac_cv_c_extern_inline,
-[ac_cv_c_extern_inline=no
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[extern $ac_cv_c_inline double foo(double x);
-extern $ac_cv_c_inline double foo(double x) { return x + 1.0 ; } ;
-double foo (double x) { return x + 1.0 ; };]], [[  foo(1.0)  ]])],[ac_cv_c_extern_inline="yes"],[])
-])
-
-if test "$ac_cv_c_extern_inline" != no ; then
-   AC_DEFINE(HAVE_INLINE,[],[Define if you have inline])
-else
-   AC_CACHE_CHECK([for C99-style inline], ac_cv_c_c99inline,
-   [ac_cv_c_c99inline=no
-   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#ifdef __GNUC_STDC_INLINE__
-   inline double foo(double x);
-   inline double foo(double x) { return x + 1.0 ; };
-   #endif]], 
-   [[  foo(1.0)  ]])],[ac_cv_c_c99inline="yes"],[])
+   AC_CACHE_CHECK([for GNU-style extern inline], ac_cv_c_extern_inline,
+   [ac_cv_c_extern_inline=no
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[extern $ac_cv_c_inline double foo(double x);
+   extern $ac_cv_c_inline double foo(double x) { return x + 1.0 ; } ;
+   double foo (double x) { return x + 1.0 ; };]], [[  foo(1.0)  ]])],[ac_cv_c_extern_inline="yes"],[])
    ])
 
-   if test "$ac_cv_c_c99inline" != no ; then
-      AC_DEFINE(HAVE_INLINE,[],[Define if you have inline])
+   if test "$ac_cv_c_extern_inline" != no ; then
+      AC_DEFINE(HAVE_INLINE,[1],[Define if you have inline])
+   else
+      AC_CACHE_CHECK([for C99-style inline], ac_cv_c_c99inline,
+      [ac_cv_c_c99inline=no
+      dnl next line is a necessary condition
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[extern inline void* foo() { foo(); return &foo ; };]], 
+      [[  return foo() != 0 ]])],[ac_cv_c_c99inline="yes"],[])
+      dnl but not sufficient, extern must work but inline on its own should not
+      if test "$ac_cv_c_c99inline" != no ; then
+            AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[inline void* foo() { foo(); return &foo ; };]], 
+            [[  return foo() != 0 ]])],[],ac_cv_c_c99inline="no")
+      fi
+      ])
+      if test "$ac_cv_c_c99inline" != no ; then
+         AC_DEFINE(HAVE_INLINE,[1],[Define if you have inline])
+         AC_DEFINE(HAVE_C99_INLINE,[1],[Define if you have inline with C99 behavior])
+      fi
    fi
 fi
 
@@ -181,6 +202,7 @@ AC_CHECK_DECLS(asinh,,,[#include <math.h>])
 AC_CHECK_DECLS(atanh,,,[#include <math.h>])
 AC_CHECK_DECLS(ldexp,,,[#include <math.h>])
 AC_CHECK_DECLS(frexp,,,[#include <math.h>])
+AC_CHECK_DECLS([fprnd_t],[],[],[[#include <float.h>]]) 
 AC_CHECK_DECLS(isinf,,,[#include <math.h>])
 AC_CHECK_DECLS(isfinite,,,[#include <math.h>])
 AC_CHECK_DECLS(finite,,,[#include <math.h>
@@ -511,6 +533,10 @@ AH_BOTTOM([/* Substitute gsl functions for missing system functions */
 #define isinf gsl_isinf
 #endif
 
+#if !HAVE_DECL_ISFINITE
+#define isfinite gsl_finite
+#endif
+
 #if !HAVE_DECL_FINITE
 #define finite gsl_finite
 #endif
@@ -529,10 +555,13 @@ AH_BOTTOM([#if defined(GSL_RANGE_CHECK_OFF) || !defined(GSL_RANGE_CHECK)
 #define GSL_RANGE_CHECK 0  /* turn off range checking by default internally */
 #endif])
 
+AH_BOTTOM([#define RETURN_IF_NULL(x) if (!x) { return ; }
+])
+
 AH_VERBATIM([GSL_DISABLE_DEPRECATED],
 [/* Disable deprecated functions and enums while building */
 #define GSL_DISABLE_DEPRECATED 1])
 
 dnl
-AC_CONFIG_FILES([gsl-config gsl.pc gsl_version.h gsl.spec gsl/Makefile test/Makefile err/Makefile sys/Makefile utils/Makefile const/Makefile min/Makefile multimin/Makefile ieee-utils/Makefile fft/Makefile specfunc/Makefile dht/Makefile fit/Makefile multifit/Makefile bspline/Makefile statistics/Makefile sum/Makefile roots/Makefile multiroots/Makefile ntuple/Makefile poly/Makefile qrng/Makefile rng/Makefile randist/Makefile siman/Makefile integration/Makefile interpolation/Makefile doc/Makefile block/Makefile vector/Makefile matrix/Makefile histogram/Makefile monte/Makefile ode-initval/Makefile cblas/Makefile blas/Makefile linalg/Makefile eigen/Makefile permutation/Makefile combination/Makefile sort/Makefile complex/Makefile diff/Makefile deriv/Makefile cheb/Makefile cdf/Makefile wavelet/Makefile Makefile])
+AC_CONFIG_FILES([gsl_version.h gsl.spec gsl/Makefile test/Makefile err/Makefile sys/Makefile utils/Makefile const/Makefile min/Makefile multimin/Makefile ieee-utils/Makefile fft/Makefile specfunc/Makefile dht/Makefile fit/Makefile multifit/Makefile bspline/Makefile statistics/Makefile sum/Makefile roots/Makefile multiroots/Makefile ntuple/Makefile poly/Makefile qrng/Makefile rng/Makefile randist/Makefile siman/Makefile integration/Makefile interpolation/Makefile doc/Makefile block/Makefile vector/Makefile matrix/Makefile histogram/Makefile monte/Makefile ode-initval/Makefile ode-initval2/Makefile cblas/Makefile blas/Makefile linalg/Makefile eigen/Makefile permutation/Makefile combination/Makefile multiset/Makefile sort/Makefile complex/Makefile diff/Makefile deriv/Makefile cheb/Makefile cdf/Makefile wavelet/Makefile Makefile])
 AC_OUTPUT

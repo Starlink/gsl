@@ -77,7 +77,7 @@ step or using a trust region to avoid steps which fall outside the linear
 regime.
 
 To perform a weighted least-squares fit of a nonlinear model
-@math{Y(x,t)} to data (@math{t_i}, @math{y_i}) with independent gaussian
+@math{Y(x,t)} to data (@math{t_i}, @math{y_i}) with independent Gaussian
 errors @math{\sigma_i}, use function components of the following form,
 @tex
 \beforedisplay
@@ -99,6 +99,7 @@ since the non-linear least-squares algorithms are described
 geometrically (i.e. finding the minimum of a surface).  The
 independent variable of any data to be fitted is denoted by @math{t}.
 
+@cindex Jacobian matrix, fitting
 With the definition above the Jacobian is 
 @c{$J_{ij} = (1 / \sigma_i) \partial Y_i / \partial x_j$}
 @math{J_@{ij@} =(1 / \sigma_i)  d Y_i / d x_j}, where @math{Y_i = Y(x,t_i)}.  
@@ -108,6 +109,8 @@ With the definition above the Jacobian is
 @section Initializing the Solver
 
 @deftypefun {gsl_multifit_fsolver *} gsl_multifit_fsolver_alloc (const gsl_multifit_fsolver_type * @var{T}, size_t @var{n}, size_t @var{p})
+@tpindex gsl_multifit_fsolver
+@tpindex gsl_multifit_fsolver_type
 This function returns a pointer to a newly allocated instance of a
 solver of type @var{T} for @var{n} observations and @var{p} parameters.
 The number of observations @var{n} must be greater than or equal to
@@ -119,6 +122,8 @@ code of @code{GSL_ENOMEM}.
 @end deftypefun
 
 @deftypefun {gsl_multifit_fdfsolver *} gsl_multifit_fdfsolver_alloc (const gsl_multifit_fdfsolver_type * @var{T}, size_t @var{n}, size_t @var{p})
+@tpindex gsl_multifit_fdfsolver
+@tpindex gsl_multifit_fdfsolver_type
 This function returns a pointer to a newly allocated instance of a
 derivative solver of type @var{T} for @var{n} observations and @var{p}
 parameters.  For example, the following code creates an instance of a
@@ -140,12 +145,12 @@ returns a null pointer and the error handler is invoked with an error
 code of @code{GSL_ENOMEM}.
 @end deftypefun
 
-@deftypefun int gsl_multifit_fsolver_set (gsl_multifit_fsolver * @var{s}, gsl_multifit_function * @var{f}, gsl_vector * @var{x})
+@deftypefun int gsl_multifit_fsolver_set (gsl_multifit_fsolver * @var{s}, gsl_multifit_function * @var{f}, const gsl_vector * @var{x})
 This function initializes, or reinitializes, an existing solver @var{s}
 to use the function @var{f} and the initial guess @var{x}.
 @end deftypefun
 
-@deftypefun int gsl_multifit_fdfsolver_set (gsl_multifit_fdfsolver * @var{s}, gsl_multifit_function_fdf * @var{fdf}, gsl_vector * @var{x})
+@deftypefun int gsl_multifit_fdfsolver_set (gsl_multifit_fdfsolver * @var{s}, gsl_multifit_function_fdf * @var{fdf}, const gsl_vector * @var{x})
 This function initializes, or reinitializes, an existing solver @var{s}
 to use the function and derivative @var{fdf} and the initial guess
 @var{x}.
@@ -425,12 +430,17 @@ the change in the position vector falls below machine precision
 @item GSL_ETOLG
 the norm of the gradient, relative to the norm of the function, falls
 below machine precision
+
+@item GSL_ENOPROG
+the routine has made 10 or more attempts to find a suitable trial step
+without success (but subsequent calls can be made to continue the
+search).@footnote{The return code @code{GSL_CONTINUE} was used for
+this case in versions prior to 1.14.}
 @end table
 
 @noindent
 These error codes indicate that further iterations will be unlikely to
-change the solution from its current value.
-
+change the solution from its current value.  
 @end deffn
 
 @deffn {Derivative Solver} gsl_multifit_fdfsolver_lmder
@@ -497,7 +507,7 @@ set to zero).
 If the minimisation uses the weighted least-squares function
 @math{f_i = (Y(x, t_i) - y_i) / \sigma_i} then the covariance
 matrix above gives the statistical error on the best-fit parameters
-resulting from the gaussian errors @math{\sigma_i} on 
+resulting from the Gaussian errors @math{\sigma_i} on 
 the underlying data @math{y_i}.  This can be verified from the relation 
 @math{\delta f = J \delta c} and the fact that the fluctuations in @math{f}
 from the data @math{y_i} are normalised by @math{\sigma_i} and 
@@ -566,7 +576,7 @@ where @math{x_0 = A}, @math{x_1 = \lambda} and @math{x_2 = b}.
 @noindent
 The main part of the program sets up a Levenberg-Marquardt solver and
 some simulated random data. The data uses the known parameters
-(1.0,5.0,0.1) combined with gaussian noise (standard deviation = 0.1)
+(1.0,5.0,0.1) combined with Gaussian noise (standard deviation = 0.1)
 over a range of 40 timesteps. The initial guess for the parameters is
 chosen as (0.0, 1.0, 0.0).
 
@@ -614,7 +624,7 @@ are multiplied by @c{$\sqrt{\chi^2/(n-p)}$}
 @math{\sqrt@{\chi^2/dof@}} in this case, a common way of increasing the
 errors for a poor fit.  Note that a poor fit will result from the use
 an inappropriate model, and the scaled error estimates may then
-be outside the range of validity for gaussian errors.
+be outside the range of validity for Gaussian errors.
 
 @iftex
 @sp 1
@@ -626,7 +636,7 @@ be outside the range of validity for gaussian errors.
 
 The @sc{minpack} algorithm is described in the following article,
 
-@itemize @asis
+@itemize @w{}
 @item
 J.J. Mor@'e, @cite{The Levenberg-Marquardt Algorithm: Implementation and
 Theory}, Lecture Notes in Mathematics, v630 (1978), ed G. Watson.
@@ -636,7 +646,7 @@ Theory}, Lecture Notes in Mathematics, v630 (1978), ed G. Watson.
 The following paper is also relevant to the algorithms described in this
 section,
 
-@itemize @asis
+@itemize @w{}
 @item 
 J.J. Mor@'e, B.S. Garbow, K.E. Hillstrom, ``Testing Unconstrained
 Optimization Software'', ACM Transactions on Mathematical Software, Vol

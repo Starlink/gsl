@@ -218,3 +218,145 @@ double myfn2 (double x, void * params) {
   double alpha = *(double *) params ;
   return exp(alpha*x) ;
 }
+
+
+/* f_monomial = constant * x^degree */
+double f_monomial(double x, void * params)
+{
+  struct monomial_params * p = (struct monomial_params *) params;
+
+  return p->constant * gsl_pow_int(x, p->degree);
+}
+
+/* integ(f_monomial,x,a b)=constant*(b^(degree+1)-a^(degree+1))/(degree+1) */
+double integ_f_monomial(double a, double b, struct monomial_params * p)
+{
+  const int degreep1 = p->degree + 1;
+  const double bnp1 = gsl_pow_int(b, degreep1);
+  const double anp1 = gsl_pow_int(a, degreep1);
+  return (p->constant / degreep1)*(bnp1 - anp1);
+}
+
+/* f(x) = sin(x) */
+double f_sin(double x, void * params)
+{
+    return sin(x);
+}
+
+/* integ(f_sin,x,a,b) */
+double integ_f_sin(double a, double b)
+{
+    return -cos(b) + cos(a);
+}
+
+
+/* The test functions. */
+double cqf1 ( double x , void *params ) {
+  return exp(x);
+}
+    
+double cqf2 ( double x , void *params ) {
+  return x >= 0.3;
+}
+
+double cqf3 ( double x , void *params ) {
+  return sqrt(x);
+}
+
+
+double cqf4 ( double x , void *params ) {
+  return (23.0/25) * cosh(x) - cos(x);
+}
+
+double cqf5 ( double x , void *params ) {
+  double x2 = x*x;
+  return 1.0 / ( x2 * (x2 + 1) + 0.9);
+}
+
+double cqf6 ( double x , void *params ) {
+  return x * sqrt( x );
+}
+
+double cqf7 ( double x , void *params ) {
+  return 1.0 / sqrt(x);
+}
+
+double cqf8 ( double x , void *params ) {
+  double x2 = x*x;
+  return 1.0 / (1 + x2*x2);
+}
+
+double cqf9 ( double x , void *params ) {
+  return 2.0 / (2 + sin(10*M_PI*x));
+}
+
+double cqf10 ( double x , void *params ) {
+  return 1.0 / (1 + x);
+}
+
+double cqf11 ( double x , void *params ) {
+  return 1.0 / (1 + exp(x));
+}
+
+double cqf12 ( double x , void *params ) {
+  return x / (exp(x) - 1.0);
+}
+
+double cqf13 ( double x , void *params ) {
+  return sin(100 * M_PI * x) / (M_PI * x);
+}
+
+double cqf14 ( double x , void *params ) {
+  return sqrt(50.0) * exp(-50*M_PI*x*x);
+}
+
+double cqf15 ( double x , void *params ) {
+  return 25.0 * exp(-25*x);
+}
+
+double cqf16 ( double x , void *params ) {
+  return 50 / M_PI * (2500 * x*x + 1);
+}
+
+double cqf17 ( double x , void *params ) {
+  double t1 = 50 * M_PI * x ,t2;
+  t2 = sin(t1) / t1;
+  return 50 * t2 * t2;
+}
+
+double cqf18 ( double x , void *params ) {
+  return cos( cos(x) + 3*sin(x) + 2*cos(2*x) + 3*sin(2*x) + 3*cos(3*x) );
+}
+
+double cqf19 ( double x , void *params ) {
+  return log(x);
+}
+
+double cqf20 ( double x , void *params ) {
+  return 1 / (x*x + 1.005);
+}
+
+double cqf21 ( double x , void *params ) {
+  return 1 / cosh( 10 * (x - 0.2) * 2 ) + 
+    1 / cosh( 100 * (x - 0.4) * 4 ) + 
+    1 / cosh( 1000 * (x - 0.6) * 8 );
+}
+
+double cqf22 ( double x , void *params ) {
+  return 4 * M_PI*M_PI * x * sin(20*M_PI*x) * cos(2*M_PI*x);
+}
+
+double cqf23 ( double x , void *params ) {
+  double t = 230*x - 30;
+  return 1 / (1 + t*t);
+}
+
+double cqf24 ( double x , void *params ) {
+  return floor(exp(x));
+}
+
+double cqf25 ( double x , void *params ) {
+  return (x < 1) * (x + 1) + 
+    (1 <= x && x <= 3) * (3 - x) + 
+    (x > 3) * 2;
+}

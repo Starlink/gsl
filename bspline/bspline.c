@@ -1,6 +1,6 @@
 /* bspline/bspline.c
  *
- * Copyright (C) 2006, 2007, 2008 Patrick Alken
+ * Copyright (C) 2006, 2007, 2008, 2009 Patrick Alken
  * Copyright (C) 2008 Rhys Ulerich
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,6 +21,7 @@
 #include <config.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_bspline.h>
+#include <gsl/gsl_statistics.h>
 
 /*
  * This module contains routines related to calculating B-splines.
@@ -89,7 +90,7 @@ gsl_bspline_alloc (const size_t k, const size_t nbreak)
       w->deltal = gsl_vector_alloc (k);
       if (w->deltal == 0)
 	{
-	  free (w->knots);
+	  gsl_vector_free (w->knots);
 	  free (w);
 	  GSL_ERROR_NULL ("failed to allocate space for deltal vector",
 			  GSL_ENOMEM);
@@ -98,8 +99,8 @@ gsl_bspline_alloc (const size_t k, const size_t nbreak)
       w->deltar = gsl_vector_alloc (k);
       if (w->deltar == 0)
 	{
-	  free (w->deltal);
-	  free (w->knots);
+	  gsl_vector_free (w->deltal);
+	  gsl_vector_free (w->knots);
 	  free (w);
 	  GSL_ERROR_NULL ("failed to allocate space for deltar vector",
 			  GSL_ENOMEM);
@@ -109,9 +110,9 @@ gsl_bspline_alloc (const size_t k, const size_t nbreak)
       w->B = gsl_vector_alloc (k);
       if (w->B == 0)
 	{
-	  free (w->deltar);;
-	  free (w->deltal);
-	  free (w->knots);
+	  gsl_vector_free (w->deltar);;
+	  gsl_vector_free (w->deltal);
+	  gsl_vector_free (w->knots);
 	  free (w);
 	  GSL_ERROR_NULL
 	    ("failed to allocate space for temporary spline vector",
@@ -165,7 +166,7 @@ gsl_bspline_deriv_alloc (const size_t k)
       dw->dB = gsl_matrix_alloc (k, k + 1);
       if (dw->dB == 0)
 	{
-	  free (dw->A);
+	  gsl_matrix_free (dw->A);
 	  free (dw);
 	  GSL_ERROR_NULL
 	    ("failed to allocate space for temporary derivative matrix",
@@ -207,6 +208,30 @@ gsl_bspline_breakpoint (size_t i, gsl_bspline_workspace * w)
   return gsl_vector_get (w->knots, j);
 }
 
+/* Return the location of the i-th Greville abscissa */
+double
+gsl_bspline_greville_abscissa(size_t i, gsl_bspline_workspace *w)
+{
+#if GSL_RANGE_CHECK
+  if (GSL_RANGE_COND(i >= gsl_bspline_ncoeffs(w)))
+    {
+      GSL_ERROR_VAL ("Greville abscissa index out of range", GSL_EINVAL, 0);
+    }
+#endif
+  const size_t stride = w->knots->stride;
+  size_t km1 = w->km1;
+  double * data = w->knots->data + (i+1)*stride;
+
+  if (km1 == 0)
+    {
+      /* Return interval midpoints in degenerate k = 1 case*/
+      km1   = 2;
+      data -= stride;
+    }
+
+  return gsl_stats_mean(data, stride, km1);
+}
+
 /*
 gsl_bspline_free()
   Free a gsl_bspline_workspace.
@@ -219,6 +244,7 @@ Return: none
 void
 gsl_bspline_free (gsl_bspline_workspace * w)
 {
+  RETURN_IF_NULL (w);
   gsl_vector_free (w->knots);
   gsl_vector_free (w->deltal);
   gsl_vector_free (w->deltar);
@@ -238,6 +264,7 @@ Return: none
 void
 gsl_bspline_deriv_free (gsl_bspline_deriv_workspace * dw)
 {
+  RETURN_IF_NULL (dw);
   gsl_matrix_free (dw->A);
   gsl_matrix_free (dw->dB);
   free (dw);

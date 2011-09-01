@@ -9,6 +9,10 @@ Interpolations can be defined for both normal and periodic boundary
 conditions.  Additional functions are available for computing
 derivatives and integrals of interpolating functions.
 
+These interpolation methods produce curves that pass through each
+datapoint.  To interpolate noisy data with a smoothing curve see
+@ref{Basis Splines}.
+
 The functions described in this section are declared in the header files
 @file{gsl_interp.h} and @file{gsl_spline.h}.
 
@@ -39,6 +43,7 @@ The interpolation function for a given dataset is stored in a
 @code{gsl_interp} object.  These are created by the following functions.
 
 @deftypefun {gsl_interp *} gsl_interp_alloc (const gsl_interp_type * @var{T}, size_t @var{size})
+@tpindex gsl_interp
 This function returns a pointer to a newly allocated interpolation
 object of type @var{T} for @var{size} data-points.
 @end deftypefun
@@ -59,8 +64,8 @@ This function frees the interpolation object @var{interp}.
 
 @node Interpolation Types
 @section Interpolation Types
-
-The interpolation library provides five interpolation types:
+@tpindex gsl_interp_type
+The interpolation library provides six interpolation types:
 
 @deffn {Interpolation Type} gsl_interp_linear
 @cindex linear interpolation
@@ -127,10 +132,13 @@ interp uses 'cspline' interpolation.
 @end deftypefun
 
 @deftypefun {unsigned int} gsl_interp_min_size (const gsl_interp * @var{interp})
-This function returns the minimum number of points required by the
-interpolation type of @var{interp}.  For example, Akima spline interpolation
-requires a minimum of 5 points.
+@deftypefunx {unsigned int} gsl_interp_type_min_size (const gsl_interp_type * @var{T})
+These functions return the minimum number of points required by the
+interpolation object @var{interp} or interpolation type @var{T}.  For
+example, Akima spline interpolation requires a minimum of 5 points.
 @end deftypefun
+
+
 
 @node Index Look-up and Acceleration
 @section Index Look-up and Acceleration
@@ -148,6 +156,7 @@ in the range [@var{index_lo},@var{index_hi}].  @inlinefn{}
 @end deftypefun
 
 @deftypefun {gsl_interp_accel *} gsl_interp_accel_alloc (void)
+@tpindex gsl_interp_accel
 This function returns a pointer to an accelerator object, which is a
 kind of iterator for interpolation lookups.  It tracks the state of
 lookups, thus allowing for application of various acceleration
@@ -162,6 +171,12 @@ function returns an index @math{i} such that @code{x_array[i] <= x <
 x_array[i+1]}.  @inlinefn{}
 @end deftypefun
 
+@deftypefun int gsl_interp_accel_reset (gsl_interp_accel * @var{acc});
+This function reinitializes the accelerator object @var{acc}.  It
+should be used when the cached information is no longer
+applicable---for example, when switching to a new dataset.
+@end deftypefun
+
 @deftypefun void gsl_interp_accel_free (gsl_interp_accel* @var{acc})
 This function frees the accelerator object @var{acc}.
 @end deftypefun
@@ -172,8 +187,11 @@ This function frees the accelerator object @var{acc}.
 @deftypefun  double gsl_interp_eval (const gsl_interp * @var{interp}, const double @var{xa}[], const double @var{ya}[], double @var{x}, gsl_interp_accel * @var{acc})
 @deftypefunx int gsl_interp_eval_e (const gsl_interp * @var{interp}, const double @var{xa}[], const double @var{ya}[], double @var{x}, gsl_interp_accel * @var{acc}, double * @var{y})
 These functions return the interpolated value of @var{y} for a given
-point @var{x}, using the interpolation object @var{interp}, data arrays
-@var{xa} and @var{ya} and the accelerator @var{acc}.
+point @var{x}, using the interpolation object @var{interp}, data
+arrays @var{xa} and @var{ya} and the accelerator @var{acc}.  When
+@var{x} is outside the range of @var{xa}, the error code
+@code{GSL_EDOM} is returned with a value of @code{GSL_NAN} for
+@var{y}.
 @end deftypefun
 
 @deftypefun double gsl_interp_eval_deriv (const gsl_interp * @var{interp}, const double @var{xa}[], const double @var{ya}[], double @var{x}, gsl_interp_accel * @var{acc})
@@ -212,6 +230,7 @@ and @var{ya} as arguments on each evaluation. These functions are
 defined in the header file @file{gsl_spline.h}.
 
 @deftypefun {gsl_spline *} gsl_spline_alloc (const gsl_interp_type * @var{T}, size_t @var{size})
+@tpindex gsl_spline
 @end deftypefun
 
 @deftypefun int gsl_spline_init (gsl_spline * @var{spline}, const double @var{xa}[], const double @var{ya}[], size_t @var{size})
@@ -306,7 +325,7 @@ data, and the second derivative is also.
 Descriptions of the interpolation algorithms and further references can
 be found in the following books:
 
-@itemize @asis
+@itemize @w{}
 @item C.W. Ueberhuber,
 @cite{Numerical Computation (Volume 1), Chapter 9 ``Interpolation''},
 Springer (1997), ISBN 3-540-62058-3.

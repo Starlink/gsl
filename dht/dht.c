@@ -1,6 +1,7 @@
 /* dht/dht.c
  * 
  * Copyright (C) 1996, 1997, 1998, 1999, 2000 Gerard Jungman
+ * Copyright (C) 2009 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -179,6 +180,7 @@ double gsl_dht_k_sample(const gsl_dht * t, int n)
 
 void gsl_dht_free(gsl_dht * t)
 {
+  RETURN_IF_NULL (t);
   free(t->J2);
   free(t->Jjj);
   free(t->j);

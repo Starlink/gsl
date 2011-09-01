@@ -98,6 +98,7 @@ gsl_odeiv_evolve_reset (gsl_odeiv_evolve * e)
 void
 gsl_odeiv_evolve_free (gsl_odeiv_evolve * e)
 {
+  RETURN_IF_NULL (e);
   free (e->dydt_out);
   free (e->dydt_in);
   free (e->yerr);
@@ -181,6 +182,7 @@ try_step:
   if (step_status != GSL_SUCCESS) 
     {
       *h = h0;  /* notify user of step-size which caused the failure */
+      *t = t0;  /* restore original t value */
       return step_status;
     }
 

@@ -83,6 +83,7 @@ possibly with some indices thrown in.  To use the random number
 generators, you do not need to know the details of what comprises the
 state, and besides that varies from algorithm to algorithm.
 
+@tpindex gsl_rng_type
 The random number generator library uses two special structs,
 @code{gsl_rng_type} which holds static information about each type of
 generator and @code{gsl_rng} which describes an instance of a generator
@@ -95,6 +96,7 @@ The functions described in this section are declared in the header file
 @section Random number generator initialization
 
 @deftypefun {gsl_rng *} gsl_rng_alloc (const gsl_rng_type * @var{T})
+@tpindex gsl_rng
 This function returns a pointer to a newly-created
 instance of a random number generator of type @var{T}.
 For example, the following code creates an instance of the Tausworthe
@@ -108,6 +110,9 @@ If there is insufficient memory to create the generator then the
 function returns a null pointer and the error handler is invoked with an
 error code of @code{GSL_ENOMEM}.
 
+@vrindex gsl_rng_default_seed
+@vrindex @env{GSL_RNG_SEED}
+@cindex @code{GSL_RNG_SEED}
 The generator is automatically initialized with the default seed,
 @code{gsl_rng_default_seed}.  This is zero by default but can be changed
 either directly or by using the environment variable @code{GSL_RNG_SEED}
@@ -195,7 +200,7 @@ returns zero.
 In particular, this function is not intended for generating the full range of
 unsigned integer values @c{$[0,2^{32}-1]$} 
 @math{[0,2^32-1]}. Instead
-choose a generator with the maximal integer range and zero mimimum
+choose a generator with the maximal integer range and zero minimum
 value, such as @code{gsl_rng_ranlxd1}, @code{gsl_rng_mt19937} or
 @code{gsl_rng_taus}, and sample it directly using
 @code{gsl_rng_get}.  The range of each generator can be found using
@@ -277,6 +282,10 @@ the function @code{gsl_rng_env_setup}.  This makes it easy try out
 different generators and seeds without having to recompile your program.
 
 @deftypefun {const gsl_rng_type *} gsl_rng_env_setup (void)
+@vrindex @env{GSL_RNG_TYPE}
+@vrindex @env{GSL_RNG_SEED}
+@vrindex gsl_rng_default
+@vrindex gsl_rng_default_seed
 This function reads the environment variables @code{GSL_RNG_TYPE} and
 @code{GSL_RNG_SEED} and uses their values to set the corresponding
 library variables @code{gsl_rng_default} and
@@ -412,7 +421,7 @@ as the default seed, you can choose this explicitly via @code{gsl_rng_set}
 instead if you require it.
 
 For more information see,
-@itemize @asis
+@itemize @w{}
 @item
 Makoto Matsumoto and Takuji Nishimura, ``Mersenne Twister: A
 623-dimensionally equidistributed uniform pseudorandom number
@@ -437,7 +446,7 @@ The generator @code{ranlxs0} is a second-generation version of the
 @sc{ranlux} algorithm of L@"uscher, which produces ``luxury random
 numbers''.  This generator provides single precision output (24 bits) at
 three luxury levels @code{ranlxs0}, @code{ranlxs1} and @code{ranlxs2}, 
-in increasing order of strength.
+in increasing order of strength.  
 It uses double-precision floating point arithmetic internally and can be
 significantly faster than the integer version of @code{ranlux},
 particularly on 64-bit architectures.  The period of the generator is
@@ -446,6 +455,10 @@ about @c{$10^{171}$}
 can provide truly decorrelated numbers at a known level of randomness.
 The higher luxury levels provide increased decorrelation between samples
 as an additional safety margin.
+
+Note that the range of allowed seeds for this generator is @c{$[0,2^{31}-1]$}
+@math{[0,2^31-1]}. Higher seed values are wrapped modulo @c{$2^{31}$}
+@math{2^31}.
 @end deffn
 
 @deffn {Generator} gsl_rng_ranlxd1
@@ -479,7 +492,7 @@ gives the highest level of randomness, with all 24 bits decorrelated.
 Both types of generator use 24 words of state per generator.
 
 For more information see,
-@itemize @asis
+@itemize @w{}
 @item
 M. L@"uscher, ``A portable high-quality random number generator for
 lattice field theory calculations'', @cite{Computer Physics
@@ -556,7 +569,7 @@ which is approximately
 @math{10^56}).  It uses
 6 words of state per generator.  For more information see,
 
-@itemize @asis
+@itemize @w{}
 @item
 P. L'Ecuyer, ``Combined Multiple Recursive Random Number
 Generators'', @cite{Operations Research}, 44, 5 (1996), 816--822.
@@ -595,7 +608,7 @@ The period of this generator is about
 @math{10^46}.  It uses 5 words
 of state per generator.  More information can be found in the following
 paper,
-@itemize @asis
+@itemize @w{}
 @item
 P. L'Ecuyer, F. Blouin, and R. Coutre, ``A search for good multiple
 recursive random number generators'', @cite{ACM Transactions on Modeling and
@@ -660,7 +673,7 @@ The period of this generator is @c{$2^{88}$}
 @math{10^26}).  It uses 3 words of state per generator.  For more
 information see,
 
-@itemize @asis
+@itemize @w{}
 @item
 P. L'Ecuyer, ``Maximally Equidistributed Combined Tausworthe
 Generators'', @cite{Mathematics of Computation}, 65, 213 (1996), 203--213.
@@ -671,7 +684,7 @@ The generator @code{gsl_rng_taus2} uses the same algorithm as
 @code{gsl_rng_taus} but with an improved seeding procedure described in
 the paper,
 
-@itemize @asis
+@itemize @w{}
 @item
 P. L'Ecuyer, ``Tables of Maximally Equidistributed Combined LFSR
 Generators'', @cite{Mathematics of Computation}, 68, 225 (1999), 261--269
@@ -730,7 +743,7 @@ value.  (We are grateful to Heiko Bauke for clarifying for us these
 properties of GFSR random number generators.)
 
 For more information see,
-@itemize @asis
+@itemize @w{}
 @item
 Robert M. Ziff, ``Four-tap shift-register-sequence random-number 
 generators'', @cite{Computers in Physics}, 12(4), Jul/Aug
@@ -909,7 +922,7 @@ defined on 48-bit unsigned integers with @math{a = 44485709377909} and
 prevent the seed taking an even value.  The upper 16 bits of 
 @math{x_1}
 are set to 0. A consequence of this procedure is that the pairs of seeds
-2 and 3, 4 and 5, etc produce the same sequences.
+2 and 3, 4 and 5, etc.@: produce the same sequences.
 
 The generator compatible with the CRAY MATHLIB routine RANF. It
 produces double precision floating point numbers which should be
@@ -971,7 +984,7 @@ where
 uses 250 words of state per generator.
 
 For more information see,
-@itemize @asis
+@itemize @w{}
 @item
 S. Kirkpatrick and E. Stoll, ``A very fast shift-register sequence random
 number generator'', @cite{Journal of Computational Physics}, 40, 517--526
@@ -990,7 +1003,7 @@ right.  It has a period of
 per generator.
 
 For more information see,
-@itemize @asis
+@itemize @w{}
 @item
 Makoto Matsumoto and Yoshiharu Kurita, ``Twisted GFSR Generators
 II'', @cite{ACM Transactions on Modelling and Computer Simulation},
@@ -1122,7 +1135,7 @@ MATLAB (the RAND function).  It is also sometimes known by the acronym
 ``GGL'' (I'm not sure what that stands for).
 
 For more information see,
-@itemize @asis
+@itemize @w{}
 @item
 Park and Miller, ``Random Number Generators: Good ones are hard to find'',
 @cite{Communications of the ACM}, October 1988, Volume 31, No 10, pages
@@ -1166,7 +1179,7 @@ u_n  = t - floor(t)
 
 The original source code is available from NETLIB.  For more information
 see,
-@itemize @asis
+@itemize @w{}
 @item
 W. Petersen, ``Lagged Fibonacci Random Number Generators for the NEC
 SX-3'', @cite{International Journal of High Speed Computing} (1994).
@@ -1346,11 +1359,6 @@ based on the @sc{ranlux} algorithm.
  238 k ints/sec,    215 k doubles/sec, cmrg
  247 k ints/sec,    198 k doubles/sec, ranlux389
  141 k ints/sec,    140 k doubles/sec, ranlxd2
-
-1852 k ints/sec,    935 k doubles/sec, ran3
- 813 k ints/sec,    575 k doubles/sec, ran0
- 787 k ints/sec,    476 k doubles/sec, ran1
- 379 k ints/sec,    292 k doubles/sec, ran2
 @end example
 
 @node Random Number Generator Examples
@@ -1390,7 +1398,7 @@ $ GSL_RNG_SEED=123 GSL_RNG_TYPE=mrg ./a.out
 The subject of random number generation and testing is reviewed
 extensively in Knuth's @cite{Seminumerical Algorithms}.
 
-@itemize @asis
+@itemize @w{}
 @item
 Donald E. Knuth, @cite{The Art of Computer Programming: Seminumerical
 Algorithms} (Vol 2, 3rd Ed, 1997), Addison-Wesley, ISBN 0201896842.
@@ -1400,7 +1408,7 @@ Algorithms} (Vol 2, 3rd Ed, 1997), Addison-Wesley, ISBN 0201896842.
 Further information is available in the review paper written by Pierre
 L'Ecuyer,
 
-@itemize @asis
+@itemize @w{}
 P. L'Ecuyer, ``Random Number Generation'', Chapter 4 of the
 Handbook on Simulation, Jerry Banks Ed., Wiley, 1998, 93--137.
 
@@ -1412,7 +1420,7 @@ in the file @file{handsim.ps}.
 The source code for the @sc{diehard} random number generator tests is also
 available online,
 
-@itemize @asis
+@itemize @w{}
 @item
 @cite{DIEHARD source code} G. Marsaglia,
 @item
@@ -1423,7 +1431,7 @@ available online,
 A comprehensive set of random number generator tests is available from
 @sc{nist},
 
-@itemize @asis
+@itemize @w{}
 @item
 NIST Special Publication 800-22, ``A Statistical Test Suite for the
 Validation of Random Number Generators and Pseudo Random Number

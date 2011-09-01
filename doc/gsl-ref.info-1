@@ -1,13 +1,13 @@
-This is gsl-ref.info, produced by makeinfo version 4.11 from
+This is gsl-ref.info, produced by makeinfo version 4.13 from
 gsl-ref.texi.
 
-INFO-DIR-SECTION Scientific software
+INFO-DIR-SECTION Software libraries
 START-INFO-DIR-ENTRY
 * gsl-ref: (gsl-ref).                   GNU Scientific Library - Reference
 END-INFO-DIR-ENTRY
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007, 2008 The GSL Team.
+2005, 2006, 2007, 2008, 2009, 2010, 2011 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -29,7 +29,7 @@ GSL
 
 This file documents the GNU Scientific Library (GSL), a collection of
 numerical routines for scientific computing.  It corresponds to release
-1.12 of the library.  Please report any errors in this manual to
+1.15 of the library.  Please report any errors in this manual to
 <bug-gsl@gnu.org>.
 
    More information about GSL can be found at the project homepage,
@@ -43,7 +43,7 @@ from sales of the manual helps support the development of GSL.
 project homepage thanks to Daisuke Tominaga.
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007, 2008 The GSL Team.
+2005, 2006, 2007, 2008, 2009, 2010, 2011 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -70,6 +70,7 @@ this GNU Manual."
 * Vectors and Matrices::
 * Permutations::
 * Combinations::
+* Multisets::
 * Sorting::
 * BLAS Support::
 * Linear Algebra::
@@ -236,9 +237,7 @@ can be found on the GNU website,
 The preferred platform for the library is a GNU system, which allows it
 to take advantage of additional features in the GNU C compiler and GNU C
 library.  However, the library is fully portable and should compile on
-most systems with a C compiler.  Precompiled versions of the library
-can be purchased from commercial redistributors listed on the website
-above.
+most systems with a C compiler.
 
    Announcements of new releases, updates and other relevant events are
 made on the `info-gsl@gnu.org' mailing list.  To subscribe to this
@@ -270,8 +269,8 @@ File: gsl-ref.info,  Node: Reporting Bugs,  Next: Further Information,  Prev: No
 ==================
 
 A list of known bugs can be found in the `BUGS' file included in the
-GSL distribution.  Details of compilation problems can be found in the
-`INSTALL' file.
+GSL distribution or online in the GSL bug tracker.(1)  Details of
+compilation problems can be found in the `INSTALL' file.
 
    If you find a bug which is not listed in these files, please report
 it to <bug-gsl@gnu.org>.
@@ -293,6 +292,10 @@ library is compiled without optimization.  Thank you.
 
    Any errors or omissions in this manual can also be reported to the
 same address.
+
+   ---------- Footnotes ----------
+
+   (1) `http://savannah.gnu.org/bugs/?group=gsl'
 
 
 File: gsl-ref.info,  Node: Further Information,  Next: Conventions used in this manual,  Prev: Reporting Bugs,  Up: Introduction
@@ -316,8 +319,8 @@ manual, and to contact the developers of the library.
 
    If you would like to refer to the GNU Scientific Library in a journal
 article, the recommended way is to cite this reference manual, e.g. `M.
-Galassi et al, GNU Scientific Library Reference Manual (2nd Ed.), ISBN
-0954161734'.
+Galassi et al, GNU Scientific Library Reference Manual (3rd Ed.), ISBN
+0954612078'.
 
    If you want to give a url, use "`http://www.gnu.org/software/gsl/'".
 
@@ -457,6 +460,18 @@ The default library path for `gcc' searches `/usr/local/lib'
 automatically so the `-L' option can be omitted when GSL is installed
 in its default location.
 
+   The option `-lm' links with the system math library. On some systems
+it is not needed.(1)
+
+   For a tutorial introduction to the GNU C Compiler and related
+programs, see `An Introduction to GCC' (ISBN 0954161793).(2)
+
+   ---------- Footnotes ----------
+
+   (1) It is not needed on MacOS X.
+
+   (2) `http://www.network-theory.co.uk/gcc/intro/'
+
 
 File: gsl-ref.info,  Node: Linking with an alternative BLAS library,  Prev: Linking programs with the library,  Up: Compiling and Linking
 
@@ -464,7 +479,7 @@ File: gsl-ref.info,  Node: Linking with an alternative BLAS library,  Prev: Link
 ----------------------------------------------
 
 The following command line shows how you would link the same application
-with an alternative CBLAS library called `libcblas',
+with an alternative CBLAS library `libcblas.a',
 
      $ gcc example.o -lgsl -lcblas -lm
 
@@ -478,7 +493,10 @@ CBLAS interface,
 
      $ gcc example.o -lgsl -lcblas -latlas -lm
 
-For more information see *note BLAS Support::.
+If the ATLAS library is installed in a non-standard directory use the
+`-L' option to add it to the search path, as described above.
+
+   For more information about BLAS functions see *note BLAS Support::.
 
 
 File: gsl-ref.info,  Node: Shared Libraries,  Next: ANSI C Compliance,  Prev: Compiling and Linking,  Up: Using the library
@@ -496,30 +514,35 @@ occur:
      libgsl.so.0: cannot open shared object file: No such
      file or directory
 
-To avoid this error, define the shell variable `LD_LIBRARY_PATH' to
+To avoid this error, either modify the system dynamic linker
+configuration(1) or define the shell variable `LD_LIBRARY_PATH' to
 include the directory where the library is installed.
 
    For example, in the Bourne shell (`/bin/sh' or `/bin/bash'), the
 library search path can be set with the following commands:
 
-     $ LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+     $ LD_LIBRARY_PATH=/usr/local/lib
      $ export LD_LIBRARY_PATH
      $ ./example
 
 In the C-shell (`/bin/csh' or `/bin/tcsh') the equivalent command is,
 
-     % setenv LD_LIBRARY_PATH /usr/local/lib:$LD_LIBRARY_PATH
+     % setenv LD_LIBRARY_PATH /usr/local/lib
 
 The standard prompt for the C-shell in the example above is the percent
 character `%', and should not be typed as part of the command.
 
-   To save retyping these commands each session they should be placed
-in an individual or system-wide login file.
+   To save retyping these commands each session they can be placed in an
+individual or system-wide login file.
 
    To compile a statically linked version of the program, use the
 `-static' flag in `gcc',
 
      $ gcc -static example.o -lgsl -lgslcblas -lm
+
+   ---------- Footnotes ----------
+
+   (1) `/etc/ld.so.conf' on GNU/Linux systems.
 
 
 File: gsl-ref.info,  Node: ANSI C Compliance,  Next: Inline functions,  Prev: Shared Libraries,  Up: Using the library
@@ -1307,7 +1330,8 @@ simple functions to fill this gap.  For reasons of efficiency, these
 functions do not check for overflow or underflow conditions.
 
  -- Function: double gsl_pow_int (double X, int N)
-     This routine computes the power x^n for integer N.  The power is
+ -- Function: double gsl_pow_uint (double X, unsigned int N)
+     These routines computes the power x^n for integer N.  The power is
      computed efficiently--for example, x^8 is computed as ((x^2)^2)^2,
      requiring only 3 multiplications.  A version of this function
      which also computes the numerical error in the result is available
@@ -1497,7 +1521,7 @@ imaginary parts, `dat[0]' and `dat[1]', allowing the struct to be
 mapped correctly onto packed complex arrays.
 
  -- Function: gsl_complex gsl_complex_rect (double X, double Y)
-     This function uses the rectangular cartesian components (X,Y) to
+     This function uses the rectangular Cartesian components (X,Y) to
      return the complex number z = x + i y.  An inline version of this
      function is used when `HAVE_INLINE' is defined.
 
@@ -1512,7 +1536,7 @@ mapped correctly onto packed complex arrays.
      number Z.
 
  -- Macro: GSL_SET_COMPLEX (ZP, X, Y)
-     This macro uses the cartesian components (X,Y) to set the real and
+     This macro uses the Cartesian components (X,Y) to set the real and
      imaginary parts of the complex number pointed to by ZP.  For
      example,
 
@@ -1879,8 +1903,8 @@ File: gsl-ref.info,  Node: Polynomial Evaluation,  Next: Divided Difference Repr
 6.1 Polynomial Evaluation
 =========================
 
-The functions described here evaluate the polynomial c[0] + c[1] x +
-c[2] x^2 + \dots + c[len-1] x^{len-1} using Horner's method for
+The functions described here evaluate the polynomial P(x) = c[0] + c[1]
+x + c[2] x^2 + \dots + c[len-1] x^{len-1} using Horner's method for
 stability. Inline versions of these functions are used when
 `HAVE_INLINE' is defined.
 
@@ -1898,6 +1922,13 @@ stability. Inline versions of these functions are used when
           gsl_complex C[], const int LEN, const gsl_complex Z)
      This function evaluates a polynomial with complex coefficients for
      the complex variable Z.
+
+ -- Function: int gsl_poly_eval_derivs (const double C[], const size_t
+          LENC, const double X, double RES[], const size_t LENRES)
+     This function evaluates a polynomial and its derivatives storing
+     the results in the array RES of size LENRES.  The output array
+     contains the values of d^k P/d x^k for the specified value of X
+     starting with k = 0.
 
 
 File: gsl-ref.info,  Node: Divided Difference Representation of Polynomials,  Next: Quadratic Equations,  Prev: Polynomial Evaluation,  Up: Polynomials
@@ -2295,7 +2326,7 @@ The Airy functions Ai(x) and Bi(x) are defined by the integral
 representations,
 
      Ai(x) = (1/\pi) \int_0^\infty \cos((1/3) t^3 + xt) dt
-     Bi(x) = (1/\pi) \int_0^\infty (e^(-(1/3) t^3) + \sin((1/3) t^3 + xt)) dt
+     Bi(x) = (1/\pi) \int_0^\infty (e^(-(1/3) t^3 + xt) + \sin((1/3) t^3 + xt)) dt
 
 For further information see Abramowitz & Stegun, Section 10.4. The Airy
 functions are defined in the header file `gsl_sf_airy.h'.
@@ -2484,8 +2515,8 @@ File: gsl-ref.info,  Node: Irregular Cylindrical Bessel Functions,  Next: Regula
      These routines compute the irregular cylindrical Bessel function
      of first order, Y_1(x), for x>0.
 
- -- Function: double gsl_sf_bessel_Yn (int N,double X)
- -- Function: int gsl_sf_bessel_Yn_e (int N,double X, gsl_sf_result *
+ -- Function: double gsl_sf_bessel_Yn (int N, double X)
+ -- Function: int gsl_sf_bessel_Yn_e (int N, double X, gsl_sf_result *
           RESULT)
      These routines compute the irregular cylindrical Bessel function of
      order N, Y_n(x), for x>0.
@@ -2653,7 +2684,7 @@ File: gsl-ref.info,  Node: Regular Spherical Bessel Functions,  Next: Irregular 
      therefore may differ slightly from the exact values.
 
  -- Function: int gsl_sf_bessel_jl_steed_array (int LMAX, double X,
-          double * JL_X_ARRAY)
+          double * RESULT_ARRAY)
      This routine uses Steed's method to compute the values of the
      regular spherical Bessel functions j_l(x) for l from 0 to LMAX
      inclusive for lmax >= 0 and x >= 0, storing the results in the
@@ -3486,7 +3517,7 @@ described in Abramowitz & Stegun, Section 26.2.
      function Q(x) = (1/\sqrt{2\pi}) \int_x^\infty dt \exp(-t^2/2).
 
    The "hazard function" for the normal distribution, also known as the
-inverse Mill's ratio, is defined as,
+inverse Mills' ratio, is defined as,
 
      h(x) = Z(x)/Q(x) = \sqrt{2/\pi} \exp(-x^2 / 2) / \erfc(x/\sqrt 2)
 
@@ -3573,7 +3604,7 @@ File: gsl-ref.info,  Node: Relative Exponential Functions,  Next: Exponentiation
           RESULT)
      These routines compute the N-relative exponential, which is the
      N-th generalization of the functions `gsl_sf_exprel' and
-     `gsl_sf_exprel2'.  The N-relative exponential is given by,
+     `gsl_sf_exprel_2'.  The N-relative exponential is given by,
 
           exprel_N(x) = N!/x^N (\exp(x) - \sum_{k=0}^{N-1} x^k/k!)
                       = 1 + x/(N+1) + x^2/((N+1)(N+2)) + ...
@@ -3685,7 +3716,7 @@ File: gsl-ref.info,  Node: Hyperbolic Integrals,  Next: Ei_3(x),  Prev: Ei(x),  
  -- Function: double gsl_sf_Chi (double X)
  -- Function: int gsl_sf_Chi_e (double X, gsl_sf_result * RESULT)
      These routines compute the integral  Chi(x) := \Re[ \gamma_E +
-     \log(x) + \int_0^x dt (\cosh[t]-1)/t] , where \gamma_E is the
+     \log(x) + \int_0^x dt (\cosh(t)-1)/t] , where \gamma_E is the
      Euler constant (available as the macro `M_EULER').
 
 
@@ -3824,8 +3855,10 @@ File: gsl-ref.info,  Node: Gamma and Beta Functions,  Next: Gegenbauer Functions
 7.19 Gamma and Beta Functions
 =============================
 
-The  functions described in this section are declared in the header
-file `gsl_sf_gamma.h'.
+This following routines compute the gamma and beta functions in their
+full and incomplete forms, as well as various kinds of factorials.  The
+functions described in this section are declared in the header file
+`gsl_sf_gamma.h'.
 
 * Menu:
 
@@ -3848,8 +3881,7 @@ The Gamma function is defined by the following integral,
 
 It is related to the factorial function by \Gamma(n)=(n-1)!  for
 positive integer n.  Further information on the Gamma function can be
-found in Abramowitz & Stegun, Chapter 6.  The functions described in
-this section are declared in the header file `gsl_sf_gamma.h'.
+found in Abramowitz & Stegun, Chapter 6.
 
  -- Function: double gsl_sf_gamma (double X)
  -- Function: int gsl_sf_gamma_e (double X, gsl_sf_result * RESULT)
@@ -3872,8 +3904,10 @@ this section are declared in the header file `gsl_sf_gamma.h'.
      This routine computes the sign of the gamma function and the
      logarithm of its magnitude, subject to x not being a negative
      integer or zero.  The function is computed using the real Lanczos
-     method.  The value of the gamma function can be reconstructed
-     using the relation \Gamma(x) = sgn * \exp(resultlg).
+     method.  The value of the gamma function and its error can be
+     reconstructed using the relation \Gamma(x) = sgn *
+     \exp(result\_lg), taking into account the two components of
+     RESULT_LG.
 
  -- Function: double gsl_sf_gammastar (double X)
  -- Function: int gsl_sf_gammastar_e (double X, gsl_sf_result * RESULT)
@@ -3967,23 +4001,23 @@ File: gsl-ref.info,  Node: Pochhammer Symbol,  Next: Incomplete Gamma Functions,
  -- Function: int gsl_sf_poch_e (double A, double X, gsl_sf_result *
           RESULT)
      These routines compute the Pochhammer symbol (a)_x = \Gamma(a +
-     x)/\Gamma(a), subject to a and a+x not being negative integers or
-     zero. The Pochhammer symbol is also known as the Apell symbol and
-     sometimes written as (a,x).
+     x)/\Gamma(a).  The Pochhammer symbol is also known as the Apell
+     symbol and sometimes written as (a,x).  When a and a+x are
+     negative integers or zero, the limiting value of the ratio is
+     returned.
 
  -- Function: double gsl_sf_lnpoch (double A, double X)
  -- Function: int gsl_sf_lnpoch_e (double A, double X, gsl_sf_result *
           RESULT)
      These routines compute the logarithm of the Pochhammer symbol,
-     \log((a)_x) = \log(\Gamma(a + x)/\Gamma(a)) for a > 0, a+x > 0.
+     \log((a)_x) = \log(\Gamma(a + x)/\Gamma(a)).
 
  -- Function: int gsl_sf_lnpoch_sgn_e (double A, double X,
           gsl_sf_result * RESULT, double * SGN)
      These routines compute the sign of the Pochhammer symbol and the
      logarithm of its magnitude.  The computed parameters are result =
-     \log(|(a)_x|) and sgn = \sgn((a)_x) where (a)_x = \Gamma(a +
-     x)/\Gamma(a), subject to a, a+x not being negative integers or
-     zero.
+     \log(|(a)_x|) with a corresponding error term, and sgn =
+     \sgn((a)_x) where (a)_x = \Gamma(a + x)/\Gamma(a).
 
  -- Function: double gsl_sf_pochrel (double A, double X)
  -- Function: int gsl_sf_pochrel_e (double A, double X, gsl_sf_result *
@@ -4161,7 +4195,6 @@ Hypergeometric functions are described in Abramowitz & Stegun, Chapters
           double C, double X, gsl_sf_result * RESULT)
      These routines compute the Gauss hypergeometric function 2F1(a_R +
      i a_I, a_R - i a_I, c, x) with complex parameters for |x| < 1.
-     exceptions:
 
  -- Function: double gsl_sf_hyperg_2F1_renorm (double A, double B,
           double C, double X)
@@ -4290,9 +4323,8 @@ File: gsl-ref.info,  Node: Legendre Polynomials,  Next: Associated Legendre Poly
           RESULT_ARRAY[])
  -- Function: int gsl_sf_legendre_Pl_deriv_array (int LMAX, double X,
           double RESULT_ARRAY[], double RESULT_DERIV_ARRAY[])
-     These functions compute an array of Legendre polynomials P_l(x),
-     and optionally their derivatives dP_l(x)/dx, for l = 0, \dots,
-     lmax, |x| <= 1
+     These functions compute arrays of Legendre polynomials P_l(x) and
+     derivatives dP_l(x)/dx, for l = 0, \dots, lmax, |x| <= 1
 
  -- Function: double gsl_sf_legendre_Q0 (double X)
  -- Function: int gsl_sf_legendre_Q0_e (double X, gsl_sf_result *
@@ -4339,15 +4371,15 @@ uses a similar recursion, but with the normalized functions.
           double RESULT_ARRAY[])
  -- Function: int gsl_sf_legendre_Plm_deriv_array (int LMAX, int M,
           double X, double RESULT_ARRAY[], double RESULT_DERIV_ARRAY[])
-     These functions compute an array of Legendre polynomials P_l^m(x),
-     and optionally their derivatives dP_l^m(x)/dx, for m >= 0, l =
-     |m|, ..., lmax, |x| <= 1.
+     These functions compute arrays of Legendre polynomials P_l^m(x)
+     and derivatives dP_l^m(x)/dx, for m >= 0, l = |m|, ..., lmax, |x|
+     <= 1.
 
  -- Function: double gsl_sf_legendre_sphPlm (int L, int M, double X)
  -- Function: int gsl_sf_legendre_sphPlm_e (int L, int M, double X,
           gsl_sf_result * RESULT)
      These routines compute the normalized associated Legendre
-     polynomial $\sqrt{(2l+1)/(4\pi)} \sqrt{(l-m)!/(l+m)!} P_l^m(x)$
+     polynomial \sqrt{(2l+1)/(4\pi)} \sqrt{(l-m)!/(l+m)!} P_l^m(x)
      suitable for use in spherical harmonics.  The parameters must
      satisfy m >= 0, l >= m, |x| <= 1. Theses routines avoid the
      overflows that occur for the standard normalization of P_l^m(x).
@@ -4356,10 +4388,9 @@ uses a similar recursion, but with the normalized functions.
           X, double RESULT_ARRAY[])
  -- Function: int gsl_sf_legendre_sphPlm_deriv_array (int LMAX, int M,
           double X, double RESULT_ARRAY[], double RESULT_DERIV_ARRAY[])
-     These functions compute an array of normalized associated Legendre
-     functions $\sqrt{(2l+1)/(4\pi)} \sqrt{(l-m)!/(l+m)!} P_l^m(x)$,
-     and optionally their derivatives, for m >= 0, l = |m|, ..., lmax,
-     |x| <= 1.0
+     These functions compute arrays of normalized associated Legendre
+     functions \sqrt{(2l+1)/(4\pi)} \sqrt{(l-m)!/(l+m)!} P_l^m(x), and
+     derivatives, for m >= 0, l = |m|, ..., lmax, |x| <= 1.0
 
  -- Function: int gsl_sf_legendre_array_size (const int LMAX, const int
           M)
@@ -4548,7 +4579,7 @@ require a preallocated workspace.
      this workspace.
 
 
- -- Function: void gsl_sf_mathieu_free (gsl_sf_mathieu_workspace *WORK)
+ -- Function: void gsl_sf_mathieu_free (gsl_sf_mathieu_workspace * WORK)
      This function frees the workspace WORK.
 
 
@@ -4557,18 +4588,18 @@ File: gsl-ref.info,  Node: Mathieu Function Characteristic Values,  Next: Angula
 7.26.2 Mathieu Function Characteristic Values
 ---------------------------------------------
 
- -- Function: int gsl_sf_mathieu_a (int N, double Q, gsl_sf_result
-          *RESULT)
- -- Function: int gsl_sf_mathieu_b (int N, double Q, gsl_sf_result
-          *RESULT)
+ -- Function: int gsl_sf_mathieu_a (int N, double Q, gsl_sf_result *
+          RESULT)
+ -- Function: int gsl_sf_mathieu_b (int N, double Q, gsl_sf_result *
+          RESULT)
      These routines compute the characteristic values a_n(q), b_n(q) of
      the Mathieu functions ce_n(q,x) and se_n(q,x), respectively.
 
  -- Function: int gsl_sf_mathieu_a_array (int ORDER_MIN, int ORDER_MAX,
-          double Q, gsl_sf_mathieu_workspace *WORK, double
+          double Q, gsl_sf_mathieu_workspace * WORK, double
           RESULT_ARRAY[])
  -- Function: int gsl_sf_mathieu_b_array (int ORDER_MIN, int ORDER_MAX,
-          double Q, gsl_sf_mathieu_workspace *WORK, double
+          double Q, gsl_sf_mathieu_workspace * WORK, double
           RESULT_ARRAY[])
      These routines compute a series of Mathieu characteristic values
      a_n(q), b_n(q) for n from ORDER_MIN to ORDER_MAX inclusive,
@@ -4581,17 +4612,17 @@ File: gsl-ref.info,  Node: Angular Mathieu Functions,  Next: Radial Mathieu Func
 --------------------------------
 
  -- Function: int gsl_sf_mathieu_ce (int N, double Q, double X,
-          gsl_sf_result *RESULT)
+          gsl_sf_result * RESULT)
  -- Function: int gsl_sf_mathieu_se (int N, double Q, double X,
-          gsl_sf_result *RESULT)
+          gsl_sf_result * RESULT)
      These routines compute the angular Mathieu functions ce_n(q,x) and
      se_n(q,x), respectively.
 
  -- Function: int gsl_sf_mathieu_ce_array (int NMIN, int NMAX, double
-          Q, double X, gsl_sf_mathieu_workspace *WORK, double
+          Q, double X, gsl_sf_mathieu_workspace * WORK, double
           RESULT_ARRAY[])
  -- Function: int gsl_sf_mathieu_se_array (int NMIN, int NMAX, double
-          Q, double X, gsl_sf_mathieu_workspace *WORK, double
+          Q, double X, gsl_sf_mathieu_workspace * WORK, double
           RESULT_ARRAY[])
      These routines compute a series of the angular Mathieu functions
      ce_n(q,x) and se_n(q,x) of order n from NMIN to NMAX inclusive,
@@ -4604,9 +4635,9 @@ File: gsl-ref.info,  Node: Radial Mathieu Functions,  Prev: Angular Mathieu Func
 -------------------------------
 
  -- Function: int gsl_sf_mathieu_Mc (int J, int N, double Q, double X,
-          gsl_sf_result *RESULT)
+          gsl_sf_result * RESULT)
  -- Function: int gsl_sf_mathieu_Ms (int J, int N, double Q, double X,
-          gsl_sf_result *RESULT)
+          gsl_sf_result * RESULT)
      These routines compute the radial J-th kind Mathieu functions
      Mc_n^{(j)}(q,x) and Ms_n^{(j)}(q,x) of order N.
 
@@ -4616,10 +4647,10 @@ File: gsl-ref.info,  Node: Radial Mathieu Functions,  Prev: Angular Mathieu Func
      Ms_n^{(j)}.
 
  -- Function: int gsl_sf_mathieu_Mc_array (int J, int NMIN, int NMAX,
-          double Q, double X, gsl_sf_mathieu_workspace *WORK, double
+          double Q, double X, gsl_sf_mathieu_workspace * WORK, double
           RESULT_ARRAY[])
  -- Function: int gsl_sf_mathieu_Ms_array (int J, int NMIN, int NMAX,
-          double Q, double X, gsl_sf_mathieu_workspace *WORK, double
+          double Q, double X, gsl_sf_mathieu_workspace * WORK, double
           RESULT_ARRAY[])
      These routines compute a series of the radial Mathieu functions of
      kind J, with order from NMIN to NMAX inclusive, storing the
@@ -4825,13 +4856,13 @@ File: gsl-ref.info,  Node: Trigonometric Functions for Complex Arguments,  Next:
  -- Function: int gsl_sf_complex_cos_e (double ZR, double ZI,
           gsl_sf_result * CZR, gsl_sf_result * CZI)
      This function computes the complex cosine, \cos(z_r + i z_i)
-     storing the real and imaginary parts in SZR, SZI.
+     storing the real and imaginary parts in CZR, CZI.
 
  -- Function: int gsl_sf_complex_logsin_e (double ZR, double ZI,
           gsl_sf_result * LSZR, gsl_sf_result * LSZI)
      This function computes the logarithm of the complex sine,
      \log(\sin(z_r + i z_i)) storing the real and imaginary parts in
-     SZR, SZI.
+     LSZR, LSZI.
 
 
 File: gsl-ref.info,  Node: Hyperbolic Trigonometric Functions,  Next: Conversion Functions,  Prev: Trigonometric Functions for Complex Arguments,  Up: Trigonometric Functions
@@ -5071,8 +5102,9 @@ possible,
 
 The following papers contain information on the algorithms used to
 compute the special functions, 
-     MISCFUN: A software package to compute uncommon special functions.
-     `ACM Trans. Math. Soft.', vol. 22, 1996, 288-301
+     Allan J. MacLeod, MISCFUN: A software package to compute uncommon
+     special functions.  `ACM Trans. Math. Soft.', vol. 22, 1996,
+     288-301
 
      G.N. Watson, A Treatise on the Theory of Bessel Functions, 2nd
      Edition (Cambridge University Press, 1944).
@@ -5081,6 +5113,9 @@ compute the special functions,
      Science Publishers, ISBN 1-56072-052-2
 
      B.C. Carlson, Special Functions of Applied Mathematics (1977)
+
+     N. M. Temme, Special Functions: An Introduction to the Classical
+     Functions of Mathematical Physics (1996), ISBN 978-0471113133.
 
      W.J. Thompson, Atlas for Computing Mathematical Functions, John
      Wiley & Sons, New York (1997).
@@ -5368,17 +5403,15 @@ File: gsl-ref.info,  Node: Accessing vector elements,  Next: Initializing vector
 -------------------------------
 
 Unlike FORTRAN compilers, C compilers do not usually provide support
-for range checking of vectors and matrices.  Range checking is
-available in the GNU C Compiler bounds-checking extension, but it is not
-part of the default installation of GCC.  The functions
+for range checking of vectors and matrices.(1)  The functions
 `gsl_vector_get' and `gsl_vector_set' can perform portable range
 checking for you and report an error if you attempt to access elements
 outside the allowed range.
 
    The functions for accessing the elements of a vector or matrix are
 defined in `gsl_vector.h' and declared `extern inline' to eliminate
-function-call overhead.  You must compile your program with the macro
-`HAVE_INLINE' defined to use these functions.
+function-call overhead.  You must compile your program with the
+preprocessor macro `HAVE_INLINE' defined to use these functions.
 
    If necessary you can turn off range checking completely without
 modifying any source files by recompiling your program with the
@@ -5388,6 +5421,19 @@ to replace calls to `gsl_vector_get(v,i)' by `v->data[i*v->stride]' and
 calls to `gsl_vector_set(v,i,x)' by `v->data[i*v->stride]=x'.  Thus
 there should be no performance penalty for using the range checking
 functions when range checking is turned off.
+
+   If you use a C99 compiler which requires inline functions in header
+files to be declared `inline' instead of `extern inline', define the
+macro `GSL_C99_INLINE' (*note Inline functions::).  With GCC this is
+selected automatically when compiling in C99 mode (`-std=c99').
+
+   If inline functions are not used, calls to the functions
+`gsl_vector_get' and `gsl_vector_set' will link to the compiled
+versions of these functions in the library itself.  The range checking
+in these functions is controlled by the global integer variable
+`gsl_check_range'.  It is enabled by default--to disable it, set
+`gsl_check_range' to zero.  Due to function-call overhead, there is
+less benefit in disabling range checking here than for inline functions.
 
  -- Function: double gsl_vector_get (const gsl_vector * V, size_t I)
      This function returns the I-th element of a vector V.  If I lies
@@ -5408,6 +5454,13 @@ functions when range checking is turned off.
      V.  If I lies outside the allowed range of 0 to N-1 then the error
      handler is invoked and a null pointer is returned.  Inline
      versions of these functions are used when `HAVE_INLINE' is defined.
+
+   ---------- Footnotes ----------
+
+   (1) Range checking is available in the GNU C Compiler
+bounds-checking extension, but it is not part of the default
+installation of GCC. Memory accesses can also be checked with Valgrind
+or the `gcc -fmudflap' memory protection option.
 
 
 File: gsl-ref.info,  Node: Initializing vector elements,  Next: Reading and writing vectors,  Prev: Accessing vector elements,  Up: Vectors
@@ -5678,32 +5731,33 @@ File: gsl-ref.info,  Node: Vector operations,  Next: Finding maximum and minimum
 
  -- Function: int gsl_vector_add (gsl_vector * A, const gsl_vector * B)
      This function adds the elements of vector B to the elements of
-     vector A, a'_i = a_i + b_i. The two vectors must have the same
-     length.
+     vector A.  The result a_i \leftarrow a_i + b_i is stored in A and
+     B remains unchanged.  The two vectors must have the same length.
 
  -- Function: int gsl_vector_sub (gsl_vector * A, const gsl_vector * B)
      This function subtracts the elements of vector B from the elements
-     of vector A, a'_i = a_i - b_i. The two vectors must have the same
+     of vector A.  The result a_i \leftarrow a_i - b_i is stored in A
+     and B remains unchanged.  The two vectors must have the same
      length.
 
  -- Function: int gsl_vector_mul (gsl_vector * A, const gsl_vector * B)
      This function multiplies the elements of vector A by the elements
-     of vector B, a'_i = a_i * b_i. The two vectors must have the same
-     length.
+     of vector B.  The result a_i \leftarrow a_i * b_i is stored in A
+     and B remains unchanged. The two vectors must have the same length.
 
  -- Function: int gsl_vector_div (gsl_vector * A, const gsl_vector * B)
      This function divides the elements of vector A by the elements of
-     vector B, a'_i = a_i / b_i. The two vectors must have the same
-     length.
+     vector B.  The result a_i \leftarrow a_i / b_i is stored in A and
+     B remains unchanged. The two vectors must have the same length.
 
  -- Function: int gsl_vector_scale (gsl_vector * A, const double X)
      This function multiplies the elements of vector A by the constant
-     factor X, a'_i = x a_i.
+     factor X.  The result a_i \leftarrow x a_i is stored in A.
 
  -- Function: int gsl_vector_add_constant (gsl_vector * A, const double
           X)
      This function adds the constant value X to the elements of the
-     vector A, a'_i = a_i + x.
+     vector A.  The result a_i \leftarrow a_i + x is stored in A.
 
 
 File: gsl-ref.info,  Node: Finding maximum and minimum elements of vectors,  Next: Vector properties,  Prev: Vector operations,  Up: Vectors
@@ -5758,6 +5812,11 @@ conditions.
      These functions return 1 if all the elements of the vector V are
      zero, strictly positive, strictly negative, or non-negative
      respectively, and 0 otherwise.
+
+ -- Function: int gsl_vector_equal (const gsl_vector * U, const
+          gsl_vector * V)
+     This function returns 1 if the vectors U and V are equal (by
+     comparison of element values) and 0 otherwise.
 
 
 File: gsl-ref.info,  Node: Example programs for vectors,  Prev: Vector properties,  Up: Vectors
@@ -6286,7 +6345,7 @@ block.
  -- Function: gsl_vector_view gsl_matrix_diagonal (gsl_matrix * M)
  -- Function: gsl_vector_const_view gsl_matrix_const_diagonal (const
           gsl_matrix * M)
-     These functions returns a vector view of the diagonal of the matrix
+     These functions return a vector view of the diagonal of the matrix
      M. The matrix M is not required to be square. For a rectangular
      matrix the length of the diagonal is the same as the smaller
      dimension of the matrix.
@@ -6418,34 +6477,38 @@ The following operations are defined for real and complex matrices.
 
  -- Function: int gsl_matrix_add (gsl_matrix * A, const gsl_matrix * B)
      This function adds the elements of matrix B to the elements of
-     matrix A, a'(i,j) = a(i,j) + b(i,j). The two matrices must have the
-     same dimensions.
+     matrix A.  The result a(i,j) \leftarrow a(i,j) + b(i,j) is stored
+     in A and B remains unchanged. The two matrices must have the same
+     dimensions.
 
  -- Function: int gsl_matrix_sub (gsl_matrix * A, const gsl_matrix * B)
      This function subtracts the elements of matrix B from the elements
-     of matrix A, a'(i,j) = a(i,j) - b(i,j). The two matrices must have
+     of matrix A.  The result a(i,j) \leftarrow a(i,j) - b(i,j) is
+     stored in A and B remains unchanged. The two matrices must have
      the same dimensions.
 
  -- Function: int gsl_matrix_mul_elements (gsl_matrix * A, const
           gsl_matrix * B)
      This function multiplies the elements of matrix A by the elements
-     of matrix B, a'(i,j) = a(i,j) * b(i,j). The two matrices must have
+     of matrix B.  The result a(i,j) \leftarrow a(i,j) * b(i,j) is
+     stored in A and B remains unchanged.  The two matrices must have
      the same dimensions.
 
  -- Function: int gsl_matrix_div_elements (gsl_matrix * A, const
           gsl_matrix * B)
      This function divides the elements of matrix A by the elements of
-     matrix B, a'(i,j) = a(i,j) / b(i,j). The two matrices must have the
-     same dimensions.
+     matrix B.  The result a(i,j) \leftarrow a(i,j) / b(i,j) is stored
+     in A and B remains unchanged. The two matrices must have the same
+     dimensions.
 
  -- Function: int gsl_matrix_scale (gsl_matrix * A, const double X)
      This function multiplies the elements of matrix A by the constant
-     factor X, a'(i,j) = x a(i,j).
+     factor X.  The result a(i,j) \leftarrow x a(i,j) is stored in A.
 
  -- Function: int gsl_matrix_add_constant (gsl_matrix * A, const double
           X)
      This function adds the constant value X to the elements of the
-     matrix A, a'(i,j) = a(i,j) + x.
+     matrix A.  The result a(i,j) \leftarrow a(i,j) + x is stored in A.
 
 
 File: gsl-ref.info,  Node: Finding maximum and minimum elements of matrices,  Next: Matrix properties,  Prev: Matrix operations,  Up: Matrices
@@ -6507,6 +6570,11 @@ conditions.
      respectively, and 0 otherwise. To test whether a matrix is
      positive-definite, use the Cholesky decomposition (*note Cholesky
      Decomposition::).
+
+ -- Function: int gsl_matrix_equal (const gsl_matrix * A, const
+          gsl_matrix * B)
+     This function returns 1 if the matrices A and B are equal (by
+     comparison of element values) and 0 otherwise.
 
 
 File: gsl-ref.info,  Node: Example programs for matrices,  Prev: Matrix properties,  Up: Matrices
@@ -6850,7 +6918,7 @@ File: gsl-ref.info,  Node: Applying Permutations,  Next: Reading and writing per
      This function applies the permutation P to the elements of the
      vector V, considered as a row-vector acted on by a permutation
      matrix from the right, v' = v P.  The j-th column of the
-     permutation matrix P is given by the p_j-th column of the identity
+     permutation matrix P is given by the P_j-th column of the identity
      matrix. The permutation P and the vector V must have the same
      length.
 
@@ -6861,14 +6929,14 @@ File: gsl-ref.info,  Node: Applying Permutations,  Next: Reading and writing per
      an inverse permutation matrix from the right, v' = v P^T.  Note
      that for permutation matrices the inverse is the same as the
      transpose.  The j-th column of the permutation matrix P is given by
-     the p_j-th column of the identity matrix. The permutation P and
+     the P_j-th column of the identity matrix. The permutation P and
      the vector V must have the same length.
 
  -- Function: int gsl_permutation_mul (gsl_permutation * P, const
           gsl_permutation * PA, const gsl_permutation * PB)
      This function combines the two permutations PA and PB into a
-     single permutation P, where p = pa . pb. The permutation P is
-     equivalent to applying pb first and then PA.
+     single permutation P, where P = PA * PB.  The permutation P is
+     equivalent to applying PB first and then PA.
 
 
 File: gsl-ref.info,  Node: Reading and writing permutations,  Next: Permutations in cyclic form,  Prev: Applying Permutations,  Up: Permutations
@@ -7113,7 +7181,7 @@ For the definition of the "canonical form" see,
      Section 1.3.3, `An Unusual Correspondence', p.178-179.
 
 
-File: gsl-ref.info,  Node: Combinations,  Next: Sorting,  Prev: Permutations,  Up: Top
+File: gsl-ref.info,  Node: Combinations,  Next: Multisets,  Prev: Permutations,  Up: Top
 
 10 Combinations
 ***************
@@ -7303,103 +7371,4 @@ file as binary data or formatted text.
 
    (1) In versions of the GNU C library prior to the ISO C99 standard,
 the type modifier `Z' was used instead.
-
-
-File: gsl-ref.info,  Node: Combination Examples,  Next: Combination References and Further Reading,  Prev: Reading and writing combinations,  Up: Combinations
-
-10.7 Examples
-=============
-
-The example program below prints all subsets of the set {0,1,2,3}
-ordered by size.  Subsets of the same size are ordered
-lexicographically.
-
-     #include <stdio.h>
-     #include <gsl/gsl_combination.h>
-
-     int
-     main (void)
-     {
-       gsl_combination * c;
-       size_t i;
-
-       printf ("All subsets of {0,1,2,3} by size:\n") ;
-       for (i = 0; i <= 4; i++)
-         {
-           c = gsl_combination_calloc (4, i);
-           do
-             {
-               printf ("{");
-               gsl_combination_fprintf (stdout, c, " %u");
-               printf (" }\n");
-             }
-           while (gsl_combination_next (c) == GSL_SUCCESS);
-           gsl_combination_free (c);
-         }
-
-       return 0;
-     }
-
-Here is the output from the program,
-
-     $ ./a.out
-     All subsets of {0,1,2,3} by size:
-     { }
-     { 0 }
-     { 1 }
-     { 2 }
-     { 3 }
-     { 0 1 }
-     { 0 2 }
-     { 0 3 }
-     { 1 2 }
-     { 1 3 }
-     { 2 3 }
-     { 0 1 2 }
-     { 0 1 3 }
-     { 0 2 3 }
-     { 1 2 3 }
-     { 0 1 2 3 }
-
-All 16 subsets are generated, and the subsets of each size are sorted
-lexicographically.
-
-
-File: gsl-ref.info,  Node: Combination References and Further Reading,  Prev: Combination Examples,  Up: Combinations
-
-10.8 References and Further Reading
-===================================
-
-Further information on combinations can be found in,
-
-     Donald L. Kreher, Douglas R. Stinson, `Combinatorial Algorithms:
-     Generation, Enumeration and Search', 1998, CRC Press LLC, ISBN
-     084933988X
-
-
-
-File: gsl-ref.info,  Node: Sorting,  Next: BLAS Support,  Prev: Combinations,  Up: Top
-
-11 Sorting
-**********
-
-This chapter describes functions for sorting data, both directly and
-indirectly (using an index).  All the functions use the "heapsort"
-algorithm.  Heapsort is an O(N \log N) algorithm which operates
-in-place and does not require any additional storage.  It also provides
-consistent performance, the running time for its worst-case (ordered
-data) being not significantly longer than the average and best cases.
-Note that the heapsort algorithm does not preserve the relative ordering
-of equal elements--it is an "unstable" sort.  However the resulting
-order of equal elements will be consistent across different platforms
-when using these functions.
-
-* Menu:
-
-* Sorting objects::
-* Sorting vectors::
-* Selecting the k smallest or largest elements::
-* Computing the rank::
-* Sorting Examples::
-* Sorting References and Further Reading::
 

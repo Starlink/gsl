@@ -208,7 +208,7 @@ p(x) dx = @{1 \over \sqrt@{2 \pi \sigma^2@}@} \exp (-x^2 / 2\sigma^2) dx
 for @math{x} in the range @math{-\infty} to @math{+\infty}.  Use the
 transformation @math{z = \mu + x} on the numbers returned by
 @code{gsl_ran_gaussian} to obtain a Gaussian distribution with mean
-@math{\mu}.  This function uses the Box-Mueller algorithm which requires two
+@math{\mu}.  This function uses the Box-Muller algorithm which requires two
 calls to the random number generator @var{r}.
 @end deftypefun
 
@@ -225,6 +225,7 @@ the formula given above.
 
 @deftypefun double gsl_ran_gaussian_ziggurat (const gsl_rng * @var{r}, double @var{sigma})
 @deftypefunx double gsl_ran_gaussian_ratio_method (const gsl_rng * @var{r}, double @var{sigma})
+@cindex Ziggurat method
 This function computes a Gaussian random variate using the alternative
 Marsaglia-Tsang ziggurat and Kinderman-Monahan-Leva ratio methods.  The
 Ziggurat algorithm is the fastest available algorithm in most cases.
@@ -481,7 +482,7 @@ p(x) dx = @{1 \over 2 a \Gamma(1+1/b)@} \exp(-|x/a|^b) dx
 @noindent
 for @c{$x \ge 0$}
 @math{x >= 0}.  For @math{b = 1} this reduces to the Laplace
-distribution.  For @math{b = 2} it has the same form as a gaussian
+distribution.  For @math{b = 2} it has the same form as a Gaussian
 distribution, but with @c{$a = \sqrt{2} \sigma$}
 @math{a = \sqrt@{2@} \sigma}.
 @end deftypefun
@@ -693,7 +694,7 @@ above.
 @cindex Levy distribution
 This function returns a random variate from the Levy symmetric stable
 distribution with scale @var{c} and exponent @var{alpha}.  The symmetric
-stable probability distribution is defined by a fourier transform,
+stable probability distribution is defined by a Fourier transform,
 @tex
 \beforedisplay
 $$
@@ -736,7 +737,7 @@ This function returns a random variate from the Levy skew stable
 distribution with scale @var{c}, exponent @var{alpha} and skewness
 parameter @var{beta}.  The skewness parameter must lie in the range
 @math{[-1,1]}.  The Levy skew stable probability distribution is defined
-by a fourier transform,
+by a Fourier transform,
 @tex
 \beforedisplay
 $$
@@ -943,7 +944,7 @@ distribution with parameters @var{zeta} and @var{sigma}.
 @node The Chi-squared Distribution
 @section The Chi-squared Distribution
 The chi-squared distribution arises in statistics.  If @math{Y_i} are
-@math{n} independent gaussian random variates with unit variance then the
+@math{n} independent Gaussian random variates with unit variance then the
 sum-of-squares,
 @tex
 \beforedisplay
@@ -1343,8 +1344,8 @@ This function returns a random direction vector
 such that 
 @c{$|v|^2 = x_1^2 + x_2^2 + \cdots + x_n^2 = 1$}
 @math{|v|^2 = x_1^2 + x_2^2 + ... + x_n^2 = 1}.  The method
-uses the fact that a multivariate gaussian distribution is spherically
-symmetric.  Each component is generated to have a gaussian distribution,
+uses the fact that a multivariate Gaussian distribution is spherically
+symmetric.  Each component is generated to have a Gaussian distribution,
 and then the components are normalized.  The method is described by
 Knuth, v2, 3rd ed, p135--136, and attributed to G. W. Brown, Modern
 Mathematics for the Engineer (1956).
@@ -1518,8 +1519,8 @@ p(\theta_1, ..., \theta_K) d\theta_1 ... d\theta_K =
 @noindent
 for @c{$\theta_i \ge 0$} 
 @math{theta_i >= 0}
-and @c{$\alpha_i \ge 0$} 
-@math{alpha_i >= 0}.  The delta function ensures that @math{\sum \theta_i = 1}.
+and @c{$\alpha_i > 0$} 
+@math{alpha_i > 0}.  The delta function ensures that @math{\sum \theta_i = 1}.
 The normalization factor @math{Z} is
 @tex
 \beforedisplay
@@ -1599,7 +1600,7 @@ pretty well.
 But faster methods have been devised.  Again, the idea is to preprocess
 the probability list, and save the result in some form of lookup table;
 then the individual calls for a random discrete event can go rapidly.
-An approach invented by G. Marsaglia (Generating discrete random numbers
+An approach invented by G. Marsaglia (Generating discrete random variables
 in a computer, Comm ACM 6, 37--38 (1963)) is very clever, and readers
 interested in examples of good algorithm design are directed to this
 short and well-written paper.  Unfortunately, for large @math{K},
@@ -1625,6 +1626,7 @@ something like the Poisson Distribution, a modification would have to
 be made, since it only takes a finite set of @math{K} outcomes.
 
 @deftypefun {gsl_ran_discrete_t *} gsl_ran_discrete_preproc (size_t @var{K}, const double * @var{P})
+@tpindex gsl_ran_discrete_t
 @cindex Discrete random numbers
 @cindex Discrete random numbers, preprocessing
 This function returns a pointer to a structure that contains the lookup
@@ -1827,7 +1829,7 @@ treated as weights and normalized appropriately.  The arrays @var{n}[]
 and @var{p}[] must both be of length @var{K}.
 
 Random variates are generated using the conditional binomial method (see
-C.S. David, @cite{The computer generation of multinomial random
+C.S. Davis, @cite{The computer generation of multinomial random
 variates}, Comp. Stat. Data Anal. 16 (1993) 205--217 for details).
 @end deftypefun
 
@@ -2200,7 +2202,7 @@ The following program generates a random walk in two dimensions.
 @end example
 
 @noindent
-Here is the output from the program, three 10-step random walks from the origin,
+Here is some output from the program, four 10-step random walks from the origin,
 
 @tex
 \centerline{\input random-walk.tex}
@@ -2229,17 +2231,18 @@ consult the book @cite{Non-Uniform Random Variate Generation} by Luc
 Devroye.  It covers every imaginable distribution and provides hundreds
 of algorithms.
 
-@itemize @asis
+@itemize @w{}
 @item
 Luc Devroye, @cite{Non-Uniform Random Variate Generation},
-Springer-Verlag, ISBN 0-387-96305-7.
+Springer-Verlag, ISBN 0-387-96305-7.  Available online at
+@uref{http://cg.scs.carleton.ca/~luc/rnbookindex.html}.
 @end itemize
 
 @noindent
 The subject of random variate generation is also reviewed by Knuth, who
 describes algorithms for all the major distributions.
 
-@itemize @asis
+@itemize @w{}
 @item
 Donald E. Knuth, @cite{The Art of Computer Programming: Seminumerical
 Algorithms} (Vol 2, 3rd Ed, 1997), Addison-Wesley, ISBN 0201896842.
@@ -2250,7 +2253,7 @@ The Particle Data Group provides a short review of techniques for
 generating distributions of random numbers in the ``Monte Carlo''
 section of its Annual Review of Particle Physics.
 
-@itemize @asis
+@itemize @w{}
 @item
 @cite{Review of Particle Properties}
 R.M. Barnett et al., Physical Review D54, 1 (1996)
@@ -2267,13 +2270,13 @@ can be found in @cite{Statistical Computing} by W.J. Kennedy and
 J.E. Gentle. Another general reference is @cite{Elements of Statistical
 Computing} by R.A. Thisted.
 
-@itemize @asis
+@itemize @w{}
 @item
 William E. Kennedy and James E. Gentle, @cite{Statistical Computing} (1980),
 Marcel Dekker, ISBN 0-8247-6898-1.
 @end itemize
 
-@itemize @asis
+@itemize @w{}
 @item
 Ronald A. Thisted, @cite{Elements of Statistical Computing} (1988), 
 Chapman & Hall, ISBN 0-412-01371-1.
@@ -2283,13 +2286,13 @@ Chapman & Hall, ISBN 0-412-01371-1.
 The cumulative distribution functions for the Gaussian distribution
 are based on the following papers,
 
-@itemize @asis
+@itemize @w{}
 @item
 @cite{Rational Chebyshev Approximations Using Linear Equations},
 W.J. Cody, W. Fraser, J.F. Hart. Numerische Mathematik 12, 242--251 (1968).
 @end itemize
 
-@itemize @asis
+@itemize @w{}
 @item
 @cite{Rational Chebyshev Approximations for the Error Function},
 W.J. Cody. Mathematics of Computation 23, n107, 631--637 (July 1969).

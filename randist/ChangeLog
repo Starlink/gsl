@@ -1,3 +1,51 @@
+2010-12-14  Brian Gough  <bjg@gnu.org>
+
+	* gamma.c (gamma_frac): avoid potential division by zero, handle
+	a=0 as a special case
+
+2010-11-20  Brian Gough  <bjg@gnu.org>
+
+	* chisq.c (gsl_ran_chisq_pdf): handle x=0 as special case
+	(x=0, nu=2 is also special)
+
+2010-10-12  Brian Gough  <bjg@gnu.org>
+
+	* test.c (test_binomial_max): added a test case for n larger than
+	maxint
+
+2010-07-21  Brian Gough  <bjg@gnu.org>
+
+	* beta.c (gsl_ran_beta_pdf): avoid overflow for x==0 || x==1 and
+	a>1,b>1
+
+2010-03-01  Brian Gough  <bjg@network-theory.co.uk>
+
+	* test.c (testPDF): extend the test run if a sample fails on the
+	first pass.
+
+2010-02-24  Brian Gough  <bjg@network-theory.co.uk>
+
+	* fdist.c (gsl_ran_fdist_pdf): compute log of pdf to avoid
+	overflow/underflow.
+
+2009-07-10  Brian Gough  <bjg@network-theory.co.uk>
+
+	* exponential.c (gsl_ran_exponential): use log(1-u) to include 0
+	in the range of possible outputs
+
+2009-07-09  Brian Gough  <bjg@network-theory.co.uk>
+
+	* discrete.c (gsl_ran_discrete_free): handle NULL argument in free
+
+2009-05-16  Brian Gough  <bjg@network-theory.co.uk>
+
+	* discrete.c (push_stack): replace abort() with an error return
+	value
+	(pop_stack): replace abort() with GSL_ERROR
+	(gsl_ran_discrete_preproc): use g->A as a temporary array to store
+	the results of the test E[k]<mean to avoid discrepancies due to
+	excess precision
+
 2008-11-30  Brian Gough  <bjg@network-theory.co.uk>
 
 	* test.c (test_gamma_vlarge): added test for a >= UINT_MAX.

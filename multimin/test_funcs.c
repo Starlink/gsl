@@ -18,9 +18,65 @@
  */
 
 #include <config.h>
+#include <math.h>
+#include <gsl/gsl_math.h>
 #include <gsl/gsl_multimin.h>
 
 #include "test_funcs.h"
+
+gsl_multimin_function_fdf simpleabs =
+{&simpleabs_f,
+ &simpleabs_df,
+ &simpleabs_fdf,
+ 2, 0};
+
+gsl_multimin_function simpleabs_fmin =
+{&simpleabs_f,
+ 2, 0};
+
+void simpleabs_initpt (gsl_vector * x)
+{
+  gsl_vector_set (x, 0, 1.0);
+  gsl_vector_set (x, 1, 2.0);
+}
+
+void simpleabs_initpt1 (gsl_vector * x)
+{
+  gsl_vector_set (x, 0, 1.0);
+  gsl_vector_set (x, 1, 1.0);
+}
+
+double simpleabs_f (const gsl_vector * x, void *params)
+{
+  double u = gsl_vector_get(x,0);
+  double v = gsl_vector_get(x,1);
+  double a = u - 1;
+  double b = v - 2;
+  fcount++;
+  return fabs(a) + fabs(b);
+}
+
+void simpleabs_df (const gsl_vector * x, void *params, gsl_vector * df)
+{
+  double u = gsl_vector_get(x,0);
+  double v = gsl_vector_get(x,1);
+  gcount++;
+  gsl_vector_set(df,0, GSL_SIGN(u-1));
+  gsl_vector_set(df,1, GSL_SIGN(v-2));  
+}
+
+void simpleabs_fdf (const gsl_vector * x, void *params, double * f,
+                     gsl_vector * df) 
+{
+  double u = gsl_vector_get(x,0);
+  double v = gsl_vector_get(x,1);
+  double a = u - 1;
+  double b = v - 2;
+  gcount++;
+  *f = fabs(a) + fabs(b);
+  gsl_vector_set(df,0, GSL_SIGN(u-1));
+  gsl_vector_set(df,1, GSL_SIGN(v-2));  
+}
 
 gsl_multimin_function_fdf rosenbrock =
 {&rosenbrock_f,
@@ -35,6 +91,12 @@ gsl_multimin_function rosenbrock_fmin =
 void rosenbrock_initpt (gsl_vector * x)
 {
   gsl_vector_set (x, 0, -1.2);
+  gsl_vector_set (x, 1, 1.0);
+}
+
+void rosenbrock_initpt1 (gsl_vector * x)
+{
+  gsl_vector_set (x, 0, 1.0);
   gsl_vector_set (x, 1, 1.0);
 }
 
@@ -175,7 +237,6 @@ void wood_fdf (const gsl_vector * x, void *params, double * f, gsl_vector * df)
   *f=wood_f(x,params);
 }
 
-
 gsl_multimin_function_fdf Nrosenbrock =
 {&rosenbrock_f,
  &Nrosenbrock_df,
@@ -242,3 +303,40 @@ void Nwood_fdf (const gsl_vector * x, void *params, double * f,
   *f = wood_f (x, params);
   Nwood_df (x, params, df);
 }
+
+
+gsl_multimin_function spring_fmin = { &spring_f,
+  3, 0
+};
+
+void
+spring_initpt (gsl_vector * x)
+{
+  gsl_vector_set (x, 0, 1.0);
+  gsl_vector_set (x, 1, 0.0);
+  gsl_vector_set (x, 2, 7.0 * M_PI);
+}
+
+double
+spring_f (const gsl_vector * x, void *params)
+{
+  double x0 = gsl_vector_get (x, 0);
+  double x1 = gsl_vector_get (x, 1);
+  double x2 = gsl_vector_get (x, 2);
+
+  double theta = atan2 (x1, x0);
+  double r = sqrt (x0 * x0 + x1 * x1);
+  double z = x2;
+  while (z > M_PI)
+    z -= 2.0 * M_PI;
+  while (z < -M_PI)
+    z += 2.0 * M_PI;
+  {
+    double tmz = theta - z;
+    double rm1 = r - 1.0;
+    double ret = 0.1 * (expm1 (tmz * tmz + rm1 * rm1) + fabs (x2 / 10.0));
+    return ret;
+  }
+}
+
+

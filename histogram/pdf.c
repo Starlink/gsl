@@ -1,6 +1,6 @@
 /* histogram/pdf.c
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007, 2009 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -147,6 +147,7 @@ gsl_histogram_pdf_init (gsl_histogram_pdf * p, const gsl_histogram * h)
 void
 gsl_histogram_pdf_free (gsl_histogram_pdf * p)
 {
+  RETURN_IF_NULL (p);
   free (p->range);
   free (p->sum);
   free (p);

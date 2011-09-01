@@ -1,6 +1,6 @@
 /* fft/hc_init.c
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007, 2009 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -117,7 +117,7 @@ FUNCTION(gsl_fft_halfcomplex_wavetable,alloc) (size_t n)
 void
 FUNCTION(gsl_fft_halfcomplex_wavetable,free) (TYPE(gsl_fft_halfcomplex_wavetable) * wavetable)
 {
-
+  RETURN_IF_NULL (wavetable);
   /* release trigonometric lookup tables */
 
   free (wavetable->trig);

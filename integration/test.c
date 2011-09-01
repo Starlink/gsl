@@ -73,6 +73,7 @@ gsl_function make_counter (gsl_function * f, struct counter_params * p)
 void my_error_handler (const char *reason, const char *file,
                        int line, int err);
 
+
 int main (void)
 {
   gsl_ieee_env_setup ();
@@ -1753,7 +1754,7 @@ int main (void)
         gsl_test_rel(w->rlist[i],r[i],1e-14,"qawc(f459) rlist") ;
 
     for (i = 0; i < 6 ; i++) 
-        gsl_test_rel(w->elist[i],e[i],1e-5,"qawc(f459) elist") ;
+        gsl_test_rel(w->elist[i],e[i],1e-4,"qawc(f459) elist") ;
 
     for (i = 0; i < 6 ; i++) 
         gsl_test_int((int)w->order[i],order[i]-1,"qawc(f459) order");
@@ -1993,7 +1994,7 @@ int main (void)
         gsl_test_rel(w->rlist[i],r[i],1e-14,"qawo(f456) rlist") ;
 
     for (i = 0; i < 9 ; i++) 
-        gsl_test_rel(w->elist[i],e[i],1e-3,"qawo(f456) elist") ;
+        gsl_test_rel(w->elist[i],e[i],1e-2,"qawo(f456) elist") ;
 
     for (i = 0; i < 9 ; i++) 
         gsl_test_int((int)w->order[i],order[i]-1,"qawo(f456) order");
@@ -2093,6 +2094,288 @@ int main (void)
 
   }
 
+  /* Sanity check monomial test function for fixed Gauss-Legendre rules */
+  {
+    struct monomial_params params;
+    gsl_function f;
+    
+    f.function = &f_monomial;
+    f.params = &params;
+
+    params.degree   = 2;
+    params.constant = 1.0;
+    gsl_test_abs(GSL_FN_EVAL(&f, 2.0), 4.0, 8*GSL_DBL_EPSILON,
+        "f_monomial sanity check 1");
+
+    params.degree   = 1;
+    params.constant = 2.0;
+    gsl_test_abs(GSL_FN_EVAL(&f, 2.0), 4.0, 8*GSL_DBL_EPSILON,
+        "f_monomial sanity check 2");
+
+    params.degree   = 2;
+    params.constant = 2.0;
+    gsl_test_abs(integ_f_monomial(1.0, 2.0, &params),
+        (2.0/3.0)*(2.0*2.0*2.0 - 1.0*1.0*1.0), 8*GSL_DBL_EPSILON,
+        "integ_f_monomial sanity check");
+  }
+
+  /* Test the fixed-order Gauss-Legendre rules with a monomial. */
+  {
+    int n;
+    struct monomial_params params;
+    gsl_function f;
+    const double a   = 0.0, b = 1.2;
+
+    f.function = &f_monomial;
+    f.params = &params;
+
+    params.constant = 1.0;
+
+    for (n = 1; n < 1025; ++n)
+      {
+        double expected, result;
+
+        gsl_integration_glfixed_table * tbl =
+          gsl_integration_glfixed_table_alloc(n);
+
+        params.degree = 2*n-1; /* n point rule exact for 2n-1 degree poly */
+        expected      = integ_f_monomial(a, b, &params);
+        result        = gsl_integration_glfixed(&f, a, b, tbl);
+
+        if (tbl->precomputed)
+          {
+            gsl_test_rel(result, expected, 1.0e-12,
+                "glfixed %d-point: Integrating (%g*x^%d) over [%g,%g]",
+                n, params.constant, params.degree, a, b);
+          }
+        else
+          {
+            gsl_test_rel(result, expected, 1.0e-7,
+                "glfixed %d-point: Integrating (%g*x^%d) over [%g,%g]",
+                n, params.constant, params.degree, a, b);
+          }
+
+        gsl_integration_glfixed_table_free(tbl);
+      }
+  }
+
+  /* Sanity check sin(x) test function for fixed Gauss-Legendre rules */
+  {
+    gsl_function f = { f_sin, NULL };
+
+    gsl_test_abs(GSL_FN_EVAL(&f, 2.0), sin(2.0), 0.0, "f_sin sanity check 1");
+    gsl_test_abs(GSL_FN_EVAL(&f, 7.0), sin(7.0), 0.0, "f_sin sanity check 2");
+    gsl_test_abs(integ_f_sin(0.0, M_PI), 2.0, GSL_DBL_EPSILON,
+        "integ_f_sin sanity check");
+  }
+
+  /* Test the fixed-order Gauss-Legendre rules against sin(x) on [0, pi] */
+  {
+    const int n_max = 1024;
+    const gsl_function f = { f_sin, NULL };
+    const double a = 0.0, b = M_PI;
+    const double expected = integ_f_sin(a, b);
+    double result, abserr, prev_abserr = 0.0;
+    int n;
+
+    for (n = 1; n <= n_max; ++n)
+      {
+        gsl_integration_glfixed_table * const tbl =
+          gsl_integration_glfixed_table_alloc(n);
+
+        result = gsl_integration_glfixed(&f, a, b, tbl);
+        abserr = fabs(expected - result);
+
+        if (n == 1)
+          {
+            gsl_test_abs(result, GSL_FN_EVAL(&f,(b+a)/2)*(b-a), 0.0,
+                "glfixed %d-point: behavior for n == 1", n);
+          }
+        else if (n < 9)
+          {
+            gsl_test(! (abserr < prev_abserr),
+                "glfixed %d-point: observed drop in absolute error versus %d-points",
+                n, n-1);
+          }
+        else if (tbl->precomputed)
+          {
+            gsl_test_abs(result, expected, 2.0 * n * GSL_DBL_EPSILON,
+                "glfixed %d-point: very low absolute error for high precision coefficients",
+                n);
+          }
+        else
+          {
+            gsl_test_abs(result, expected, 1.0e6 * GSL_DBL_EPSILON,
+                "glfixed %d-point: acceptable absolute error for on-the-fly coefficients",
+                n);
+          }
+
+        prev_abserr = abserr;
+        gsl_integration_glfixed_table_free(tbl);
+      }
+  }
+
+  /* Test some fixed-order Gauss-Legendre rule points and weights on [-1, 1] */
+  /* This verifies the (point, weight) retrieval API behaves sanely */
+  {
+    const double eps = GSL_DBL_EPSILON;
+    gsl_integration_glfixed_table *tbl;
+    int n, i;
+    double xi, wi;
+
+    /* Analytical results for points and weights on [-1, 1]
+       Pulled from http://en.wikipedia.org/wiki/Gaussian_quadrature
+       Sorted in increasing order of Gauss points */
+    const double e1[1][2] = {
+      {0, 2 }
+    };
+    const double e2[2][2] = {
+      {-1/sqrt(3), 1},
+      { 1/sqrt(3), 1}
+    };
+    const double e3[3][2] = {
+      {-sqrt(15)/5, 5./9},
+      {          0, 8./9},
+      { sqrt(15)/5, 5./9}
+    };
+    const double e4[4][2] = {
+      {-sqrt((3+2*sqrt(6./5))/7), (18-sqrt(30))/36},
+      {-sqrt((3-2*sqrt(6./5))/7), (18+sqrt(30))/36},
+      { sqrt((3-2*sqrt(6./5))/7), (18+sqrt(30))/36},
+      { sqrt((3+2*sqrt(6./5))/7), (18-sqrt(30))/36}
+    };
+    const double e5[5][2] = {
+      {-sqrt((5+2*sqrt(10./7)))/3, (322-13*sqrt(70))/900},
+      {-sqrt((5-2*sqrt(10./7)))/3, (322+13*sqrt(70))/900},
+      {                         0, 128./225             },
+      { sqrt((5-2*sqrt(10./7)))/3, (322+13*sqrt(70))/900},
+      { sqrt((5+2*sqrt(10./7)))/3, (322-13*sqrt(70))/900}
+    };
+
+    n = 1;
+    tbl = gsl_integration_glfixed_table_alloc(n);
+    for (i = 0; i < n; ++i)
+      {
+        gsl_integration_glfixed_point(-1, 1, i, &xi, &wi, tbl);
+        gsl_test_abs(xi, e1[i][0], eps, "glfixed %d-point lookup: x(%d)", n, i);
+        gsl_test_abs(wi, e1[i][1], eps, "glfixed %d-point lookup: w(%d)", n, i);
+      }
+    gsl_integration_glfixed_table_free(tbl);
+
+    n = 2;
+    tbl = gsl_integration_glfixed_table_alloc(n);
+    for (i = 0; i < n; ++i)
+      {
+        gsl_integration_glfixed_point(-1, 1, i, &xi, &wi, tbl);
+        gsl_test_abs(xi, e2[i][0], eps, "glfixed %d-point lookup: x(%d)", n, i);
+        gsl_test_abs(wi, e2[i][1], eps, "glfixed %d-point lookup: w(%d)", n, i);
+      }
+    gsl_integration_glfixed_table_free(tbl);
+
+    n = 3;
+    tbl = gsl_integration_glfixed_table_alloc(n);
+    for (i = 0; i < n; ++i)
+      {
+        gsl_integration_glfixed_point(-1, 1, i, &xi, &wi, tbl);
+        gsl_test_abs(xi, e3[i][0], eps, "glfixed %d-point lookup: x(%d)", n, i);
+        gsl_test_abs(wi, e3[i][1], eps, "glfixed %d-point lookup: w(%d)", n, i);
+      }
+    gsl_integration_glfixed_table_free(tbl);
+
+    n = 4;
+    tbl = gsl_integration_glfixed_table_alloc(n);
+    for (i = 0; i < n; ++i)
+      {
+        gsl_integration_glfixed_point(-1, 1, i, &xi, &wi, tbl);
+        gsl_test_abs(xi, e4[i][0], eps, "glfixed %d-point lookup: x(%d)", n, i);
+        gsl_test_abs(wi, e4[i][1], eps, "glfixed %d-point lookup: w(%d)", n, i);
+      }
+    gsl_integration_glfixed_table_free(tbl);
+
+    n = 5;
+    tbl = gsl_integration_glfixed_table_alloc(n);
+    for (i = 0; i < n; ++i)
+      {
+        gsl_integration_glfixed_point(-1, 1, i, &xi, &wi, tbl);
+        gsl_test_abs(xi, e5[i][0], eps, "glfixed %d-point lookup: x(%d)", n, i);
+        gsl_test_abs(wi, e5[i][1], eps, "glfixed %d-point lookup: w(%d)", n, i);
+      }
+    gsl_integration_glfixed_table_free(tbl);
+  }
+
+  /* Test some fixed-order Gauss-Legendre rule points and weights on [-2, 3] */
+  /* This verifies the (point, weight) retrieval API is okay on non-[-1,1] */
+  {
+    gsl_integration_glfixed_table *tbl;
+    double result, x, w;
+    int i;
+
+    /* Odd n = 3, f(x) = x**5 + x**4 + x**3 + x**2 + x**1 + 1 */
+    result = 0;
+    tbl = gsl_integration_glfixed_table_alloc(3);
+    for (i = 0; i < 3; ++i)
+      {
+        gsl_integration_glfixed_point(-2, 3, i, &x, &w, tbl);
+        result += w * (1 + x*(1 + x*(1 + x*(1 + x*(1 + x)))));
+      }
+    gsl_test_rel(result, 805./4, 1e-8,
+        "glfixed %d-point xi,wi eval", 3);
+    gsl_integration_glfixed_table_free(tbl);
+
+    /* Even n = 4, f(x) = x**7 + x**6 + x**5 + x**4 + x**3 + x**2 + x**1 + 1 */
+    result = 0;
+    tbl = gsl_integration_glfixed_table_alloc(4);
+    for (i = 0; i < 4; ++i)
+      {
+        gsl_integration_glfixed_point(-2, 3, i, &x, &w, tbl);
+        result += w * (1 + x*(1 + x*(1 + x*(1 + x*(1 + x*(1 + x*(1 + x)))))));
+      }
+    gsl_test_rel(result, 73925./56, 1e-8,
+        "glfixed %d-point xi,wi eval", 4);
+    gsl_integration_glfixed_table_free(tbl);
+  }
+
+  {
+    typedef double (*fptr) ( double , void * );
+    
+    const static fptr funs[25] = { &cqf1 , &cqf2 , &cqf3 , &cqf4 , &cqf5 , &cqf6 , &cqf7 , 
+                                   &cqf8 , &cqf9 , &cqf10 , &cqf11 , &cqf12 , &cqf13 , &cqf14 , &cqf15 , &cqf16 , &cqf17 ,
+                                   &cqf18 , &cqf19 , &cqf20 , &cqf21 , &cqf22 , &cqf23 , &cqf24 , &cqf25 };
+    
+    const static double ranges[50] = { 0, 1 , 0, 1 , 0, 1 , -1, 1 , -1, 1 , 0, 1 , 0, 1 , 0, 1 , 0, 1 , 
+                                       0, 1 , 0, 1 , 0, 1 , 0, 1 , 0, 10 , 0, 10 , 0, 10 , 0, 1 , 0, M_PI ,
+                                       0, 1 , -1, 1 , 0, 1 , 0, 1 , 0, 1 , 0, 3 , 0, 5 };
+    const static double f_exact[25] = { 1.7182818284590452354 , 0.7 , 2.0/3 , 0.4794282266888016674 , 
+                                        1.5822329637296729331 , 0.4 , 2 , 0.86697298733991103757 , 
+                                        1.1547005383792515290 , 0.69314718055994530942 , 0.3798854930417224753 , 
+                                        0.77750463411224827640 , 0.49898680869304550249 , 
+                                        0.5 , 1 , 0.13263071079267703209e+08 , 0.49898680869304550249 , 
+                                        0.83867634269442961454 , -1 , 1.5643964440690497731 , 
+                                        0.16349494301863722618 , -0.63466518254339257343 , 
+                                        0.013492485649467772692 , 17.664383539246514971 , 7.5 };
+    
+    double result, abserr;
+    size_t neval;
+    int fid;
+        
+    /* Loop over the functions... */
+    for ( fid = 0 ; fid < 25 ; fid++ ) {
+      gsl_integration_cquad_workspace *ws = gsl_integration_cquad_workspace_alloc ( 200 );
+      gsl_function f = make_function(funs[fid], NULL);
+      double exact = f_exact[fid];
+
+      /* Call our quadrature routine. */
+      int status = gsl_integration_cquad (&f, ranges[2*fid] , ranges[2*fid+1] , 0.0 , 1.0e-12 , ws , &result , &abserr , &neval);
+      
+      gsl_test_rel (result, exact, 1e-12, "cquad f%d", fid);
+      gsl_test (fabs(result - exact) > 5.0 * abserr, "cquad f%d error (%g actual vs %g estimated)", fid, fabs(result-exact), abserr);
+      gsl_test_int (status, GSL_SUCCESS, "cquad return code");
+
+      gsl_integration_cquad_workspace_free(ws);
+    }
+  }        
+
+
   exit (gsl_test_summary());
 } 
 
@@ -2101,5 +2384,3 @@ my_error_handler (const char *reason, const char *file, int line, int err)
 {
   if (0) printf ("(caught [%s:%d: %s (%d)])\n", file, line, reason, err) ;
 }
-
-

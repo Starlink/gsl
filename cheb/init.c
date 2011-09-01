@@ -1,6 +1,7 @@
 /* cheb/init.c
  * 
  * Copyright (C) 1996, 1997, 1998, 1999, 2000 Gerard Jungman
+ * Copyright (C) 2009 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,6 +56,7 @@ gsl_cheb_alloc(const size_t order)
 
 void gsl_cheb_free(gsl_cheb_series * cs)
 {
+  RETURN_IF_NULL (cs);
   free(cs->f);
   free(cs->c);
   free(cs);

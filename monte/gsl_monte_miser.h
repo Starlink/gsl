@@ -1,6 +1,7 @@
 /* monte/gsl_monte_miser.h
  * 
  * Copyright (C) 1996, 1997, 1998, 1999, 2000 Michael Booth
+ * Copyright (C) 2009 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,6 +78,19 @@ int gsl_monte_miser_init(gsl_monte_miser_state* state);
 
 void gsl_monte_miser_free(gsl_monte_miser_state* state);
 
+typedef struct {
+  double estimate_frac;
+  size_t min_calls;
+  size_t min_calls_per_bisection;
+  double alpha;
+  double dither;
+} gsl_monte_miser_params;
+
+void gsl_monte_miser_params_get (const gsl_monte_miser_state * state,
+				 gsl_monte_miser_params * params);
+
+void gsl_monte_miser_params_set (gsl_monte_miser_state * state,
+				 const gsl_monte_miser_params * params);
 
 __END_DECLS
 

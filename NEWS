@@ -1,4 +1,244 @@
-* What is new in gsl-1.12:
+* What is new in gsl-1.15:
+
+** Added Tuomo Keskitalo's new ode branch ode-initval2 with a
+   gsl_odeiv2 prefix. This provides proper support for implicit
+   solvers.  It is intended to be the new default for differential
+   equations.  The existing gsl_odeiv routines will be retained for
+   binary compatibility but their interface will be deprecated.
+
+** Added new gsl_integrate_cquad routines for robust integration of
+   difficult functions using the doubly-adaptive CQUAD algorithm
+   (Pedro Gonnet).
+
+** Added error checking to CBLAS functions (José Luis García Pallero)
+
+** Added a new function gsl_integration_glfixed_point to return
+   ordered Gauss-Legendre points and weights contained within a
+   gsl_integration_glfixed_table [bug #32237].
+
+** Added a new function gsl_interp_type_min_size to return the size of
+   an interpolation type.
+
+** Added a function gsl_pow_uint(x,n) to compute x^n for unsigned
+   exponents (needed when n exceeds the range of signed integers).
+
+** Added new routine gsl_linalg_complex_cholesky_invert to handle the
+   matrix inversion for complex Cholesky decompositions (Huan Wu).
+
+** Added the functions gsl_vector_equal(x,y) and gsl_matrix_equal(x,y)
+   for testing equality of two vectors or matrices.
+
+** Added function gsl_eigen_nonsymmv_params to control the balancing
+   transformation for eigenvector calculations. Balancing is now
+   turned off by default for gsl_eigen_nonsymmv.
+
+** It is now possible to choose an alternative cblas library via
+   pkg-config using the GSL_CBLAS_LIB environment variable or
+   the pkg-config --define-variable option.
+
+** The jacobi method gsl_eigen_jacobi now uses the norm of the
+   off-diagonal elements for its convergence criterion, as in
+   algorithm 8.4.3 of Golub and van Loan.
+
+** The newton multiroot solvers now return an error when a singular
+   jacobian is detected.
+
+** The interpolation functions now return NaN and when x is out of range,
+   instead of extrapolating.
+
+** The gsl_multimin_fdfsolver multidimensional minimisers now return
+   GSL_ENOPROG immediately if the generated trial point does not
+   differ from the initial point (to machine precision), avoiding
+   unnecessary further iterations.
+
+** Extended the range of gsl_sf_bessel_lnKnu_e by rescaling
+   intermediate results to avoid internal overflows [bug #31528].
+
+** Improved the result of gsl_sf_atanint_e for large arguments by
+   adding the first order 1/x correction term. [bug #29562]
+
+** Fixed the gsl_rng_ranlxs generators to enforce a maximum seed value
+   of 2^31-1.  Larger seed values caused out of range values to be
+   returned.
+
+** Fixed gsl_ran_chisq_pdf(x,nu) to return correct result of 1/2
+   instead of 0 when x=0 and nu=2, and +inf when x=0 and nu<2.
+
+** Fixed gsl_pow_int(x,n) to avoid an infinite loop when n=INT_MIN due
+   to wrapping of signed integers.
+
+** Fixed gsl_sf_hyperg_2F1(a,b,c,x) to avoid returning NaN for
+   arguments |a|>10. [bug #24812]
+
+** Avoid spurious underflow return code in gsl_sf_beta_inc_e when
+   intermediate underflow does not affect the result. [bug #30933]
+
+** Avoid segfault in Chebyshev series derivatives gsl_cheb_calc_deriv
+   for n=1. [bug #29139]
+
+* What was new in gsl-1.14:
+
+** Upgraded to latest libtool, autoconf and automake (libtool-2.2.6b,
+   autoconf-2.65, automake-1.11.1).  Fixes security hole in 'make
+   dist' (see Automake CVE-2009-4029).
+
+** Added support for "multisets", which are similar to permutations
+   and combinations.  A multiset is an array of k integers in the
+   range 0 to n-1 where each value may occur more than once. Multisets
+   can be used to iterate over the indices of a k-th order symmetric
+   tensor in n-space. (Rhys Ulerich)
+
+** Added gsl_integrate_glfixed routines for performing fixed order
+   Gauss-Legendre integration 
+   (Pavel Holoborodko, Konstantin Holoborodko, Rhys Ulerich)
+
+** In the LMDER multi-dimensional fitting routines, the return code
+   GSL_ENOPROG is now used instead of GSL_CONTINUE for the case where
+   10 or more attempts to find a suitable trial step have been made
+   without success. [bug #25383]
+
+** The confluent hypergeometric function gsl_sf_hyperg_U (a,b,x) has
+   been extended to support x < 0 for cases not involving
+   singularities in 1F1(a,b,x). [bug #27859]
+
+** The F-distribution gsl_ran_fdist_pdf now avoids unnecessary
+   underflow and overflow and handles cases where n > 248. [bug
+   #28500]
+
+** The SVD routines now use a scaled version of the implicit QR method
+   and compute the shift more reliably for values at the limit of
+   double precision, avoiding potential NaNs. [bug #28767]
+
+** A compile time error is emitted if the configuration stage prevents
+   the functions gsl_isnan and gsl_finite from being defined.
+
+** Added missing dereference in GSL_VECTOR_COMPLEX when not using
+   GSL_RANGE_CHECK [bug #28017]
+
+** Improved the range of gsl_sf_hyperg1F1(a,b,x) when a<0,b>0. [bug
+   #28718]
+
+** Added macros GSL_MAJOR_VERSION and GSL_MINOR_VERSION in
+   <gsl/gsl_version.h>
+
+** Improved gsl_eigen_symmv and gsl_eigen_symm to avoid a potential
+   infinite loop when the tridiagonalised matrix contains very small
+   values. [bug #28096]
+
+** Added functions gsl_multifit_linear_usvd and
+   gsl_multifit_wlinear_usvd for multilinear fitting without
+   column-scaling of the fit matrix.
+
+* What was new in gsl-1.13:
+
+** Upgraded to latest autoconf and automake (autoconf-2.64,
+   automake-1.11)
+
+** Fixed the rk4 and bspline allocators to avoid invalid free()
+   calls under out of memory conditions. [bug #27194, #27236]
+
+** Fixed a bug in gsl_multimin_fminimizer_nmsimplex2 where the center
+   and size of the simplex were not updated on contract-by-best steps,
+   causing failures in convergence. [bug #27180]
+
+** Added new functions to set MISER and VEGAS Monte Carlo integration
+   parameters, and to examine VEGAS chi-squared value and intermediate
+   results.
+
+** Added the function gsl_bspline_greville_abscissa to compute
+   Greville abscissae for B-splines.
+
+** The cumulative distribution functions gsl_cdf_gumbel1_{P,Q} should
+   now handle a larger range of parameters without underflow and
+   overflow.
+
+** The header file gsl_const_cgs.h no longer defines values for
+   electromagnetic units.  Applications should use gsl_const_cgsm.h
+   instead to obtain the values in the CGS-Magnetic system.  The
+   previous values for these units given in gsl_const_cgs.h were
+   ill-defined as the type of CGS electromagnetic system was
+   unspecified (the values were a mixture of CGS units with the Ampere
+   of the MSKA system).  The affected constants are
+   GSL_CONST_CGS_BOHR_MAGNETON, GSL_CONST_CGS_ELECTRON_CHARGE,
+   GSL_CONST_CGS_ELECTRON_MAGNETIC_MOMENT, GSL_CONST_CGS_FARADAY,
+   GSL_CONST_CGS_GAUSS, GSL_CONST_CGS_NUCLEAR_MAGNETON,
+   GSL_CONST_CGS_PROTON_MAGNETIC_MOMENT, and GSL_CONST_CGS_ROENTGEN.
+
+** The Pochhammer functions gsl_sf_poch(a,x) and gsl_sf_lnpoch(a,x) now
+   handle the special cases where a and a+x are zero or negative
+   integers.
+
+** The confluent hypergeometric function gsl_sf_hyperg_U (a,b,x) now
+   handles some cases where x=0. The case where 1+a-b is a negative
+   integer no longer returns an error [bug #22859] and the incorrect
+   termination of the series in certain cases is fixed [bug #26706].
+
+** Added a new function gsl_poly_eval_derivs to evaluate a polynomial
+   and its derivatives simultaneously.
+
+** Added a new univariate minimisation algorithm
+   gsl_min_fminimizer_quad_golden which is a variant of Brent's
+   algorithm with safeguarded step-length adjustment.
+
+** Added a new Nelder-Mead minimiser gsl_multimin_fminimizer_nmsimplex2rand
+   which uses a randomly oriented simplex rather than one fixed on
+   the coordinate axes [bug #25077]
+
+** The texinfo file now uses the dircategory "Software libraries" from
+   the Free Software Directory, as recommended in the Texinfo manual.
+
+** The function gsl_ran_exponential now includes zero in its output
+   range. [bug #25039]
+
+** All functions for freeing allocated memory now accept a NULL
+   pointer, following the standard C convention for free(). [bug
+   #25319]
+
+** The function gsl_sum_levin_u_accel now handles the special case
+   c_0 + 0 + 0 + 0 + .... that occurs when summing power series
+   c_n*x^n with x=0. [bug #26807]
+
+** The functions gsl_linalg_LU_solve, gsl_linalg_LU_svx,
+   gsl_linalg_LU_refine, gsl_linalg_LU_invert and their complex
+   equivalents now return an error for singular matrices.
+
+** The multifit LMDER hybrid solvers now check the return code of the
+   user-supplied function in the gsl_multifit_fdfsolver_set
+   method. [bug #26871]
+
+** Improved the implementation of gsl_ran_discrete_preproc to avoid
+   internal errors due to inconsistencies from excess precision on
+   some platforms. [bug #26502]
+
+** Corrected gsl_sf_hyperg_2F1(a,b,c,x) to not give a domain error in
+   the case where c is a negative integer and the series terminates
+   with a finite result.
+
+** The C99 inline keyword is now supported, in addition to the
+   previously supported GNU-style inline.
+
+** Modified gsl_poly_complex_solve_cubic and gsl_poly_solve_cubic to
+   avoid returning NaNs in cases where excess precision causes a
+   change in the number of roots. 
+
+** Fixed incorrect length check in gsl_blas_drotm. [bug #26503]
+
+** Fixed gsl_odeiv_step_gear2 to restore y on step failure
+
+** gsl_odeiv_evolve_apply now restores the correct value of t on step
+   failures [bug #26255].
+
+** Using make install prefix=DIR now puts correct paths in package
+   config files gsl-config and gsl.pc
+
+** Modified gsl_monte_vegas to work around pow() function inaccuracies
+   on MinGW [bug #25413].
+
+** Increased the number of terms in gsl_sf_mathieu_a and
+   gsl_sf_mathieu_b to improve convergence in difficult regions [bug
+   #25075]
+
+* What was new in gsl-1.12:
 
 ** Upgraded to latest libtool, autoconf and automake (libtool-2.2.6,
    autoconf-2.63, automake-1.10.2)
