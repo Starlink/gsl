@@ -131,6 +131,8 @@ function values, rather than the location of the minimum itself.
 @section Initializing the Minimizer
 
 @deftypefun {gsl_min_fminimizer *} gsl_min_fminimizer_alloc (const gsl_min_fminimizer_type * @var{T})
+@tpindex gsl_min_fminimizer
+@tpindex gsl_min_fminimizer_type
 This function returns a pointer to a newly allocated instance of a
 minimizer of type @var{T}.  For example, the following code
 creates an instance of a golden section minimizer,
@@ -361,6 +363,12 @@ and used to generate a smaller interval.  If the interpolating point is
 not accepted then the algorithm falls back to an ordinary golden section
 step.  The full details of Brent's method include some additional checks
 to improve convergence.
+@end deffn
+
+@deffn {Minimizer} gsl_min_fminimizer_quad_golden
+@cindex safeguarded step-length algorithm
+This is a variant of Brent's algorithm which uses the safeguarded
+step-length algorithm of Gill and Murray.
 @end deffn
 
 @comment ============================================================

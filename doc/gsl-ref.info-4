@@ -1,13 +1,13 @@
 This is gsl-ref.info, produced by makeinfo version 4.11 from
 gsl-ref.texi.
 
-INFO-DIR-SECTION Scientific software
+INFO-DIR-SECTION Software libraries
 START-INFO-DIR-ENTRY
 * gsl-ref: (gsl-ref).                   GNU Scientific Library - Reference
 END-INFO-DIR-ENTRY
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007, 2008 The GSL Team.
+2005, 2006, 2007, 2008, 2009 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -20,6 +20,118 @@ License".
 
    (a) The Back-Cover Text is: "You have the freedom to copy and modify
 this GNU Manual."
+
+
+File: gsl-ref.info,  Node: References and Further Reading for Multidimensional Root Finding,  Prev: Example programs for Multidimensional Root finding,  Up: Multidimensional Root-Finding
+
+34.9 References and Further Reading
+===================================
+
+The original version of the Hybrid method is described in the following
+articles by Powell,
+
+     M.J.D. Powell, "A Hybrid Method for Nonlinear Equations" (Chap 6, p
+     87-114) and "A Fortran Subroutine for Solving systems of Nonlinear
+     Algebraic Equations" (Chap 7, p 115-161), in `Numerical Methods for
+     Nonlinear Algebraic Equations', P. Rabinowitz, editor.  Gordon and
+     Breach, 1970.
+
+The following papers are also relevant to the algorithms described in
+this section,
+
+     J.J. More', M.Y. Cosnard, "Numerical Solution of Nonlinear
+     Equations", `ACM Transactions on Mathematical Software', Vol 5, No
+     1, (1979), p 64-85
+
+     C.G. Broyden, "A Class of Methods for Solving Nonlinear
+     Simultaneous Equations", `Mathematics of Computation', Vol 19
+     (1965), p 577-593
+
+     J.J. More', B.S. Garbow, K.E. Hillstrom, "Testing Unconstrained
+     Optimization Software", ACM Transactions on Mathematical Software,
+     Vol 7, No 1 (1981), p 17-41
+
+
+File: gsl-ref.info,  Node: Multidimensional Minimization,  Next: Least-Squares Fitting,  Prev: Multidimensional Root-Finding,  Up: Top
+
+35 Multidimensional Minimization
+********************************
+
+This chapter describes routines for finding minima of arbitrary
+multidimensional functions.  The library provides low level components
+for a variety of iterative minimizers and convergence tests.  These can
+be combined by the user to achieve the desired solution, while providing
+full access to the intermediate steps of the algorithms.  Each class of
+methods uses the same framework, so that you can switch between
+minimizers at runtime without needing to recompile your program.  Each
+instance of a minimizer keeps track of its own state, allowing the
+minimizers to be used in multi-threaded programs. The minimization
+algorithms can be used to maximize a function by inverting its sign.
+
+   The header file `gsl_multimin.h' contains prototypes for the
+minimization functions and related declarations.
+
+* Menu:
+
+* Multimin Overview::
+* Multimin Caveats::
+* Initializing the Multidimensional Minimizer::
+* Providing a function to minimize::
+* Multimin Iteration::
+* Multimin Stopping Criteria::
+* Multimin Algorithms with Derivatives::
+* Multimin Algorithms without Derivatives::
+* Multimin Examples::
+* Multimin References and Further Reading::
+
+
+File: gsl-ref.info,  Node: Multimin Overview,  Next: Multimin Caveats,  Up: Multidimensional Minimization
+
+35.1 Overview
+=============
+
+The problem of multidimensional minimization requires finding a point x
+such that the scalar function,
+
+     f(x_1, ..., x_n)
+
+takes a value which is lower than at any neighboring point. For smooth
+functions the gradient g = \nabla f vanishes at the minimum. In general
+there are no bracketing methods available for the minimization of
+n-dimensional functions.  The algorithms proceed from an initial guess
+using a search algorithm which attempts to move in a downhill direction.
+
+   Algorithms making use of the gradient of the function perform a
+one-dimensional line minimisation along this direction until the lowest
+point is found to a suitable tolerance.  The search direction is then
+updated with local information from the function and its derivatives,
+and the whole process repeated until the true n-dimensional minimum is
+found.
+
+   Algorithms which do not require the gradient of the function use
+different strategies.  For example, the Nelder-Mead Simplex algorithm
+maintains n+1 trial parameter vectors as the vertices of a
+n-dimensional simplex.  On each iteration it tries to improve the worst
+vertex of the simplex by geometrical transformations.  The iterations
+are continued until the overall size of the simplex has decreased
+sufficiently.
+
+   Both types of algorithms use a standard framework. The user provides
+a high-level driver for the algorithms, and the library provides the
+individual functions necessary for each of the steps.  There are three
+main phases of the iteration.  The steps are,
+
+   * initialize minimizer state, S, for algorithm T
+
+   * update S using the iteration T
+
+   * test S for convergence, and repeat iteration if necessary
+
+Each iteration step consists either of an improvement to the
+line-minimisation in the current direction or an update to the search
+direction itself.  The state for the minimizers is held in a
+`gsl_multimin_fdfminimizer' struct or a `gsl_multimin_fminimizer'
+struct.
 
 
 File: gsl-ref.info,  Node: Multimin Caveats,  Next: Initializing the Multidimensional Minimizer,  Prev: Multimin Overview,  Up: Multidimensional Minimization
@@ -377,23 +489,24 @@ function at each evaluation point.
 
  -- Minimizer: gsl_multimin_fminimizer_nmsimplex2
  -- Minimizer: gsl_multimin_fminimizer_nmsimplex
-     These methods use the Simplex algorithm of Nelder and Mead. They
-     construct n vectors p_i from the starting vector X and the vector
+     These methods use the Simplex algorithm of Nelder and Mead.
+     Starting from the initial vector X = p_0, the algorithm constructs
+     an additional n vectors p_i using the step size vector s =
      STEP_SIZE as follows:
 
           p_0 = (x_0, x_1, ... , x_n)
-          p_1 = (x_0 + step_size_0, x_1, ... , x_n)
-          p_2 = (x_0, x_1 + step_size_1, ... , x_n)
+          p_1 = (x_0 + s_0, x_1, ... , x_n)
+          p_2 = (x_0, x_1 + s_1, ... , x_n)
           ... = ...
-          p_n = (x_0, x_1, ... , x_n+step_size_n)
+          p_n = (x_0, x_1, ... , x_n + s_n)
 
      These vectors form the n+1 vertices of a simplex in n dimensions.
-     On each iteration the algorithm tries to improve the parameter
-     vector p_i corresponding to the highest function value by simple
-     geometrical transformations.  These are reflection, reflection
-     followed by expansion, contraction and multiple contraction. Using
-     these transformations the simplex moves through the parameter
-     space towards the minimum, where it contracts itself.
+     On each iteration the algorithm uses simple geometrical
+     transformations to update the vector corresponding to the highest
+     function value.  The geometric transformations are reflection,
+     reflection followed by expansion, contraction and multiple
+     contraction.  Using these transformations the simplex moves through
+     the space towards the minimum, where it contracts itself.
 
      After each iteration, the best vertex is returned.  Note, that due
      to the nature of the algorithm not every step improves the current
@@ -407,9 +520,21 @@ function at each evaluation point.
 
      The `nmsimplex2' version of this minimiser is a new O(N)
      implementation of the earlier O(N^2) `nmsimplex' minimiser.  It
-     calculates the size of simplex as the RMS distance of each vertex
-     from the center rather than the mean distance, which has the
-     advantage of allowing a linear update.
+     uses the same underlying algorithm, but the simplex updates are
+     computed more efficiently for high-dimensional problems.  In
+     addition, the size of simplex is calculated as the RMS distance of
+     each vertex from the center rather than the mean distance,
+     allowing a linear update of this quantity on each step.
+
+ -- Minimizer: gsl_multimin_fminimizer_nmsimplex2rand
+     This method is a variant of `nmsimplex2' which initialises the
+     simplex around the starting point X using a randomly-oriented set
+     of basis vectors instead of the fixed coordinate axes. The final
+     dimensions of the simplex are scaled along the coordinate axes by
+     the vector STEP_SIZE.  The randomisation uses a simple
+     deterministic generator so that repeated calls to
+     `gsl_multimin_fminimizer_set' for a given solver object will vary
+     the orientation in a well-defined way.
 
 
 File: gsl-ref.info,  Node: Multimin Examples,  Next: Multimin References and Further Reading,  Prev: Multimin Algorithms without Derivatives,  Up: Multidimensional Minimization
@@ -440,10 +565,10 @@ in this chapter.
        gsl_multimin_function_fdf my_func;
 
        my_func.n = 2;
-       my_func.f = &my_f;
-       my_func.df = &my_df;
-       my_func.fdf = &my_fdf;
-       my_func.params = &par;
+       my_func.f = my_f;
+       my_func.df = my_df;
+       my_func.fdf = my_fdf;
+       my_func.params = par;
 
        /* Starting point, x = (5,7) */
        x = gsl_vector_alloc (2);
@@ -540,8 +665,8 @@ minimize the same example object function, as above.
 
        /* Initialize method and iterate */
        minex_func.n = 2;
-       minex_func.f = &my_f;
-       minex_func.params = (void *)&par;
+       minex_func.f = my_f;
+       minex_func.params = par;
 
        s = gsl_multimin_fminimizer_alloc (T, 2);
        gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
@@ -632,7 +757,7 @@ more recent references can be found in,
 The simplex algorithm is described in the following paper,
 
      J.A. Nelder and R. Mead, `A simplex method for function
-     minimization', Computer Journal vol. 7 (1965), 308-315.
+     minimization', Computer Journal vol. 7 (1965), 308-313.
 
 
 
@@ -1291,12 +1416,12 @@ File: gsl-ref.info,  Node: Initializing the Nonlinear Least-Squares Solver,  Nex
      with an error code of `GSL_ENOMEM'.
 
  -- Function: int gsl_multifit_fsolver_set (gsl_multifit_fsolver * S,
-          gsl_multifit_function * F, gsl_vector * X)
+          gsl_multifit_function * F, const gsl_vector * X)
      This function initializes, or reinitializes, an existing solver S
      to use the function F and the initial guess X.
 
  -- Function: int gsl_multifit_fdfsolver_set (gsl_multifit_fdfsolver *
-          S, gsl_multifit_function_fdf * FDF, gsl_vector * X)
+          S, gsl_multifit_function_fdf * FDF, const gsl_vector * X)
      This function initializes, or reinitializes, an existing solver S
      to use the function and derivative FDF and the initial guess X.
 
@@ -1539,9 +1664,13 @@ initial guess must be sufficiently close to the minimum for it to work.
           the norm of the gradient, relative to the norm of the
           function, falls below machine precision
 
+    `GSL_CONTINUE'
+          the routine has made 10 or more attempts to find a suitable
+          trial step without success (but subsequent calls can be made
+          to continue the search).
+
      These error codes indicate that further iterations will be
      unlikely to change the solution from its current value.
-
 
  -- Derivative Solver: gsl_multifit_fdfsolver_lmder
      This is an unscaled version of the LMDER algorithm.  The elements
@@ -1878,8 +2007,13 @@ File: gsl-ref.info,  Node: Basis Splines,  Next: Physical Constants,  Prev: Nonl
 ****************
 
 This chapter describes functions for the computation of smoothing basis
-splines (B-splines). The header file `gsl_bspline.h' contains
-prototypes for the bspline functions and related declarations.
+splines (B-splines). A smoothing spline differs from an interpolating
+spline in that the resulting curve is not required to pass through each
+datapoint.  *Note Interpolation::, for information about interpolating
+splines.
+
+   The header file `gsl_bspline.h' contains the prototypes for the
+bspline functions and related declarations.
 
 * Menu:
 
@@ -1888,6 +2022,7 @@ prototypes for the bspline functions and related declarations.
 * Constructing the knots vector::
 * Evaluation of B-spline basis functions::
 * Evaluation of B-spline basis function derivatives::
+* Obtaining Greville abscissae for B-spline basis functions::
 * Example programs for B-splines::
 * References and Further Reading::
 
@@ -1907,10 +2042,11 @@ t_{n+k-1}}, the n basis splines of order k are defined by
 
      B_(i,1)(x) = (1, t_i <= x < t_(i+1)
                   (0, else
-     B_(i,k)(x) = [(x - t_i)/(t_(i+k-1) - t_i)] B_(i,k-1)(x) + [(t_(i+k) - x)/(t_(i+k) - t_(i+1))] B_(i+1,k-1)(x)
+     B_(i,k)(x) = [(x - t_i)/(t_(i+k-1) - t_i)] B_(i,k-1)(x)
+                   + [(t_(i+k) - x)/(t_(i+k) - t_(i+1))] B_(i+1,k-1)(x)
 
-   for i = 0, ..., n-1. The common case of cubic B-splines is given by
-k = 4. The above recurrence relation can be evaluated in a numerically
+for i = 0, ..., n-1. The common case of cubic B-splines is given by k =
+4. The above recurrence relation can be evaluated in a numerically
 stable way by the de Boor algorithm.
 
    If we define appropriate knots on an interval [a,b] then the
@@ -1919,8 +2055,8 @@ Therefore we can expand a smoothing function as
 
      f(x) = \sum_i c_i B_(i,k)(x)
 
-   given enough (x_j, f(x_j)) data pairs. The c_i can be readily
-obtained from a least-squares fit.
+given enough (x_j, f(x_j)) data pairs. The coefficients c_i can be
+readily obtained from a least-squares fit.
 
 
 File: gsl-ref.info,  Node: Initializing the B-splines solver,  Next: Constructing the knots vector,  Prev: Overview of B-splines,  Up: Basis Splines
@@ -1928,7 +2064,9 @@ File: gsl-ref.info,  Node: Initializing the B-splines solver,  Next: Constructin
 38.2 Initializing the B-splines solver
 ======================================
 
-Using B-splines requires a gsl_bspline_workspace:
+The computation of B-spline functions requires a preallocated workspace
+of type `gsl_bspline_workspace'. If B-spline derivatives are also
+required, an additional `gsl_bspline_deriv_workspace' is needed.
 
  -- Function: gsl_bspline_workspace * gsl_bspline_alloc (const size_t
           K, const size_t NBREAK)
@@ -1939,9 +2077,6 @@ Using B-splines requires a gsl_bspline_workspace:
 
  -- Function: void gsl_bspline_free (gsl_bspline_workspace * W)
      This function frees the memory associated with the workspace W.
-
-   Evaluation of B-spline basis function derivatives additionally
-requires a `gsl_bspline_deriv_workspace':
 
  -- Function: gsl_bspline_deriv_workspace * gsl_bspline_deriv_alloc
           (const size_t K)
@@ -1965,8 +2100,8 @@ File: gsl-ref.info,  Node: Constructing the knots vector,  Next: Evaluation of B
      This function computes the knots associated with the given
      breakpoints and stores them internally in `w->knots'.
 
- -- Function: int gsl_bspline_knots_uniform (const double a, const
-          double b, gsl_bspline_workspace * W)
+ -- Function: int gsl_bspline_knots_uniform (const double A, const
+          double B, gsl_bspline_workspace * W)
      This function assumes uniformly spaced breakpoints on [a,b] and
      constructs the corresponding knot vector using the previously
      specified NBREAK parameter. The knots are stored in `w->knots'.
@@ -1980,30 +2115,31 @@ File: gsl-ref.info,  Node: Evaluation of B-spline basis functions,  Next: Evalua
  -- Function: int gsl_bspline_eval (const double X, gsl_vector * B,
           gsl_bspline_workspace * W)
      This function evaluates all B-spline basis functions at the
-     position X and stores them in B, so that the ith element of B is
-     B_i(x). B must be of length n = nbreak + k - 2. This value may
-     also be obtained by calling `gsl_bspline_ncoeffs'.  It is far more
-     efficient to compute all of the basis functions at once than to
-     compute them individually, due to the nature of the defining
-     recurrence relation.
+     position X and stores them in the vector B, so that the i-th
+     element is B_i(x). The vector B must be of length n = nbreak + k -
+     2.  This value may also be obtained by calling
+     `gsl_bspline_ncoeffs'.  Computing all the basis functions at once
+     is more efficient than computing them individually, due to the
+     nature of the defining recurrence relation.
 
  -- Function: int gsl_bspline_eval_nonzero (const double X, gsl_vector
           * BK, size_t * ISTART, size_t * IEND, gsl_bspline_workspace *
           W)
      This function evaluates all potentially nonzero B-spline basis
-     functions at the position X and stores them in BK, so that the ith
-     element of BK is B_(istart+i)(x).  The last element of BK is
-     B_(iend)(x).  BK must be of length k.  Only returning nonzero
-     basis functions allows users to more cheaply perform tasks
-     requiring linear combinations of the basis functions, e.g.  when
-     evaluating an interpolated function.
+     functions at the position X and stores them in the vector BK, so
+     that the i-th element is B_(istart+i)(x).  The last element of BK
+     is B_(iend)(x).  The vector BK must be of length k.  By returning
+     only the nonzero basis functions, this function allows quantities
+     involving linear combinations of the B_i(x) to be computed without
+     unnecessary terms (such linear combinations occur, for example,
+     when evaluating an interpolated function).
 
  -- Function: size_t gsl_bspline_ncoeffs (gsl_bspline_workspace * W)
      This function returns the number of B-spline coefficients given by
      n = nbreak + k - 2.
 
 
-File: gsl-ref.info,  Node: Evaluation of B-spline basis function derivatives,  Next: Example programs for B-splines,  Prev: Evaluation of B-spline basis functions,  Up: Basis Splines
+File: gsl-ref.info,  Node: Evaluation of B-spline basis function derivatives,  Next: Obtaining Greville abscissae for B-spline basis functions,  Prev: Evaluation of B-spline basis functions,  Up: Basis Splines
 
 38.5 Evaluation of B-spline derivatives
 =======================================
@@ -2013,13 +2149,14 @@ File: gsl-ref.info,  Node: Evaluation of B-spline basis function derivatives,  N
           gsl_bspline_deriv_workspace * DW)
      This function evaluates all B-spline basis function derivatives of
      orders 0 through nderiv (inclusive) at the position X and stores
-     them in DB.  The (i,j)th element of DB is d^j/dx^j B_i(x).  DB
-     must be of size n = nbreak + k - 2 by nderiv + 1.  The value n may
-     also be obtained by calling `gsl_bspline_ncoeffs'.  Note that
-     function evaluations are included as the 0th order derivatives in
-     DB.  It is far more efficient to compute all of the basis
-     functions derivatives at once than to compute them individually,
-     due to the nature of the defining recurrence relation.
+     them in the matrix DB.  The (i,j)-th element of DB is
+     d^jB_i(x)/dx^j.  The matrix DB must be of size n = nbreak + k - 2
+     by nderiv + 1.  The value n may also be obtained by calling
+     `gsl_bspline_ncoeffs'.  Note that function evaluations are
+     included as the zeroth order derivatives in DB.  Computing all the
+     basis function derivatives at once is more efficient than
+     computing them individually, due to the nature of the defining
+     recurrence relation.
 
  -- Function: int gsl_bspline_deriv_eval_nonzero (const double X, const
           size_t NDERIV, gsl_matrix * DB, size_t * ISTART, size_t *
@@ -2027,25 +2164,47 @@ File: gsl-ref.info,  Node: Evaluation of B-spline basis function derivatives,  N
           * DW)
      This function evaluates all potentially nonzero B-spline basis
      function derivatives of orders 0 through nderiv (inclusive) at the
-     position X and stores them in DB.  The (i,j)th element of DB is
-     d^j/dx^j B_(istart+i)(x).  The last row of DB contains d^j/dx^j
-     B_(iend)(x).  DB must be of size k by at least nderiv + 1.  Note
-     that function evaluations are included as the 0th order
-     derivatives in DB.  Only returning nonzero basis functions allows
-     users to more cheaply perform tasks requiring linear combinations
-     of the basis functions, e.g.  when evaluating an interpolated
-     function.
+     position X and stores them in the matrix DB.  The (i,j)-th element
+     of DB is d^j/dx^j B_(istart+i)(x).  The last row of DB contains
+     d^j/dx^j B_(iend)(x).  The matrix DB must be of size k by at least
+     nderiv + 1.  Note that function evaluations are included as the
+     zeroth order derivatives in DB.  By returning only the nonzero
+     basis functions, this function allows quantities involving linear
+     combinations of the B_i(x) and their derivatives to be computed
+     without unnecessary terms.
 
 
-File: gsl-ref.info,  Node: Example programs for B-splines,  Next: References and Further Reading,  Prev: Evaluation of B-spline basis function derivatives,  Up: Basis Splines
+File: gsl-ref.info,  Node: Obtaining Greville abscissae for B-spline basis functions,  Next: Example programs for B-splines,  Prev: Evaluation of B-spline basis function derivatives,  Up: Basis Splines
 
-38.6 Example programs for B-splines
-===================================
+38.6 Greville abscissae
+=======================
+
+The Greville abscissae are defined to be the mean location of k-1
+consecutive knots in the knot vector for each basis spline function of
+order k.  Note that the first and last knots in the knot vector are
+excluded when applying this definition; consequently there are
+`gsl_bspline_ncoeffs' Greville abscissa.  They are often used in
+B-spline collocation applications and may also be called
+Marsden-Schoenberg points.
+
+   The above definition is undefined for k=1.  The implementation
+chooses to return interval midpoints in the degenerate k=1 case.
+
+ -- Function: double gsl_bspline_greville_abscissa (size_t I,
+          gsl_bspline_workspace *W);
+     Returns the location of the i-th Greville abscissa for the given
+     spline basis.  Here, i = 0, ..., `gsl_bspline_ncoeffs(w)'.
+
+
+File: gsl-ref.info,  Node: Example programs for B-splines,  Next: References and Further Reading,  Prev: Obtaining Greville abscissae for B-spline basis functions,  Up: Basis Splines
+
+38.7 Examples
+=============
 
 The following program computes a linear least squares fit to data using
 cubic B-spline basis functions with uniform breakpoints. The data is
-generated from the curve y(x) = \cos(x) \exp(-x/10) on [0, 15] with
-gaussian noise added.
+generated from the curve y(x) = \cos(x) \exp(-x/10) on the interval [0,
+15] with gaussian noise added.
 
      #include <stdio.h>
      #include <stdlib.h>
@@ -2080,9 +2239,7 @@ gaussian noise added.
        gsl_vector *x, *y;
        gsl_matrix *X, *cov;
        gsl_multifit_linear_workspace *mw;
-       double chisq;
-       double Rsq;
-       double dof;
+       double chisq, Rsq, dof, tss;
 
        gsl_rng_env_setup();
        r = gsl_rng_alloc(gsl_rng_default);
@@ -2141,9 +2298,11 @@ gaussian noise added.
        gsl_multifit_wlinear(X, w, y, c, cov, &chisq, mw);
 
        dof = n - ncoeffs;
-       Rsq = 1.0 - chisq / gsl_stats_wtss(w->data, 1, y->data, 1, y->size);
+       tss = gsl_stats_wtss(w->data, 1, y->data, 1, y->size);
+       Rsq = 1.0 - chisq / tss;
 
-       fprintf(stderr, "chisq/dof = %e, Rsq = %f\n", chisq / dof, Rsq);
+       fprintf(stderr, "chisq/dof = %e, Rsq = %f\n",
+                        chisq / dof, Rsq);
 
        /* output the smoothed curve */
        {
@@ -2181,7 +2340,7 @@ gaussian noise added.
 
 File: gsl-ref.info,  Node: References and Further Reading,  Prev: Example programs for B-splines,  Up: Basis Splines
 
-38.7 References and Further Reading
+38.8 References and Further Reading
 ===================================
 
 Further information on the algorithms described in this section can be
@@ -2189,6 +2348,13 @@ found in the following book,
 
      C. de Boor, `A Practical Guide to Splines' (1978), Springer-Verlag,
      ISBN 0-387-90356-9.
+
+   Further information of Greville abscissae and B-spline collocation
+can be found in the following paper,
+
+     Richard W. Johnson, Higher order B-spline collocation at the
+     Greville abscissae.  `Applied Numerical Mathematics'. vol. 52,
+     2005, 63-75.
 
 A large collection of B-spline routines is available in the PPPACK
 library available at `http://www.netlib.org/pppack', which is also part
@@ -2338,7 +2504,7 @@ File: gsl-ref.info,  Node: Atomic and Nuclear Physics,  Next: Measurement of Tim
 
 `GSL_CONST_MKSA_RYDBERG'
      The Rydberg constant, Ry, in units of energy.  This is related to
-     the Rydberg inverse wavelength R by Ry = h c R.
+     the Rydberg inverse wavelength R_\infty by Ry = h c R_\infty.
 
 `GSL_CONST_MKSA_BOHR_RADIUS'
      The Bohr radius, a_0.
@@ -2743,15 +2909,14 @@ File: gsl-ref.info,  Node: Physical Constant References and Further Reading,  Pr
 39.18 References and Further Reading
 ====================================
 
-The authoritative sources for physical constants are the 2002 CODATA
-recommended values, published in the articles below. Further information
-on the values of physical constants is also available from the cited
-articles and the NIST website.
+The authoritative sources for physical constants are the 2006 CODATA
+recommended values, published in the article below. Further information
+on the values of physical constants is also available from the NIST
+website.
 
-     Journal of Physical and Chemical Reference Data, 28(6), 1713-1852,
-     1999
-
-     Reviews of Modern Physics, 72(2), 351-495, 2000
+     P.J. Mohr, B.N. Taylor, D.B. Newell, "CODATA Recommended Values of
+     the Fundamental Physical Constants: 2006", Reviews of Modern
+     Physics, 80(2), pp. 633-730 (2008).
 
      `http://www.physics.nist.gov/cuu/Constants/index.html'
 
@@ -3339,11 +3504,6 @@ these options catch.
      Warn if there are any missing or inconsistent prototypes.  Without
      prototypes it is harder to detect problems with incorrect
      arguments.
-
-`-Wtraditional'
-     This warns about certain constructs that behave differently in
-     traditional and ANSI C. Whether the traditional or ANSI
-     interpretation is used might be unpredictable on other compilers.
 
 `-Wconversion'
      The main use of this option is to warn about conversions from

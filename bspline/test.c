@@ -1,6 +1,6 @@
 /* bspline/test.c
  *
- * Copyright (C) 2006, 2007 Brian Gough
+ * Copyright (C) 2006, 2007, 2009 Brian Gough
  * Copyright (C) 2008 Rhys Ulerich
  *
  * This program is free software; you can redistribute it and/or modify
@@ -265,6 +265,120 @@ main(int argc, char **argv)
     gsl_bspline_deriv_free(dbw);
     gsl_bspline_free(bw);
     gsl_vector_free(breakpts);
+  }
+
+  /* Check Greville abscissae functionality on a non-uniform k=1 */
+  {
+    size_t i; /* looping */
+
+    /* Test parameters */
+    const size_t k = 1;
+    const double bpoint_data[]    = { 0.0, 0.2, 0.5, 0.75, 1.0 };
+    const size_t nbreak           = sizeof(bpoint_data)/sizeof(bpoint_data[0]);
+
+    /* Expected results */
+    const double abscissae_data[] = { 0.1, 0.35, 0.625, 0.875 };
+    const size_t nabscissae       = sizeof(abscissae_data)/sizeof(abscissae_data[0]);
+
+    gsl_vector_const_view bpoints = gsl_vector_const_view_array(bpoint_data, nbreak);
+    gsl_bspline_workspace *w = gsl_bspline_alloc(k, nbreak);
+    gsl_bspline_knots((const gsl_vector *) &bpoints, w);
+
+    gsl_test_int(nabscissae, gsl_bspline_ncoeffs(w),
+        "b-spline k=%d number of abscissae", k);
+    for (i = 0; i < nabscissae; ++i)
+      {
+        gsl_test_abs(gsl_bspline_greville_abscissa(i, w), abscissae_data[i], 2*k*GSL_DBL_EPSILON,
+            "b-spline k=%d Greville abscissa #%d at x = %f", k, i, abscissae_data[i]);
+      }
+
+    gsl_bspline_free(w);
+  }
+
+  /* Check Greville abscissae functionality on a non-uniform k=2 */
+  {
+    size_t i; /* looping */
+
+    /* Test parameters */
+    const size_t k = 2;
+    const double bpoint_data[]    = { 0.0, 0.2, 0.5, 0.75, 1.0 };
+    const size_t nbreak           = sizeof(bpoint_data)/sizeof(bpoint_data[0]);
+
+    /* Expected results */
+    const double abscissae_data[] = { 0.0, 0.2, 0.5, 0.75, 1.0 };
+    const size_t nabscissae       = sizeof(abscissae_data)/sizeof(abscissae_data[0]);
+
+    gsl_vector_const_view bpoints = gsl_vector_const_view_array(bpoint_data, nbreak);
+    gsl_bspline_workspace *w = gsl_bspline_alloc(k, nbreak);
+    gsl_bspline_knots((const gsl_vector *) &bpoints, w);
+
+    gsl_test_int(nabscissae, gsl_bspline_ncoeffs(w),
+        "b-spline k=%d number of abscissae", k);
+    for (i = 0; i < nabscissae; ++i)
+      {
+        gsl_test_abs(gsl_bspline_greville_abscissa(i, w), abscissae_data[i], 2*k*GSL_DBL_EPSILON,
+            "b-spline k=%d Greville abscissa #%d at x = %f", k, i, abscissae_data[i]);
+      }
+
+    gsl_bspline_free(w);
+  }
+
+  /* Check Greville abscissae functionality on non-uniform k=3 */
+  {
+    size_t i; /* looping */
+
+    /* Test parameters */
+    const size_t k = 3;
+    const double bpoint_data[]    = { 0.0, 0.2, 0.5, 0.75, 1.0 };
+    const size_t nbreak           = sizeof(bpoint_data)/sizeof(bpoint_data[0]);
+
+    /* Expected results */
+    const double abscissae_data[] = {      0.0, 1.0/10.0, 7.0/20.0,
+                                      5.0/ 8.0, 7.0/ 8.0,      1.0 };
+    const size_t nabscissae       = sizeof(abscissae_data)/sizeof(abscissae_data[0]);
+
+    gsl_vector_const_view bpoints = gsl_vector_const_view_array(bpoint_data, nbreak);
+    gsl_bspline_workspace *w = gsl_bspline_alloc(k, nbreak);
+    gsl_bspline_knots((const gsl_vector *) &bpoints, w);
+
+    gsl_test_int(nabscissae, gsl_bspline_ncoeffs(w),
+        "b-spline k=%d number of abscissae", k);
+    for (i = 0; i < nabscissae; ++i)
+      {
+        gsl_test_abs(gsl_bspline_greville_abscissa(i, w), abscissae_data[i], 2*k*GSL_DBL_EPSILON,
+            "b-spline k=%d Greville abscissa #%d at x = %f", k, i, abscissae_data[i]);
+      }
+
+    gsl_bspline_free(w);
+  }
+
+  /* Check Greville abscissae functionality on non-uniform k=4 */
+  {
+    size_t i; /* looping */
+
+    /* Test parameters */
+    const size_t k = 4;
+    const double bpoint_data[]    = { 0.0, 0.2, 0.5, 0.75, 1.0 };
+    const size_t nbreak           = sizeof(bpoint_data)/sizeof(bpoint_data[0]);
+
+    /* Expected results */
+    const double abscissae_data[] = { 0.0,  1.0/15.0,  7.0/30.0,  29.0/60.0,
+                                            3.0/ 4.0, 11.0/12.0,        1.0 };
+    const size_t nabscissae       = sizeof(abscissae_data)/sizeof(abscissae_data[0]);
+
+    gsl_vector_const_view bpoints = gsl_vector_const_view_array(bpoint_data, nbreak);
+    gsl_bspline_workspace *w = gsl_bspline_alloc(k, nbreak);
+    gsl_bspline_knots((const gsl_vector *) &bpoints, w);
+
+    gsl_test_int(nabscissae, gsl_bspline_ncoeffs(w),
+        "b-spline k=%d number of abscissae", k);
+    for (i = 0; i < nabscissae; ++i)
+      {
+        gsl_test_abs(gsl_bspline_greville_abscissa(i, w), abscissae_data[i], 2*k*GSL_DBL_EPSILON,
+            "b-spline k=%d Greville abscissa #%d at x = %f", k, i, abscissae_data[i]);
+      }
+
+    gsl_bspline_free(w);
   }
 
   exit(gsl_test_summary());

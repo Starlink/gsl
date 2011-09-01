@@ -99,6 +99,7 @@ since the non-linear least-squares algorithms are described
 geometrically (i.e. finding the minimum of a surface).  The
 independent variable of any data to be fitted is denoted by @math{t}.
 
+@cindex Jacobian matrix, fitting
 With the definition above the Jacobian is 
 @c{$J_{ij} = (1 / \sigma_i) \partial Y_i / \partial x_j$}
 @math{J_@{ij@} =(1 / \sigma_i)  d Y_i / d x_j}, where @math{Y_i = Y(x,t_i)}.  
@@ -108,6 +109,8 @@ With the definition above the Jacobian is
 @section Initializing the Solver
 
 @deftypefun {gsl_multifit_fsolver *} gsl_multifit_fsolver_alloc (const gsl_multifit_fsolver_type * @var{T}, size_t @var{n}, size_t @var{p})
+@tpindex gsl_multifit_fsolver
+@tpindex gsl_multifit_fsolver_type
 This function returns a pointer to a newly allocated instance of a
 solver of type @var{T} for @var{n} observations and @var{p} parameters.
 The number of observations @var{n} must be greater than or equal to
@@ -119,6 +122,8 @@ code of @code{GSL_ENOMEM}.
 @end deftypefun
 
 @deftypefun {gsl_multifit_fdfsolver *} gsl_multifit_fdfsolver_alloc (const gsl_multifit_fdfsolver_type * @var{T}, size_t @var{n}, size_t @var{p})
+@tpindex gsl_multifit_fdfsolver
+@tpindex gsl_multifit_fdfsolver_type
 This function returns a pointer to a newly allocated instance of a
 derivative solver of type @var{T} for @var{n} observations and @var{p}
 parameters.  For example, the following code creates an instance of a
@@ -140,12 +145,12 @@ returns a null pointer and the error handler is invoked with an error
 code of @code{GSL_ENOMEM}.
 @end deftypefun
 
-@deftypefun int gsl_multifit_fsolver_set (gsl_multifit_fsolver * @var{s}, gsl_multifit_function * @var{f}, gsl_vector * @var{x})
+@deftypefun int gsl_multifit_fsolver_set (gsl_multifit_fsolver * @var{s}, gsl_multifit_function * @var{f}, const gsl_vector * @var{x})
 This function initializes, or reinitializes, an existing solver @var{s}
 to use the function @var{f} and the initial guess @var{x}.
 @end deftypefun
 
-@deftypefun int gsl_multifit_fdfsolver_set (gsl_multifit_fdfsolver * @var{s}, gsl_multifit_function_fdf * @var{fdf}, gsl_vector * @var{x})
+@deftypefun int gsl_multifit_fdfsolver_set (gsl_multifit_fdfsolver * @var{s}, gsl_multifit_function_fdf * @var{fdf}, const gsl_vector * @var{x})
 This function initializes, or reinitializes, an existing solver @var{s}
 to use the function and derivative @var{fdf} and the initial guess
 @var{x}.
@@ -425,12 +430,15 @@ the change in the position vector falls below machine precision
 @item GSL_ETOLG
 the norm of the gradient, relative to the norm of the function, falls
 below machine precision
+
+@item GSL_CONTINUE
+the routine has made 10 or more attempts to find a suitable trial step
+without success (but subsequent calls can be made to continue the search).
 @end table
 
 @noindent
 These error codes indicate that further iterations will be unlikely to
-change the solution from its current value.
-
+change the solution from its current value.  
 @end deffn
 
 @deffn {Derivative Solver} gsl_multifit_fdfsolver_lmder

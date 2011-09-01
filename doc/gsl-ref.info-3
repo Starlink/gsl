@@ -1,13 +1,13 @@
 This is gsl-ref.info, produced by makeinfo version 4.11 from
 gsl-ref.texi.
 
-INFO-DIR-SECTION Scientific software
+INFO-DIR-SECTION Software libraries
 START-INFO-DIR-ENTRY
 * gsl-ref: (gsl-ref).                   GNU Scientific Library - Reference
 END-INFO-DIR-ENTRY
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007, 2008 The GSL Team.
+2005, 2006, 2007, 2008, 2009 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -20,6 +20,36 @@ License".
 
    (a) The Back-Cover Text is: "You have the freedom to copy and modify
 this GNU Manual."
+
+
+File: gsl-ref.info,  Node: The Geometric Distribution,  Next: The Hypergeometric Distribution,  Prev: The Pascal Distribution,  Up: Random Number Distributions
+
+19.35 The Geometric Distribution
+================================
+
+ -- Function: unsigned int gsl_ran_geometric (const gsl_rng * R, double
+          P)
+     This function returns a random integer from the geometric
+     distribution, the number of independent trials with probability P
+     until the first success.  The probability distribution for
+     geometric variates is,
+
+          p(k) =  p (1-p)^(k-1)
+
+     for k >= 1.  Note that the distribution begins with k=1 with this
+     definition.  There is another convention in which the exponent k-1
+     is replaced by k.
+
+ -- Function: double gsl_ran_geometric_pdf (unsigned int K, double P)
+     This function computes the probability p(k) of obtaining K from a
+     geometric distribution with probability parameter P, using the
+     formula given above.
+
+
+ -- Function: double gsl_cdf_geometric_P (unsigned int K, double P)
+ -- Function: double gsl_cdf_geometric_Q (unsigned int K, double P)
+     These functions compute the cumulative distribution functions
+     P(k), Q(k) for the geometric distribution with parameter P.
 
 
 File: gsl-ref.info,  Node: The Hypergeometric Distribution,  Next: The Logarithmic Distribution,  Prev: The Geometric Distribution,  Up: Random Number Distributions
@@ -245,7 +275,7 @@ The following program generates a random walk in two dimensions.
        return 0;
      }
 
-Here is the output from the program, three 10-step random walks from
+Here is some output from the program, four 10-step random walks from
 the origin,
 
    The following program computes the upper and lower cumulative
@@ -294,7 +324,8 @@ Devroye.  It covers every imaginable distribution and provides hundreds
 of algorithms.
 
      Luc Devroye, `Non-Uniform Random Variate Generation',
-     Springer-Verlag, ISBN 0-387-96305-7.
+     Springer-Verlag, ISBN 0-387-96305-7.  Available online at
+     `http://cg.scs.carleton.ca/~luc/rnbookindex.html'.
 
 The subject of random variate generation is also reviewed by Knuth, who
 describes algorithms for all the major distributions.
@@ -352,7 +383,8 @@ floating-point and integer types.  The versions for double precision
 floating-point data have the prefix `gsl_stats' and are declared in the
 header file `gsl_statistics_double.h'.  The versions for integer data
 have the prefix `gsl_stats_int' and are declared in the header file
-`gsl_statistics_int.h'.
+`gsl_statistics_int.h'.   All the functions operate on C arrays with a
+STRIDE parameter specifying the spacing between elements.
 
 * Menu:
 
@@ -618,7 +650,7 @@ zero corresponds to removing a sample from a dataset.
      This function returns the estimated variance of the dataset DATA
      with stride STRIDE and length N, using the set of weights W with
      stride WSTRIDE and length N.  The estimated variance of a weighted
-     dataset is defined as,
+     dataset is calculated as,
 
           \Hat\sigma^2 = ((\sum w_i)/((\sum w_i)^2 - \sum (w_i^2)))
                           \sum w_i (x_i - \Hat\mu)^2
@@ -647,7 +679,7 @@ zero corresponds to removing a sample from a dataset.
  -- Function: double gsl_stats_wvariance_with_fixed_mean (const double
           W[], size_t WSTRIDE, const double DATA[], size_t STRIDE,
           size_t N, const double MEAN)
-     This function computes an unbiased estimate of the variance of
+     This function computes an unbiased estimate of the variance of the
      weighted dataset DATA when the population mean MEAN of the
      underlying distribution is known _a priori_.  In this case the
      estimator for the variance replaces the sample mean \Hat\mu by the
@@ -692,7 +724,7 @@ zero corresponds to removing a sample from a dataset.
           const double DATA[], size_t STRIDE, size_t N)
      This function computes the weighted skewness of the dataset DATA.
 
-          skew = (\sum w_i ((x_i - xbar)/\sigma)^3) / (\sum w_i)
+          skew = (\sum w_i ((x_i - \Hat x)/\Hat \sigma)^3) / (\sum w_i)
 
  -- Function: double gsl_stats_wskew_m_sd (const double W[], size_t
           WSTRIDE, const double DATA[], size_t STRIDE, size_t N, double
@@ -705,7 +737,7 @@ zero corresponds to removing a sample from a dataset.
           WSTRIDE, const double DATA[], size_t STRIDE, size_t N)
      This function computes the weighted kurtosis of the dataset DATA.
 
-          kurtosis = ((\sum w_i ((x_i - xbar)/sigma)^4) / (\sum w_i)) - 3
+          kurtosis = ((\sum w_i ((x_i - \Hat x)/\Hat \sigma)^4) / (\sum w_i)) - 3
 
  -- Function: double gsl_stats_wkurtosis_m_sd (const double W[], size_t
           WSTRIDE, const double DATA[], size_t STRIDE, size_t N, double
@@ -2146,6 +2178,7 @@ a second argument.
 
    The "selection function" determines which ntuple rows are selected
 for histogramming.  It is defined by the following struct,
+
      typedef struct {
        int (* function) (void * ntuple_data, void * params);
        void * params;
@@ -2156,6 +2189,7 @@ ntuple row that is to be included in the histogram.
 
    The "value function" computes scalar values for those ntuple rows
 selected by the selection function,
+
      typedef struct {
        double (* function) (void * ntuple_data, void * params);
        void * params;
@@ -2473,9 +2507,9 @@ file `gsl_monte_plain.h'.
      integrations.
 
  -- Function: int gsl_monte_plain_integrate (gsl_monte_function * F,
-          double * XL, double * XU, size_t DIM, size_t CALLS, gsl_rng *
-          R, gsl_monte_plain_state * S, double * RESULT, double *
-          ABSERR)
+          const double XL[], const double XU[], size_t DIM, size_t
+          CALLS, gsl_rng * R, gsl_monte_plain_state * S, double *
+          RESULT, double * ABSERR)
      This routines uses the plain Monte Carlo algorithm to integrate the
      function F over the DIM-dimensional hypercubic region defined by
      the lower and upper limits in the arrays XL and XU, each of size
@@ -2546,9 +2580,9 @@ file `gsl_monte_miser.h'.
      integrations.
 
  -- Function: int gsl_monte_miser_integrate (gsl_monte_function * F,
-          double * XL, double * XU, size_t DIM, size_t CALLS, gsl_rng *
-          R, gsl_monte_miser_state * S, double * RESULT, double *
-          ABSERR)
+          const double XL[], const double XU[], size_t DIM, size_t
+          CALLS, gsl_rng * R, gsl_monte_miser_state * S, double *
+          RESULT, double * ABSERR)
      This routines uses the MISER Monte Carlo algorithm to integrate the
      function F over the DIM-dimensional hypercubic region defined by
      the lower and upper limits in the arrays XL and XU, each of size
@@ -2562,9 +2596,25 @@ file `gsl_monte_miser.h'.
      This function frees the memory associated with the integrator state
      S.
 
-   The MISER algorithm has several configurable parameters. The
-following variables can be accessed through the `gsl_monte_miser_state'
-struct,
+   The MISER algorithm has several configurable parameters which can be
+changed using the following two functions.(1)
+
+ -- Function: void gsl_monte_miser_params_get (const
+          gsl_monte_miser_state * S, gsl_monte_miser_params * PARAMS)
+     This function copies the parameters of the integrator state into
+     the user-supplied PARAMS structure.
+
+ -- Function: void gsl_monte_miser_params_set (gsl_monte_miser_state *
+          S, const gsl_monte_miser_params * PARAMS)
+     This function sets the integrator parameters based on values
+     provided in the PARAMS structure.
+
+   Typically the values of the parameters are first read using
+`gsl_monte_miser_params_get', the necessary changes are made to the
+fields of the PARAMS structure, and the values are copied back into the
+integrator state using `gsl_monte_miser_params_set'.  The functions use
+the `gsl_monte_miser_params' structure which contains the following
+fields:
 
  -- Variable: double estimate_frac
      This parameter specifies the fraction of the currently available
@@ -2610,6 +2660,11 @@ struct,
      center of the hypercubic integration region.  The default value of
      dither is zero, so no variation is introduced. If needed, a
      typical value of DITHER is 0.1.
+
+   ---------- Footnotes ----------
+
+   (1) The previous method of accessing these fields directly through
+the `gsl_monte_miser_state' struct is now deprecated.
 
 
 File: gsl-ref.info,  Node: VEGAS,  Next: Monte Carlo Examples,  Prev: MISER,  Up: Monte Carlo Integration
@@ -2672,7 +2727,7 @@ switches to a kind variance reduction (rather than importance sampling).
      integrations.
 
  -- Function: int gsl_monte_vegas_integrate (gsl_monte_function * F,
-          double * XL, double * XU, size_t DIM, size_t CALLS, gsl_rng *
+          double XL[], double XU[], size_t DIM, size_t CALLS, gsl_rng *
           R, gsl_monte_vegas_state * S, double * RESULT, double *
           ABSERR)
      This routines uses the VEGAS Monte Carlo algorithm to integrate the
@@ -2717,22 +2772,44 @@ current estimate has zero error, previous estimates had zero error
      The estimates are averaged using the arithmetic mean, but no error
      is computed.
 
-   The VEGAS algorithm is highly configurable. The following variables
-can be accessed through the `gsl_monte_vegas_state' struct,
+   The convergence of the algorithm can be tested using the overall
+chi-squared value of the results, which is available from the following
+function:
 
- -- Variable: double result
- -- Variable: double sigma
-     These parameters contain the raw value of the integral RESULT and
-     its error SIGMA from the last iteration of the algorithm.
+ -- Function: double gsl_monte_vegas_chisq (const gsl_monte_vegas_state
+          * S)
+     This function returns the chi-squared per degree of freedom for the
+     weighted estimate of the integral.  The returned value should be
+     close to 1.  A value which differs significantly from 1 indicates
+     that the values from different iterations are inconsistent.  In
+     this case the weighted error will be under-estimated, and further
+     iterations of the algorithm are needed to obtain reliable results.
 
- -- Variable: double chisq
-     This parameter gives the chi-squared per degree of freedom for the
-     weighted estimate of the integral.  The value of CHISQ should be
-     close to 1.  A value of CHISQ which differs significantly from 1
-     indicates that the values from different iterations are
-     inconsistent.  In this case the weighted error will be
-     under-estimated, and further iterations of the algorithm are
-     needed to obtain reliable results.
+ -- Function: void gsl_monte_vegas_runval (const gsl_monte_vegas_state
+          * S, double * RESULT, double * SIGMA)
+     This function returns the raw (unaveraged) values of the integral
+     RESULT and its error SIGMA from the most recent iteration of the
+     algorithm.
+
+   The VEGAS algorithm is highly configurable. Several parameters can
+be changed using the following two functions.
+
+ -- Function: void gsl_monte_vegas_params_get (const
+          gsl_monte_vegas_state * S, gsl_monte_vegas_params * PARAMS)
+     This function copies the parameters of the integrator state into
+     the user-supplied PARAMS structure.
+
+ -- Function: void gsl_monte_vegas_params_set (gsl_monte_vegas_state *
+          S, const gsl_monte_vegas_params * PARAMS)
+     This function sets the integrator parameters based on values
+     provided in the PARAMS structure.
+
+   Typically the values of the parameters are first read using
+`gsl_monte_vegas_params_get', the necessary changes are made to the
+fields of the PARAMS structure, and the values are copied back into the
+integrator state using `gsl_monte_vegas_params_set'.  The functions use
+the `gsl_monte_vegas_params' structure which contains the following
+fields:
 
  -- Variable: double alpha
      The parameter `alpha' controls the stiffness of the rebinning
@@ -2775,6 +2852,9 @@ can be accessed through the `gsl_monte_vegas_state' struct,
      final result, while a value of `1' also displays the grid
      coordinates.  A value of `2' prints information from the rebinning
      procedure for each iteration.
+
+   The above fields and the CHISQ value can also be accessed directly
+in the `gsl_monte_vegas_state' but such use is deprecated.
 
 
 File: gsl-ref.info,  Node: Monte Carlo Examples,  Next: Monte Carlo Integration References and Further Reading,  Prev: VEGAS,  Up: Monte Carlo Integration
@@ -2841,7 +2921,7 @@ special measures are needed to avoid these singularities.
        printf ("result = % .6f\n", result);
        printf ("sigma  = % .6f\n", error);
        printf ("exact  = % .6f\n", exact);
-       printf ("error  = % .6f = %.1g sigma\n", result - exact,
+       printf ("error  = % .6f = %.2g sigma\n", result - exact,
                fabs (result - exact) / error);
      }
 
@@ -2897,9 +2977,9 @@ special measures are needed to avoid these singularities.
              gsl_monte_vegas_integrate (&G, xl, xu, 3, calls/5, r, s,
                                         &res, &err);
              printf ("result = % .6f sigma = % .6f "
-                     "chisq/dof = %.1f\n", res, err, s->chisq);
+                     "chisq/dof = %.1f\n", res, err, gsl_monte_vegas_chisq (s));
            }
-         while (fabs (s->chisq - 1.0) > 0.5);
+         while (fabs (gsl_monte_vegas_chisq (s) - 1.0) > 0.5);
 
          display_results ("vegas final", res, err);
 
@@ -2912,24 +2992,24 @@ special measures are needed to avoid these singularities.
      }
 
 With 500,000 function calls the plain Monte Carlo algorithm achieves a
-fractional error of 0.6%.  The estimated error `sigma' is consistent
-with the actual error, and the computed result differs from the true
-result by about one standard deviation,
+fractional error of 1%.  The estimated error `sigma' is roughly
+consistent with the actual error-the computed result differs from the
+true result by about 1.4 standard deviations,
 
      plain ==================
-     result =  1.385867
-     sigma  =  0.007938
+     result =  1.412209
+     sigma  =  0.013436
      exact  =  1.393204
-     error  = -0.007337 = 0.9 sigma
+     error  =  0.019005 = 1.4 sigma
 
-The MISER algorithm reduces the error by a factor of two, and also
+The MISER algorithm reduces the error by a factor of four, and also
 correctly estimates the error,
 
      miser ==================
-     result =  1.390656
-     sigma  =  0.003743
+     result =  1.391322
+     sigma  =  0.003461
      exact  =  1.393204
-     error  = -0.002548 = 0.7 sigma
+     error  = -0.001882 = 0.54 sigma
 
 In the case of the VEGAS algorithm the program uses an initial warm-up
 run of 10,000 function calls to prepare, or "warm up", the grid.  This
@@ -2940,17 +3020,17 @@ have not converged. In this case the estimates are consistent on the
 first pass.
 
      vegas warm-up ==================
-     result =  1.386925
-     sigma  =  0.002651
+     result =  1.392673
+     sigma  =  0.003410
      exact  =  1.393204
-     error  = -0.006278 = 2 sigma
+     error  = -0.000531 = 0.16 sigma
      converging...
-     result =  1.392957 sigma =  0.000452 chisq/dof = 1.1
+     result =  1.393281 sigma =  0.000362 chisq/dof = 1.5
      vegas final ==================
-     result =  1.392957
-     sigma  =  0.000452
+     result =  1.393281
+     sigma  =  0.000362
      exact  =  1.393204
-     error  = -0.000247 = 0.5 sigma
+     error  =  0.000077 = 0.21 sigma
 
 If the value of `chisq' had differed significantly from 1 it would
 indicate inconsistent results, with a correspondingly underestimated
@@ -3931,6 +4011,10 @@ Interpolations can be defined for both normal and periodic boundary
 conditions.  Additional functions are available for computing
 derivatives and integrals of interpolating functions.
 
+   These interpolation methods produce curves that pass through each
+datapoint.  To interpolate noisy data with a smoothing curve see *note
+Basis Splines::.
+
    The functions described in this section are declared in the header
 files `gsl_interp.h' and `gsl_spline.h'.
 
@@ -3990,7 +4074,7 @@ File: gsl-ref.info,  Node: Interpolation Types,  Next: Index Look-up and Acceler
 26.3 Interpolation Types
 ========================
 
-The interpolation library provides five interpolation types:
+The interpolation library provides six interpolation types:
 
  -- Interpolation Type: gsl_interp_linear
      Linear interpolation.  This interpolation method does not require
@@ -4079,6 +4163,11 @@ immediately.
      returns an index i such that `x_array[i] <= x < x_array[i+1]'.  An
      inline version of this function is used when `HAVE_INLINE' is
      defined.
+
+ -- Function: int gsl_interp_accel_reset (gsl_interp_accel * ACC);
+     This function reinitializes the accelerator object ACC.  It should
+     be used when the cached information is no longer applicable--for
+     example, when switching to a new dataset.
 
  -- Function: void gsl_interp_accel_free (gsl_interp_accel* ACC)
      This function frees the accelerator object ACC.
@@ -4255,8 +4344,8 @@ same y-value for a periodic spline.
      {
        int N = 4;
        double x[4] = {0.00, 0.10,  0.27,  0.30};
-       double y[4] = {0.15, 0.70, -0.10,  0.15}; /* Note: first = last
-                                                    for periodic data */
+       double y[4] = {0.15, 0.70, -0.10,  0.15};
+                  /* Note: y[0] == y[3] for periodic data */
 
        gsl_interp_accel *acc = gsl_interp_accel_alloc ();
        const gsl_interp_type *t = gsl_interp_cspline_periodic;
@@ -4560,7 +4649,7 @@ File: gsl-ref.info,  Node: Chebyshev Series Evaluation,  Next: Derivatives and I
  -- Function: double gsl_cheb_eval_n (const gsl_cheb_series * CS,
           size_t ORDER, double X)
      This function evaluates the Chebyshev series CS at a given point
-     N, to (at most) the given order ORDER.
+     X, to (at most) the given order ORDER.
 
  -- Function: int gsl_cheb_eval_n_err (const gsl_cheb_series * CS,
           const size_t ORDER, const double X, double * RESULT, double *
@@ -5093,15 +5182,14 @@ file `gsl_wavelet2d.h'.
           W, double * DATA, size_t TDA, size_t SIZE1, size_t SIZE2,
           gsl_wavelet_workspace * WORK)
      These functions compute two-dimensional in-place forward and
-     inverse discrete wavelet transforms in standard and non-standard
-     forms on the array DATA stored in row-major form with dimensions
-     SIZE1 and SIZE2 and physical row length TDA.  The dimensions must
-     be equal (square matrix) and are restricted to powers of two.  For
-     the `transform' version of the function the argument DIR can be
-     either `forward' (+1) or `backward' (-1).  A workspace WORK of the
-     appropriate size must be provided.  On exit, the appropriate
-     elements of the array DATA are replaced by their two-dimensional
-     wavelet transform.
+     inverse discrete wavelet transforms in standard form on the array
+     DATA stored in row-major form with dimensions SIZE1 and SIZE2 and
+     physical row length TDA.  The dimensions must be equal (square
+     matrix) and are restricted to powers of two.  For the `transform'
+     version of the function the argument DIR can be either `forward'
+     (+1) or `backward' (-1).  A workspace WORK of the appropriate size
+     must be provided.  On exit, the appropriate elements of the array
+     DATA are replaced by their two-dimensional wavelet transform.
 
      The functions return a status of `GSL_SUCCESS' upon successful
      completion.  `GSL_EINVAL' is returned if SIZE1 and SIZE2 are not
@@ -5338,12 +5426,12 @@ File: gsl-ref.info,  Node: Discrete Hankel Transform Functions,  Next: Discrete 
 
  -- Function: int gsl_dht_init (gsl_dht * T, double NU, double XMAX)
      This function initializes the transform T for the given values of
-     NU and X.
+     NU and XMAX.
 
  -- Function: gsl_dht * gsl_dht_new (size_t SIZE, double NU, double
           XMAX)
      This function allocates a Discrete Hankel transform object of size
-     SIZE and initializes it for the given values of NU and X.
+     SIZE and initializes it for the given values of NU and XMAX.
 
  -- Function: void gsl_dht_free (gsl_dht * T)
      This function frees the transform T.
@@ -5610,7 +5698,7 @@ The function f(x) can be evaluated using the following macro,
           with respect to X, f'(x,params), for argument X and
           parameters PARAMS
 
-    `void (* fdf) (double X, void * PARAMS, double * F, double * Df)'
+    `void (* fdf) (double X, void * PARAMS, double * F, double * DF)'
           this function should set the values of the function F to
           f(x,params) and its derivative DF to f'(x,params) for
           argument X and parameters PARAMS.  This function provides an
@@ -5684,11 +5772,12 @@ control them.
    A guess is simply an x value which is iterated until it is within
 the desired precision of a root.  It takes the form of a `double'.
 
-   Search bounds are the endpoints of a interval which is iterated until
-the length of the interval is smaller than the requested precision.  The
-interval is defined by two values, the lower limit and the upper limit.
-Whether the endpoints are intended to be included in the interval or not
-depends on the context in which the interval is used.
+   Search bounds are the endpoints of an interval which is iterated
+until the length of the interval is smaller than the requested
+precision.  The interval is defined by two values, the lower limit and
+the upper limit.  Whether the endpoints are intended to be included in
+the interval or not depends on the context in which the interval is
+used.
 
 
 File: gsl-ref.info,  Node: Root Finding Iteration,  Next: Search Stopping Parameters,  Prev: Search Bounds and Guesses,  Up: One dimensional Root-Finding
@@ -5928,10 +6017,10 @@ quadratic.
 
 
  -- Derivative Solver: gsl_root_fdfsolver_steffenson
-     The "Steffenson Method" provides the fastest convergence of all the
-     routines.  It combines the basic Newton algorithm with an Aitken
-     "delta-squared" acceleration.  If the Newton iterates are x_i then
-     the acceleration procedure generates a new sequence R_i,
+     The "Steffenson Method"(1) provides the fastest convergence of all
+     the routines.  It combines the basic Newton algorithm with an
+     Aitken "delta-squared" acceleration.  If the Newton iterates are
+     x_i then the acceleration procedure generates a new sequence R_i,
 
           R_i = x_i - (x_{i+1} - x_i)^2 / (x_{i+2} - 2 x_{i+1} + x_{i})
 
@@ -5945,6 +6034,12 @@ quadratic.
 
      As with all acceleration procedures this method can become
      unstable if the function is not well-behaved.
+
+   ---------- Footnotes ----------
+
+   (1) J.F. Steffensen (1873-1961). The spelling used in the name of
+the function is slightly incorrect, but has been preserved to avoid
+incompatibility.
 
 
 File: gsl-ref.info,  Node: Root Finding Examples,  Next: Root Finding References and Further Reading,  Prev: Root Finding Algorithms using Derivatives,  Up: One dimensional Root-Finding
@@ -6505,6 +6600,10 @@ these algorithm cannot fail, provided the function is well-behaved.
      back to an ordinary golden section step.  The full details of
      Brent's method include some additional checks to improve
      convergence.
+
+ -- Minimizer: gsl_min_fminimizer_quad_golden
+     This is a variant of Brent's algorithm which uses the safeguarded
+     step-length algorithm of Gill and Murray.
 
 
 File: gsl-ref.info,  Node: Minimization Examples,  Next: Minimization References and Further Reading,  Prev: Minimization Algorithms,  Up: One dimensional Minimization
@@ -7426,116 +7525,4 @@ The convergence is much more rapid, but takes a wide excursion out to
 the point (-4.23,-65.3). This could cause the algorithm to go astray in
 a realistic application.  The hybrid algorithm follows the downhill
 path to the solution more reliably.
-
-
-File: gsl-ref.info,  Node: References and Further Reading for Multidimensional Root Finding,  Prev: Example programs for Multidimensional Root finding,  Up: Multidimensional Root-Finding
-
-34.9 References and Further Reading
-===================================
-
-The original version of the Hybrid method is described in the following
-articles by Powell,
-
-     M.J.D. Powell, "A Hybrid Method for Nonlinear Equations" (Chap 6, p
-     87-114) and "A Fortran Subroutine for Solving systems of Nonlinear
-     Algebraic Equations" (Chap 7, p 115-161), in `Numerical Methods for
-     Nonlinear Algebraic Equations', P. Rabinowitz, editor.  Gordon and
-     Breach, 1970.
-
-The following papers are also relevant to the algorithms described in
-this section,
-
-     J.J. More', M.Y. Cosnard, "Numerical Solution of Nonlinear
-     Equations", `ACM Transactions on Mathematical Software', Vol 5, No
-     1, (1979), p 64-85
-
-     C.G. Broyden, "A Class of Methods for Solving Nonlinear
-     Simultaneous Equations", `Mathematics of Computation', Vol 19
-     (1965), p 577-593
-
-     J.J. More', B.S. Garbow, K.E. Hillstrom, "Testing Unconstrained
-     Optimization Software", ACM Transactions on Mathematical Software,
-     Vol 7, No 1 (1981), p 17-41
-
-
-File: gsl-ref.info,  Node: Multidimensional Minimization,  Next: Least-Squares Fitting,  Prev: Multidimensional Root-Finding,  Up: Top
-
-35 Multidimensional Minimization
-********************************
-
-This chapter describes routines for finding minima of arbitrary
-multidimensional functions.  The library provides low level components
-for a variety of iterative minimizers and convergence tests.  These can
-be combined by the user to achieve the desired solution, while providing
-full access to the intermediate steps of the algorithms.  Each class of
-methods uses the same framework, so that you can switch between
-minimizers at runtime without needing to recompile your program.  Each
-instance of a minimizer keeps track of its own state, allowing the
-minimizers to be used in multi-threaded programs. The minimization
-algorithms can be used to maximize a function by inverting its sign.
-
-   The header file `gsl_multimin.h' contains prototypes for the
-minimization functions and related declarations.
-
-* Menu:
-
-* Multimin Overview::
-* Multimin Caveats::
-* Initializing the Multidimensional Minimizer::
-* Providing a function to minimize::
-* Multimin Iteration::
-* Multimin Stopping Criteria::
-* Multimin Algorithms with Derivatives::
-* Multimin Algorithms without Derivatives::
-* Multimin Examples::
-* Multimin References and Further Reading::
-
-
-File: gsl-ref.info,  Node: Multimin Overview,  Next: Multimin Caveats,  Up: Multidimensional Minimization
-
-35.1 Overview
-=============
-
-The problem of multidimensional minimization requires finding a point x
-such that the scalar function,
-
-     f(x_1, ..., x_n)
-
-takes a value which is lower than at any neighboring point. For smooth
-functions the gradient g = \nabla f vanishes at the minimum. In general
-there are no bracketing methods available for the minimization of
-n-dimensional functions.  The algorithms proceed from an initial guess
-using a search algorithm which attempts to move in a downhill direction.
-
-   Algorithms making use of the gradient of the function perform a
-one-dimensional line minimisation along this direction until the lowest
-point is found to a suitable tolerance.  The search direction is then
-updated with local information from the function and its derivatives,
-and the whole process repeated until the true n-dimensional minimum is
-found.
-
-   Algorithms which do not require the gradient of the function use
-different strategies.  For example, the Nelder-Mead Simplex algorithm
-maintains n+1 trial parameter vectors as the vertices of a
-n-dimensional simplex.  On each iteration it tries to improve the worst
-vertex of the simplex by geometrical transformations.  The iterations
-are continued until the overall size of the simplex has decreased
-sufficiently.
-
-   Both types of algorithms use a standard framework. The user provides
-a high-level driver for the algorithms, and the library provides the
-individual functions necessary for each of the steps.  There are three
-main phases of the iteration.  The steps are,
-
-   * initialize minimizer state, S, for algorithm T
-
-   * update S using the iteration T
-
-   * test S for convergence, and repeat iteration if necessary
-
-Each iteration step consists either of an improvement to the
-line-minimisation in the current direction or an update to the search
-direction itself.  The state for the minimizers is held in a
-`gsl_multimin_fdfminimizer' struct or a `gsl_multimin_fminimizer'
-struct.
 

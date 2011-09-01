@@ -101,6 +101,7 @@ programming the derivatives is intractable or because computation of the
 the algorithms provided by the library are divided into two classes according
 to whether the derivatives are available or not.
 
+@cindex Jacobian matrix, root finding
 The state for solvers with an analytic Jacobian matrix is held in a
 @code{gsl_multiroot_fdfsolver} struct.  The updating procedure requires
 both the function and its derivatives to be supplied by the user.
@@ -120,6 +121,8 @@ dimension of the problem and the algorithm and can be reused for
 different problems.
 
 @deftypefun {gsl_multiroot_fsolver *} gsl_multiroot_fsolver_alloc (const gsl_multiroot_fsolver_type * @var{T}, size_t @var{n})
+@tpindex gsl_multiroot_fsolver
+@tpindex gsl_multiroot_fsolver_type
 This function returns a pointer to a newly allocated instance of a
 solver of type @var{T} for a system of @var{n} dimensions.
 For example, the following code creates an instance of a hybrid solver, 
@@ -139,6 +142,8 @@ code of @code{GSL_ENOMEM}.
 @end deftypefun
 
 @deftypefun {gsl_multiroot_fdfsolver *} gsl_multiroot_fdfsolver_alloc (const gsl_multiroot_fdfsolver_type * @var{T}, size_t @var{n})
+@tpindex gsl_multiroot_fdfsolver
+@tpindex gsl_multiroot_fdfsolver_type
 This function returns a pointer to a newly allocated instance of a
 derivative solver of type @var{T} for a system of @var{n} dimensions.
 For example, the following code creates an instance of a Newton-Raphson solver,

@@ -77,12 +77,13 @@ main (void)
 
 
   {
-    const gsl_multimin_fminimizer_type *fminimizers[3];
+    const gsl_multimin_fminimizer_type *fminimizers[4];
     const gsl_multimin_fminimizer_type ** T;
 
     fminimizers[0] = gsl_multimin_fminimizer_nmsimplex;
     fminimizers[1] = gsl_multimin_fminimizer_nmsimplex2;
-    fminimizers[2] = 0;
+    fminimizers[2] = gsl_multimin_fminimizer_nmsimplex2rand;
+    fminimizers[3] = 0;
     
     T = fminimizers;
     
@@ -91,6 +92,7 @@ main (void)
         test_f("Roth", &roth_fmin, roth_initpt,*T);
         test_f("Wood", &wood_fmin, wood_initpt,*T);
         test_f("Rosenbrock", &rosenbrock_fmin, rosenbrock_initpt,*T);
+        test_f("Spring", &spring_fmin, spring_initpt,*T);
         T++;
       }
   }

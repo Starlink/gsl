@@ -140,10 +140,10 @@ gsl_multimin_fminimizer_size (const gsl_multimin_fminimizer * s);
 /* Convergence test functions */
 
 int
-gsl_multimin_test_gradient(const gsl_vector * g,double epsabs);
+gsl_multimin_test_gradient(const gsl_vector * g, double epsabs);
 
 int
-gsl_multimin_test_size(const double size ,double epsabs);
+gsl_multimin_test_size(const double size, double epsabs);
 
 /* minimisation of differentiable functions */
 
@@ -219,6 +219,7 @@ GSL_VAR const gsl_multimin_fdfminimizer_type *gsl_multimin_fdfminimizer_vector_b
 GSL_VAR const gsl_multimin_fdfminimizer_type *gsl_multimin_fdfminimizer_vector_bfgs2;
 GSL_VAR const gsl_multimin_fminimizer_type *gsl_multimin_fminimizer_nmsimplex;
 GSL_VAR const gsl_multimin_fminimizer_type *gsl_multimin_fminimizer_nmsimplex2;
+GSL_VAR const gsl_multimin_fminimizer_type *gsl_multimin_fminimizer_nmsimplex2rand;
 
 __END_DECLS
 

@@ -1,6 +1,6 @@
 /* gsl_inline.h
  * 
- * Copyright (C) 2008 Brian Gough
+ * Copyright (C) 2008, 2009 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@
 */
 
 #ifdef HAVE_INLINE
-#  if defined(__GNUC_STDC_INLINE__) || defined(GSL_C99_INLINE)
+#  if defined(__GNUC_STDC_INLINE__) || defined(GSL_C99_INLINE) || defined(HAVE_C99_INLINE)
 #    define INLINE_DECL inline  /* use C99 inline */
 #    define INLINE_FUN inline
 #  else

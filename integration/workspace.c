@@ -1,6 +1,6 @@
 /* integration/workspace.c
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007, 2009 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -128,6 +128,7 @@ gsl_integration_workspace_alloc (const size_t n)
 void
 gsl_integration_workspace_free (gsl_integration_workspace * w)
 {
+  RETURN_IF_NULL (w);
   free (w->level) ;
   free (w->order) ;
   free (w->elist) ;

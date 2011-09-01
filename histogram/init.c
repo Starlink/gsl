@@ -1,6 +1,6 @@
 /* histogram/init.c
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007, 2009 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -136,6 +136,7 @@ gsl_histogram_calloc (size_t n)
 void
 gsl_histogram_free (gsl_histogram * h)
 {
+  RETURN_IF_NULL (h);
   free (h->range);
   free (h->bin);
   free (h);

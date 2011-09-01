@@ -1,6 +1,6 @@
 /* multimin/simplex2.c
  * 
- * Copyright (C) 2007, 2008 Brian Gough
+ * Copyright (C) 2007, 2008, 2009 Brian Gough
  * Copyright (C) 2002 Tuomo Keskitalo, Ivo Alxneit
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_multimin.h>
+#include <gsl/gsl_matrix_double.h>
 
 typedef struct
 {
@@ -52,8 +53,14 @@ typedef struct
   gsl_vector *delta;		/* current step */
   gsl_vector *xmc;		/* x - center (workspace) */
   double S2;
+  unsigned long count;
 }
 nmsimplex_state_t;
+
+static int
+compute_center (const nmsimplex_state_t * state, gsl_vector * center);
+static double
+compute_size (nmsimplex_state_t * state, const gsl_vector * center);
 
 static double
 try_corner_move (const double coeff,
@@ -170,6 +177,10 @@ contract_by_best (nmsimplex_state_t * state, size_t best,
 	    }
 	}
     }
+
+  /* We need to update the centre and size as well */
+  compute_center (state, state->center);
+  compute_size (state, state->center);
 
   return status;
 }
@@ -310,6 +321,7 @@ nmsimplex_alloc (void *vstate, size_t n)
       GSL_ERROR ("failed to allocate space for xmc", GSL_ENOMEM);
     }
 
+  state->count = 0;
 
   return GSL_SUCCESS;
 }
@@ -395,6 +407,8 @@ nmsimplex_set (void *vstate, gsl_multimin_function * f,
 
   /* Initialize simplex size */
   *size = compute_size (state, state->center);
+
+  state->count++;
 
   return GSL_SUCCESS;
 }
@@ -555,3 +569,133 @@ static const gsl_multimin_fminimizer_type nmsimplex_type =
 
 const gsl_multimin_fminimizer_type
   * gsl_multimin_fminimizer_nmsimplex2 = &nmsimplex_type;
+
+
+static inline double
+ran_unif (unsigned long *seed)
+{
+  unsigned long s = *seed;
+  *seed = (s * 69069 + 1) & 0xffffffffUL;
+  return (*seed) / 4294967296.0;
+}
+
+static int
+nmsimplex_set_rand (void *vstate, gsl_multimin_function * f,
+		    const gsl_vector * x,
+		    double *size, const gsl_vector * step_size)
+{
+  size_t i, j;
+  double val;
+
+  nmsimplex_state_t *state = (nmsimplex_state_t *) vstate;
+
+  gsl_vector *xtemp = state->ws1;
+
+  if (xtemp->size != x->size)
+    {
+      GSL_ERROR ("incompatible size of x", GSL_EINVAL);
+    }
+
+  if (xtemp->size != step_size->size)
+    {
+      GSL_ERROR ("incompatible size of step_size", GSL_EINVAL);
+    }
+
+  /* first point is the original x0 */
+
+  val = GSL_MULTIMIN_FN_EVAL (f, x);
+
+  if (!gsl_finite (val))
+    {
+      GSL_ERROR ("non-finite function value encountered", GSL_EBADFUNC);
+    }
+
+  gsl_matrix_set_row (state->x1, 0, x);
+  gsl_vector_set (state->y1, 0, val);
+
+  {
+    gsl_matrix_view m =
+      gsl_matrix_submatrix (state->x1, 1, 0, x->size, x->size);
+
+    /* generate a random orthornomal basis  */
+    unsigned long seed = state->count ^ 0x12345678;
+
+    ran_unif (&seed);		/* warm it up */
+
+    gsl_matrix_set_identity (&m.matrix);
+
+    /* start with random reflections */
+    for (i = 0; i < x->size; i++)
+      {
+        double s = ran_unif (&seed);
+        if (s > 0.5) gsl_matrix_set (&m.matrix, i, i, -1.0);
+      }
+
+    /* apply random rotations */
+    for (i = 0; i < x->size; i++)
+      {
+	for (j = i + 1; j < x->size; j++)
+	  {
+	    /* rotate columns i and j by a random angle */
+	    double angle = 2.0 * M_PI * ran_unif (&seed);
+	    double c = cos (angle), s = sin (angle);
+	    gsl_vector_view c_i = gsl_matrix_column (&m.matrix, i);
+	    gsl_vector_view c_j = gsl_matrix_column (&m.matrix, j);
+	    gsl_blas_drot (&c_i.vector, &c_j.vector, c, s);
+	  }
+      }
+
+    /* scale the orthonormal basis by the user-supplied step_size in
+       each dimension, and use as an offset from the central point x */
+
+    for (i = 0; i < x->size; i++)
+      {
+	double x_i = gsl_vector_get (x, i);
+	double s_i = gsl_vector_get (step_size, i);
+	gsl_vector_view c_i = gsl_matrix_column (&m.matrix, i);
+
+	for (j = 0; j < x->size; j++)
+	  {
+	    double x_ij = gsl_vector_get (&c_i.vector, j);
+	    gsl_vector_set (&c_i.vector, j, x_i + s_i * x_ij);
+	  }
+      }
+
+    /* compute the function values at each offset point */
+
+    for (i = 0; i < x->size; i++)
+      {
+	gsl_vector_view r_i = gsl_matrix_row (&m.matrix, i);
+
+	val = GSL_MULTIMIN_FN_EVAL (f, &r_i.vector);
+
+	if (!gsl_finite (val))
+	  {
+	    GSL_ERROR ("non-finite function value encountered", GSL_EBADFUNC);
+	  }
+
+	gsl_vector_set (state->y1, i + 1, val);
+      }
+  }
+
+  compute_center (state, state->center);
+
+  /* Initialize simplex size */
+  *size = compute_size (state, state->center);
+
+  state->count++;
+
+  return GSL_SUCCESS;
+}
+
+static const gsl_multimin_fminimizer_type nmsimplex2rand_type = 
+{ "nmsimplex2rand",	/* name */
+  sizeof (nmsimplex_state_t),
+  &nmsimplex_alloc,
+  &nmsimplex_set_rand,
+  &nmsimplex_iterate,
+  &nmsimplex_free
+};
+
+const gsl_multimin_fminimizer_type
+  * gsl_multimin_fminimizer_nmsimplex2rand = &nmsimplex2rand_type;

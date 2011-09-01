@@ -1,4 +1,113 @@
-* What is new in gsl-1.12:
+* What is new in gsl-1.13:
+
+** Upgraded to latest autoconf and automake (autoconf-2.64,
+   automake-1.11)
+
+** Fixed the rk4 and bspline allocators to avoid invalid free()
+   calls under out of memory conditions. [bug #27194, #27236]
+
+** Fixed a bug in gsl_multimin_fminimizer_nmsimplex2 where the center
+   and size of the simplex were not updated on contract-by-best steps,
+   causing failures in convergence. [bug #27180]
+
+** Added new functions to set MISER and VEGAS Monte Carlo integration
+   parameters, and to examine VEGAS chi-squared value and intermediate
+   results.
+
+** Added the function gsl_bspline_greville_abscissa to compute
+   Greville abscissae for B-splines.
+
+** The cumulative distribution functions gsl_cdf_gumbel1_{P,Q} should
+   now handle a larger range of parameters without underflow and
+   overflow.
+
+** The header file gsl_const_cgs.h no longer defines values for
+   electromagnetic units.  Applications should use gsl_const_cgsm.h
+   instead to obtain the values in the CGS-Magnetic system.  The
+   previous values for these units given in gsl_const_cgs.h were
+   ill-defined as the type of CGS electromagnetic system was
+   unspecified (the values were a mixture of CGS units with the Ampere
+   of the MSKA system).  The affected constants are
+   GSL_CONST_CGS_BOHR_MAGNETON, GSL_CONST_CGS_ELECTRON_CHARGE,
+   GSL_CONST_CGS_ELECTRON_MAGNETIC_MOMENT, GSL_CONST_CGS_FARADAY,
+   GSL_CONST_CGS_GAUSS, GSL_CONST_CGS_NUCLEAR_MAGNETON,
+   GSL_CONST_CGS_PROTON_MAGNETIC_MOMENT, and GSL_CONST_CGS_ROENTGEN.
+
+** The Pochhammer functions gsl_sf_poch(a,x) and gsl_sf_lnpoch(a,x) now
+   handle the special cases where a and a+x are zero or negative
+   integers.
+
+** The confluent hypergeometric function gsl_sf_hyperg_U (a,b,x) now
+   handles some cases where x=0. The case where 1+a-b is a negative
+   integer no longer returns an error [bug #22859] and the incorrect
+   termination of the series in certain cases is fixed [bug #26706].
+
+** Added a new function gsl_poly_eval_derivs to evaluate a polynomial
+   and its derivatives simultaneously.
+
+** Added a new univariate minimisation algorithm
+   gsl_min_fminimizer_quad_golden which is a variant of Brent's
+   algorithm with safeguarded step-length adjustment.
+
+** Added a new Nelder-Mead minimiser gsl_multimin_fminimizer_nmsimplex2rand
+   which uses a randomly oriented simplex rather than one fixed on
+   the coordinate axes [bug #25077]
+
+** The texinfo file now uses the dircategory "Software libraries" from
+   the Free Software Directory, as recommended in the Texinfo manual.
+
+** The function gsl_ran_exponential now includes zero in its output
+   range. [bug #25039]
+
+** All functions for freeing allocated memory now accept a NULL
+   pointer, following the standard C convention for free(). [bug
+   #25319]
+
+** The function gsl_sum_levin_u_accel now handles the special case
+   c_0 + 0 + 0 + 0 + .... that occurs when summing power series
+   c_n*x^n with x=0. [bug #26807]
+
+** The functions gsl_linalg_LU_solve, gsl_linalg_LU_svx,
+   gsl_linalg_LU_refine, gsl_linalg_LU_invert and their complex
+   equivalents now return an error for singular matrices.
+
+** The multifit LMDER hybrid solvers now check the return code of the
+   user-supplied function in the gsl_multifit_fdfsolver_set
+   method. [bug #26871]
+
+** Improved the implementation of gsl_ran_discrete_preproc to avoid
+   internal errors due to inconsistencies from excess precision on
+   some platforms. [bug #26502]
+
+** Corrected gsl_sf_hyperg_2F1(a,b,c,x) to not give a domain error in
+   the case where c is a negative integer and the series terminates
+   with a finite result.
+
+** The C99 inline keyword is now supported, in addition to the
+   previously supported GNU-style inline.
+
+** Modified gsl_poly_complex_solve_cubic and gsl_poly_solve_cubic to
+   avoid returning NaNs in cases where excess precision causes a
+   change in the number of roots. 
+
+** Fixed incorrect length check in gsl_blas_drotm. [bug #26503]
+
+** Fixed gsl_odeiv_step_gear2 to restore y on step failure
+
+** gsl_odeiv_evolve_apply now restores the correct value of t on step
+   failures [bug #26255].
+
+** Using make install prefix=DIR now puts correct paths in package
+   config files gsl-config and gsl.pc
+
+** Modified gsl_monte_vegas to work around pow() function inaccuracies
+   on MinGW [bug #25413].
+
+** Increased the number of terms in gsl_sf_mathieu_a and
+   gsl_sf_mathieu_b to improve convergence in difficult regions [bug
+   #25075]
+
+* What was new in gsl-1.12:
 
 ** Upgraded to latest libtool, autoconf and automake (libtool-2.2.6,
    autoconf-2.63, automake-1.10.2)

@@ -1,5 +1,7 @@
-The  functions described in this section are declared
-in the header file @file{gsl_sf_gamma.h}.
+This following routines compute the gamma and beta functions in their
+full and incomplete forms, as well as various kinds of factorials.
+The functions described in this section are declared in the header
+file @file{gsl_sf_gamma.h}.
 
 @menu
 * Gamma Functions::             
@@ -32,9 +34,7 @@ $$
 @noindent
 It is related to the factorial function by @math{\Gamma(n)=(n-1)!}
 for positive integer @math{n}.  Further information on the Gamma function
-can be found in Abramowitz & Stegun, Chapter 6.  The functions
-described in this section are declared in the header file
-@file{gsl_sf_gamma.h}.
+can be found in Abramowitz & Stegun, Chapter 6.  
 
 @deftypefun double gsl_sf_gamma (double @var{x})
 @deftypefunx int gsl_sf_gamma_e (double @var{x}, gsl_sf_result * @var{result})
@@ -61,8 +61,9 @@ is computed using the real Lanczos method.
 This routine computes the sign of the gamma function and the logarithm of
 its magnitude, subject to @math{x} not being a negative integer or zero.  The
 function is computed using the real Lanczos method.  The value of the
-gamma function can be reconstructed using the relation @math{\Gamma(x) =
-sgn * \exp(resultlg)}.
+gamma function and its error can be reconstructed using the relation 
+@math{\Gamma(x) = sgn * \exp(result\_lg)}, taking into account the two 
+components of @var{result_lg}.
 @comment exceptions: GSL_EDOM, GSL_EROUND
 @end deftypefun
 
@@ -198,28 +199,26 @@ These routines compute the Taylor coefficient @math{x^n / n!} for
 @cindex Pochhammer symbol
 @cindex Apell symbol, see Pochammer symbol
 These routines compute the Pochhammer symbol @math{(a)_x = \Gamma(a +
-x)/\Gamma(a)}, subject to @math{a} and @math{a+x} not being negative
-integers or zero. The Pochhammer symbol is also known as the Apell symbol and
-sometimes written as @math{(a,x)}.
+x)/\Gamma(a)}.  The Pochhammer symbol is also known as the Apell symbol and
+sometimes written as @math{(a,x)}.  When @math{a} and @math{a+x} 
+are negative integers or zero, the limiting value of the ratio is returned. 
 @comment exceptions:  GSL_EDOM, GSL_EOVRFLW
 @end deftypefun
-
 
 @deftypefun double gsl_sf_lnpoch (double @var{a}, double @var{x})
 @deftypefunx int gsl_sf_lnpoch_e (double @var{a}, double @var{x}, gsl_sf_result * @var{result})
 @cindex logarithm of Pochhammer symbol
 These routines compute the logarithm of the Pochhammer symbol,
-@math{\log((a)_x) = \log(\Gamma(a + x)/\Gamma(a))} for @math{a > 0},
-@math{a+x > 0}.
+@math{\log((a)_x) = \log(\Gamma(a + x)/\Gamma(a))}.
 @comment exceptions:  GSL_EDOM
 @end deftypefun
 
 @deftypefun int gsl_sf_lnpoch_sgn_e (double @var{a}, double @var{x}, gsl_sf_result * @var{result}, double * @var{sgn})
 These routines compute the sign of the Pochhammer symbol and the
 logarithm of its magnitude.  The computed parameters are @math{result =
-\log(|(a)_x|)} and @math{sgn = \sgn((a)_x)} where @math{(a)_x =
-\Gamma(a + x)/\Gamma(a)}, subject to @math{a}, @math{a+x} not being
-negative integers or zero.
+\log(|(a)_x|)} with a corresponding error term,  
+and @math{sgn = \sgn((a)_x)} where @math{(a)_x =
+\Gamma(a + x)/\Gamma(a)}.
 @comment exceptions:  GSL_EDOM
 @end deftypefun
 

@@ -130,8 +130,7 @@ code can be found on the GNU website,
 The preferred platform for the library is a GNU system, which allows it
 to take advantage of additional features in the GNU C compiler and GNU C
 library.  However, the library is fully portable and should compile on
-most systems with a C compiler.  Precompiled versions of the library can be purchased from
-commercial redistributors listed on the website above.
+most systems with a C compiler. 
 
 Announcements of new releases, updates and other relevant events are
 made on the @code{info-gsl@@gnu.org} mailing list.  To subscribe to this
@@ -163,7 +162,7 @@ Public License}).
 @cindex bug-gsl mailing list
 @cindex mailing list, bug-gsl
 A list of known bugs can be found in the @file{BUGS} file included in
-the GSL distribution.  Details of compilation problems can be found in
+the GSL distribution or online in the GSL bug tracker.@footnote{@url{http://savannah.gnu.org/bugs/?group=gsl}}  Details of compilation problems can be found in
 the @file{INSTALL} file.
 
 If you find a bug which is not listed in these files, please report it to
@@ -215,8 +214,8 @@ manual, and to contact the developers of the library.
 
 If you would like to refer to the GNU Scientific Library in a journal
 article, the recommended way is to cite this reference manual,
-e.g. @cite{M. Galassi et al, GNU Scientific Library Reference Manual (2nd
-Ed.), ISBN 0954161734}.
+e.g. @cite{M. Galassi et al, GNU Scientific Library Reference Manual (3rd
+Ed.), ISBN 0954612078}.
 
 If you want to give a url, use ``@uref{http://www.gnu.org/software/gsl/}''.
 

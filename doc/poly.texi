@@ -5,7 +5,7 @@ There are routines for finding real and complex roots of quadratic and
 cubic equations using analytic methods.  An iterative polynomial solver
 is also available for finding the roots of general polynomials with real
 coefficients (of any order).  The functions are declared in the header
-file @code{gsl_poly.h}.
+file @file{gsl_poly.h}.
 
 @menu
 * Polynomial Evaluation::       
@@ -23,8 +23,8 @@ file @code{gsl_poly.h}.
 @cindex evaluation of polynomials
 
 The functions described here evaluate the polynomial 
-@c{$c[0] + c[1] x + c[2] x^2 + \dots + c[len-1] x^{len-1}$}
-@math{c[0] + c[1] x + c[2] x^2 + \dots + c[len-1] x^@{len-1@}} using
+@c{$P(x) = c[0] + c[1] x + c[2] x^2 + \dots + c[len-1] x^{len-1}$}
+@math{P(x) = c[0] + c[1] x + c[2] x^2 + \dots + c[len-1] x^@{len-1@}} using
 Horner's method for stability. @inlinefns{}
 
 @deftypefun double gsl_poly_eval (const double @var{c}[], const int @var{len}, const double @var{x})
@@ -37,6 +37,13 @@ This function evaluates a polynomial with real coefficients for the complex vari
 
 @deftypefun gsl_complex gsl_complex_poly_complex_eval (const gsl_complex @var{c}[], const int @var{len}, const gsl_complex @var{z})
 This function evaluates a polynomial with complex coefficients for the complex variable @var{z}.
+@end deftypefun
+
+@deftypefun int gsl_poly_eval_derivs (const double @var{c}[], const size_t @var{lenc}, const double @var{x}, double @var{res}[], const size_t @var{lenres})
+This function evaluates a polynomial and its derivatives storing the
+results in the array @var{res} of size @var{lenres}.  The output array
+contains the values of @math{d^k P/d x^k} for the specified value of
+@var{x} starting with @math{k = 0}.
 @end deftypefun
 
 @node Divided Difference Representation of Polynomials
@@ -209,6 +216,7 @@ algorithm described in this section uses an iterative method to find the
 approximate locations of roots of higher order polynomials.
 
 @deftypefun {gsl_poly_complex_workspace *} gsl_poly_complex_workspace_alloc (size_t @var{n})
+@tpindex gsl_poly_complex_workspace
 This function allocates space for a @code{gsl_poly_complex_workspace}
 struct and a workspace suitable for solving a polynomial with @var{n}
 coefficients using the routine @code{gsl_poly_complex_solve}.

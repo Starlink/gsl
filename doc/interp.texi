@@ -9,6 +9,10 @@ Interpolations can be defined for both normal and periodic boundary
 conditions.  Additional functions are available for computing
 derivatives and integrals of interpolating functions.
 
+These interpolation methods produce curves that pass through each
+datapoint.  To interpolate noisy data with a smoothing curve see
+@ref{Basis Splines}.
+
 The functions described in this section are declared in the header files
 @file{gsl_interp.h} and @file{gsl_spline.h}.
 
@@ -39,6 +43,7 @@ The interpolation function for a given dataset is stored in a
 @code{gsl_interp} object.  These are created by the following functions.
 
 @deftypefun {gsl_interp *} gsl_interp_alloc (const gsl_interp_type * @var{T}, size_t @var{size})
+@tpindex gsl_interp
 This function returns a pointer to a newly allocated interpolation
 object of type @var{T} for @var{size} data-points.
 @end deftypefun
@@ -59,8 +64,8 @@ This function frees the interpolation object @var{interp}.
 
 @node Interpolation Types
 @section Interpolation Types
-
-The interpolation library provides five interpolation types:
+@tpindex gsl_interp_type
+The interpolation library provides six interpolation types:
 
 @deffn {Interpolation Type} gsl_interp_linear
 @cindex linear interpolation
@@ -148,6 +153,7 @@ in the range [@var{index_lo},@var{index_hi}].  @inlinefn{}
 @end deftypefun
 
 @deftypefun {gsl_interp_accel *} gsl_interp_accel_alloc (void)
+@tpindex gsl_interp_accel
 This function returns a pointer to an accelerator object, which is a
 kind of iterator for interpolation lookups.  It tracks the state of
 lookups, thus allowing for application of various acceleration
@@ -160,6 +166,12 @@ of size @var{size}, using the given accelerator @var{a}.  This is how
 lookups are performed during evaluation of an interpolation.  The
 function returns an index @math{i} such that @code{x_array[i] <= x <
 x_array[i+1]}.  @inlinefn{}
+@end deftypefun
+
+@deftypefun int gsl_interp_accel_reset (gsl_interp_accel * @var{acc});
+This function reinitializes the accelerator object @var{acc}.  It
+should be used when the cached information is no longer
+applicable---for example, when switching to a new dataset.
 @end deftypefun
 
 @deftypefun void gsl_interp_accel_free (gsl_interp_accel* @var{acc})
@@ -212,6 +224,7 @@ and @var{ya} as arguments on each evaluation. These functions are
 defined in the header file @file{gsl_spline.h}.
 
 @deftypefun {gsl_spline *} gsl_spline_alloc (const gsl_interp_type * @var{T}, size_t @var{size})
+@tpindex gsl_spline
 @end deftypefun
 
 @deftypefun int gsl_spline_init (gsl_spline * @var{spline}, const double @var{xa}[], const double @var{ya}[], size_t @var{size})

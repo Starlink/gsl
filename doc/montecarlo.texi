@@ -1,5 +1,6 @@
 @cindex Monte Carlo integration
 @cindex stratified sampling in monte carlo integration
+@cindex multidimensional integration
 This chapter describes routines for multidimensional Monte Carlo
 integration.  These include the traditional Monte Carlo method and
 adaptive algorithms such as @sc{vegas} and @sc{miser} which use
@@ -29,7 +30,7 @@ sampling of the region may not uncover all the important features
 of the function, resulting in an underestimate of the error.
 
 The functions are defined in separate header files for each routine,
-@code{gsl_monte_plain.h}, @file{gsl_monte_miser.h} and
+@file{gsl_monte_plain.h}, @file{gsl_monte_miser.h} and
 @file{gsl_monte_vegas.h}.
 
 @menu
@@ -194,6 +195,7 @@ The functions described in this section are declared in the header file
 @file{gsl_monte_plain.h}.
 
 @deftypefun {gsl_monte_plain_state *} gsl_monte_plain_alloc (size_t @var{dim})
+@tpindex gsl_monte_plain_state
 This function allocates and initializes a workspace for Monte Carlo
 integration in @var{dim} dimensions.  
 @end deftypefun
@@ -204,7 +206,7 @@ This allows an existing workspace to be reused for different
 integrations.
 @end deftypefun
 
-@deftypefun int gsl_monte_plain_integrate (gsl_monte_function * @var{f}, double * @var{xl}, double * @var{xu}, size_t @var{dim}, size_t @var{calls}, gsl_rng * @var{r}, gsl_monte_plain_state * @var{s}, double * @var{result}, double * @var{abserr})
+@deftypefun int gsl_monte_plain_integrate (gsl_monte_function * @var{f}, const double @var{xl}[], const double @var{xu}[], size_t @var{dim}, size_t @var{calls}, gsl_rng * @var{r}, gsl_monte_plain_state * @var{s}, double * @var{result}, double * @var{abserr})
 This routines uses the plain Monte Carlo algorithm to integrate the
 function @var{f} over the @var{dim}-dimensional hypercubic region
 defined by the lower and upper limits in the arrays @var{xl} and
@@ -293,6 +295,7 @@ The functions described in this section are declared in the header file
 @file{gsl_monte_miser.h}.
 
 @deftypefun {gsl_monte_miser_state *} gsl_monte_miser_alloc (size_t @var{dim})
+@tpindex gsl_monte_miser_state
 This function allocates and initializes a workspace for Monte Carlo
 integration in @var{dim} dimensions.  The workspace is used to maintain
 the state of the integration.
@@ -304,7 +307,7 @@ This allows an existing workspace to be reused for different
 integrations.
 @end deftypefun
 
-@deftypefun int gsl_monte_miser_integrate (gsl_monte_function * @var{f}, double * @var{xl}, double * @var{xu}, size_t @var{dim}, size_t @var{calls}, gsl_rng * @var{r}, gsl_monte_miser_state * @var{s}, double * @var{result}, double * @var{abserr})
+@deftypefun int gsl_monte_miser_integrate (gsl_monte_function * @var{f}, const double @var{xl}[], const double @var{xu}[], size_t @var{dim}, size_t @var{calls}, gsl_rng * @var{r}, gsl_monte_miser_state * @var{s}, double * @var{result}, double * @var{abserr})
 This routines uses the @sc{miser} Monte Carlo algorithm to integrate the
 function @var{f} over the @var{dim}-dimensional hypercubic region
 defined by the lower and upper limits in the arrays @var{xl} and
@@ -320,9 +323,28 @@ This function frees the memory associated with the integrator state
 @var{s}.
 @end deftypefun
 
-The @sc{miser} algorithm has several configurable parameters. The
-following variables can be accessed through the
-@code{gsl_monte_miser_state} struct,
+The @sc{miser} algorithm has several configurable parameters which can
+be changed using the following two functions.@footnote{The previous
+method of accessing these fields directly through the
+@code{gsl_monte_miser_state} struct is now deprecated.}
+
+@deftypefun void gsl_monte_miser_params_get (const gsl_monte_miser_state * @var{s}, gsl_monte_miser_params * @var{params}) 
+This function copies the parameters of the integrator state into the
+user-supplied @var{params} structure.
+@end deftypefun
+
+@deftypefun void gsl_monte_miser_params_set (gsl_monte_miser_state * @var{s}, const gsl_monte_miser_params * @var{params}) 
+This function sets the integrator parameters based on values provided
+in the @var{params} structure.
+@end deftypefun
+
+Typically the values of the parameters are first read using
+@code{gsl_monte_miser_params_get}, the necessary changes are made to
+the fields of the @var{params} structure, and the values are copied
+back into the integrator state using
+@code{gsl_monte_miser_params_set}.  The functions use the
+@code{gsl_monte_miser_params} structure which contains the following
+fields:
 
 @deftypevar double estimate_frac
 This parameter specifies the fraction of the currently available number of
@@ -463,6 +485,7 @@ kind variance reduction (rather than importance sampling).
 
 
 @deftypefun {gsl_monte_vegas_state *} gsl_monte_vegas_alloc (size_t @var{dim})
+@tpindex gsl_monte_vegas_state
 This function allocates and initializes a workspace for Monte Carlo
 integration in @var{dim} dimensions.  The workspace is used to maintain
 the state of the integration.
@@ -474,7 +497,7 @@ This allows an existing workspace to be reused for different
 integrations.
 @end deftypefun
 
-@deftypefun int gsl_monte_vegas_integrate (gsl_monte_function * @var{f}, double * @var{xl}, double * @var{xu}, size_t @var{dim}, size_t @var{calls}, gsl_rng * @var{r}, gsl_monte_vegas_state * @var{s}, double * @var{result}, double * @var{abserr})
+@deftypefun int gsl_monte_vegas_integrate (gsl_monte_function * @var{f}, double @var{xl}[], double @var{xu}[], size_t @var{dim}, size_t @var{calls}, gsl_rng * @var{r}, gsl_monte_vegas_state * @var{s}, double * @var{result}, double * @var{abserr})
 This routines uses the @sc{vegas} Monte Carlo algorithm to integrate the
 function @var{f} over the @var{dim}-dimensional hypercubic region
 defined by the lower and upper limits in the arrays @var{xl} and
@@ -523,23 +546,45 @@ procedure begins with the current estimate.
 The estimates are averaged using the arithmetic mean, but no error is computed.
 @end table
 
-The @sc{vegas} algorithm is highly configurable. The following variables
-can be accessed through the @code{gsl_monte_vegas_state} struct,
+The convergence of the algorithm can be tested using the overall
+chi-squared value of the results, which is available from the
+following function:
 
-@deftypevar double result
-@deftypevarx double sigma
-These parameters contain the raw value of the integral @var{result} and
-its error @var{sigma} from the last iteration of the algorithm.
-@end deftypevar
+@deftypefun double gsl_monte_vegas_chisq (const gsl_monte_vegas_state * @var{s})
+This function returns the chi-squared per degree of freedom for the
+weighted estimate of the integral.  The returned value should be close
+to 1.  A value which differs significantly from 1 indicates that the
+values from different iterations are inconsistent.  In this case the
+weighted error will be under-estimated, and further iterations of the
+algorithm are needed to obtain reliable results.
+@end deftypefun
 
-@deftypevar double chisq
-This parameter gives the chi-squared per degree of freedom for the
-weighted estimate of the integral.  The value of @var{chisq} should be
-close to 1.  A value of @var{chisq} which differs significantly from 1
-indicates that the values from different iterations are inconsistent.
-In this case the weighted error will be under-estimated, and further
-iterations of the algorithm are needed to obtain reliable results.
-@end deftypevar
+@deftypefun void gsl_monte_vegas_runval (const gsl_monte_vegas_state * @var{s}, double * @var{result}, double * @var{sigma})
+This function returns the raw (unaveraged) values of the integral
+@var{result} and its error @var{sigma} from the most recent iteration
+of the algorithm.
+@end deftypefun
+
+The @sc{vegas} algorithm is highly configurable. Several parameters
+can be changed using the following two functions.
+
+@deftypefun void gsl_monte_vegas_params_get (const gsl_monte_vegas_state * @var{s}, gsl_monte_vegas_params * @var{params}) 
+This function copies the parameters of the integrator state into the
+user-supplied @var{params} structure.
+@end deftypefun
+
+@deftypefun void gsl_monte_vegas_params_set (gsl_monte_vegas_state * @var{s}, const gsl_monte_vegas_params * @var{params}) 
+This function sets the integrator parameters based on values provided
+in the @var{params} structure.
+@end deftypefun
+
+Typically the values of the parameters are first read using
+@code{gsl_monte_vegas_params_get}, the necessary changes are made to
+the fields of the @var{params} structure, and the values are copied
+back into the integrator state using
+@code{gsl_monte_vegas_params_set}.  The functions use the
+@code{gsl_monte_vegas_params} structure which contains the following
+fields:
 
 @deftypevar double alpha
 The parameter @code{alpha} controls the stiffness of the rebinning
@@ -585,6 +630,10 @@ weighted average and final result, while a value of @code{1} also
 displays the grid coordinates.  A value of @code{2} prints information
 from the rebinning procedure for each iteration.
 @end deftypevar
+
+The above fields and the @var{chisq} value can also be accessed
+directly in the @code{gsl_monte_vegas_state} but such use is
+deprecated.
 
 @node Monte Carlo Examples
 @section Examples
@@ -633,28 +682,28 @@ singularities.
 
 @noindent
 With 500,000 function calls the plain Monte Carlo algorithm achieves a
-fractional error of 0.6%.  The estimated error @code{sigma} is
-consistent with the actual error, and the computed result differs from
-the true result by about one standard deviation,
+fractional error of 1%.  The estimated error @code{sigma} is roughly
+consistent with the actual error--the computed result differs from
+the true result by about 1.4 standard deviations,
 
 @example
 plain ==================
-result =  1.385867
-sigma  =  0.007938
+result =  1.412209
+sigma  =  0.013436
 exact  =  1.393204
-error  = -0.007337 = 0.9 sigma
+error  =  0.019005 = 1.4 sigma
 @end example
 
 @noindent
-The @sc{miser} algorithm reduces the error by a factor of two, and also
+The @sc{miser} algorithm reduces the error by a factor of four, and also
 correctly estimates the error,
 
 @example
 miser ==================
-result =  1.390656
-sigma  =  0.003743
+result =  1.391322
+sigma  =  0.003461
 exact  =  1.393204
-error  = -0.002548 = 0.7 sigma
+error  = -0.001882 = 0.54 sigma
 @end example
 
 @noindent
@@ -668,17 +717,17 @@ first pass.
 
 @example
 vegas warm-up ==================
-result =  1.386925
-sigma  =  0.002651
+result =  1.392673
+sigma  =  0.003410
 exact  =  1.393204
-error  = -0.006278 = 2 sigma
+error  = -0.000531 = 0.16 sigma
 converging...
-result =  1.392957 sigma =  0.000452 chisq/dof = 1.1
+result =  1.393281 sigma =  0.000362 chisq/dof = 1.5
 vegas final ==================
-result =  1.392957
-sigma  =  0.000452
+result =  1.393281
+sigma  =  0.000362
 exact  =  1.393204
-error  = -0.000247 = 0.5 sigma
+error  =  0.000077 = 0.21 sigma
 @end example
 
 @noindent

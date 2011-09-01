@@ -208,7 +208,7 @@ p(x) dx = @{1 \over \sqrt@{2 \pi \sigma^2@}@} \exp (-x^2 / 2\sigma^2) dx
 for @math{x} in the range @math{-\infty} to @math{+\infty}.  Use the
 transformation @math{z = \mu + x} on the numbers returned by
 @code{gsl_ran_gaussian} to obtain a Gaussian distribution with mean
-@math{\mu}.  This function uses the Box-Mueller algorithm which requires two
+@math{\mu}.  This function uses the Box-Muller algorithm which requires two
 calls to the random number generator @var{r}.
 @end deftypefun
 
@@ -225,6 +225,7 @@ the formula given above.
 
 @deftypefun double gsl_ran_gaussian_ziggurat (const gsl_rng * @var{r}, double @var{sigma})
 @deftypefunx double gsl_ran_gaussian_ratio_method (const gsl_rng * @var{r}, double @var{sigma})
+@cindex Ziggurat method
 This function computes a Gaussian random variate using the alternative
 Marsaglia-Tsang ziggurat and Kinderman-Monahan-Leva ratio methods.  The
 Ziggurat algorithm is the fastest available algorithm in most cases.
@@ -1518,8 +1519,8 @@ p(\theta_1, ..., \theta_K) d\theta_1 ... d\theta_K =
 @noindent
 for @c{$\theta_i \ge 0$} 
 @math{theta_i >= 0}
-and @c{$\alpha_i \ge 0$} 
-@math{alpha_i >= 0}.  The delta function ensures that @math{\sum \theta_i = 1}.
+and @c{$\alpha_i > 0$} 
+@math{alpha_i > 0}.  The delta function ensures that @math{\sum \theta_i = 1}.
 The normalization factor @math{Z} is
 @tex
 \beforedisplay
@@ -1599,7 +1600,7 @@ pretty well.
 But faster methods have been devised.  Again, the idea is to preprocess
 the probability list, and save the result in some form of lookup table;
 then the individual calls for a random discrete event can go rapidly.
-An approach invented by G. Marsaglia (Generating discrete random numbers
+An approach invented by G. Marsaglia (Generating discrete random variables
 in a computer, Comm ACM 6, 37--38 (1963)) is very clever, and readers
 interested in examples of good algorithm design are directed to this
 short and well-written paper.  Unfortunately, for large @math{K},
@@ -1625,6 +1626,7 @@ something like the Poisson Distribution, a modification would have to
 be made, since it only takes a finite set of @math{K} outcomes.
 
 @deftypefun {gsl_ran_discrete_t *} gsl_ran_discrete_preproc (size_t @var{K}, const double * @var{P})
+@tpindex gsl_ran_discrete_t
 @cindex Discrete random numbers
 @cindex Discrete random numbers, preprocessing
 This function returns a pointer to a structure that contains the lookup
@@ -1827,7 +1829,7 @@ treated as weights and normalized appropriately.  The arrays @var{n}[]
 and @var{p}[] must both be of length @var{K}.
 
 Random variates are generated using the conditional binomial method (see
-C.S. David, @cite{The computer generation of multinomial random
+C.S. Davis, @cite{The computer generation of multinomial random
 variates}, Comp. Stat. Data Anal. 16 (1993) 205--217 for details).
 @end deftypefun
 
@@ -2200,7 +2202,7 @@ The following program generates a random walk in two dimensions.
 @end example
 
 @noindent
-Here is the output from the program, three 10-step random walks from the origin,
+Here is some output from the program, four 10-step random walks from the origin,
 
 @tex
 \centerline{\input random-walk.tex}
@@ -2232,7 +2234,8 @@ of algorithms.
 @itemize @asis
 @item
 Luc Devroye, @cite{Non-Uniform Random Variate Generation},
-Springer-Verlag, ISBN 0-387-96305-7.
+Springer-Verlag, ISBN 0-387-96305-7.  Available online at
+@uref{http://cg.scs.carleton.ca/~luc/rnbookindex.html}.
 @end itemize
 
 @noindent

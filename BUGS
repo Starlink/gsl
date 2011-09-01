@@ -1,139 +1,6 @@
-------------------------------------------------------------------------
-BUG-ID:   21819   
-STATUS:   Open/Confirmed  
-CATEGORY: Runtime error
-SUMMARY:  gsl_sf_bessel_J_CF1() crash for large arguments
+The GSL Bugs Database is at http://savannah.gnu.org/bugs/?group=gsl
 
-Reply-To: Koichi Takahashi <ktakahashi@molsci.org>
-From: Koichi Takahashi <ktakahashi.molsci@gmail.com>
-To: bug-gsl@gnu.org
-CC: Brian Gough <bjg@gnu.org>, Jonathan Taylor <j.m.taylor@durham.ac.uk>
-Subject: gsl_sf_bessel__J_CF1 bug again
-Date: Sun, 02 Dec 2007 00:11:02 -0800
-
-Hi,
-
-Unfortunately, I found some additional sets of numbers that still
-crash gsl_sf_bessel_J_CF1() even with the cvs version.   Symptom
-is exactly the same as what I reported before.  I tested on
-x86_64.
-
-main()
-{
-//    this used to crash, but now fixed in the current cvs.
-//    double a = gsl_sf_bessel_jl( 30,  3875.6138424501978 );
-
-//    at least the following three sets of values still crashes.
-     double a = gsl_sf_bessel_jl( 49, 9912.6308956132361 );
-//    double a = gsl_sf_bessel_jl( 49, 9950.3478935215589 );
-//    double a = gsl_sf_bessel_jl( 52, 9930.5181281798232 );
-
-     printf("%g\n",a);
-}
-
-Let me know if there is anything I could do to help you fixing
-this issue.
-
-thanks,
-Koichi
-
-From: Jonny Taylor <j.m.taylor@dur.ac.uk>
-To: Koichi Takahashi <ktakahashi@molsci.org>
-Cc: bug-gsl@gnu.org
-Subject: [Bug-gsl] Re: gsl_sf_bessel__J_CF1 bug again
-Date: Sun, 2 Dec 2007 10:49:33 +0000
-
-While the symptom is the same, the cause is different. For those  
-numbers it seems that 10,000 iterations is simply not enough.  
-Interestingly, In fact, in all three cases it requires less than 50  
-additional iterations to converge!?
-
-The naive fix is simply to increase the maximum permitted number of  
-iterations, but a more sophisticated fix would probably need to  
-justify a maximum number of iterations, and propose an alternative  
-method of generating the result in the cases where the number of  
-iterations is prohibitive...
-
-Jonny
-From: Koichi Takahashi <ktakahashi@molsci.org>
-To: Jonny Taylor <j.m.taylor@dur.ac.uk>
-Cc: bug-gsl@gnu.org
-Subject: [Bug-gsl] Re: gsl_sf_bessel__J_CF1 bug again
-Date: Sun, 02 Dec 2007 06:06:11 -0800
-
-At this range, x is still not large enough to use the asymptotic form?
-In gsl_sf_bessel_jl_e,
-
-   else if(x > 1000.0 && x > 100.0*l*l)
-   {
-     //asymptotic
-   }
-   else
-   {
-     //CF1
-   }
-
-so, for example, 100 * 50 * 50 = 250,000.
-For l=50, the iteration starts to exceed 10,000 around x=9900.
-If we want to stick to 10,000 max iteration, we have to switch to
-the asymptotic version with something like x > 3*l*l.  Maybe this is
-too small?   If so I'd consider increasing the max iteration.
-Maybe we should do both.  Or there can be a better method.
-
-koichi
-
-------------------------------------------------------------------------
-BUG-ID:   21826   
-STATUS:   Open            
-CATEGORY: Build
-SUMMARY:  libtool problem on hp-ux
-
-From: "Benoit, Gerard" <GERARD.BENOIT@astrium.eads.net>
-To: bug-gsl@gnu.org
-Subject: [Bug-gsl] gsl-1.9 : error in compilation scripts
-Date: Fri, 13 Jul 2007 12:28:35 +0200
-
-Hello,
-
-I wish to report a bug in the compilation scripts:
-GSL version 1.9  downloaded from ftp.gnu.org
-computer HP 9000/785 under HP-UX  B.11.00 A 
-config.guess -> hppa2.0w-hp-hpux11.00
-compiler  : cc -> /opt/ansic/bin/cc   HP C  HP92453-01 A.11.01.20
-compilation options : -Ae
-linker  : ld -> /bin/ld
-
-fatal error during the build of the shared libraries( first for cblas/libgslcblas.sl )
-command executed : $archive_cmds 
-gsl-1.9/libtool ( line 214 ) : archive_cmds="\$CC -b \${wl}+h \${wl}\$soname \${wl}+b \${wl}\$install_libdir -o \$lib \$libobjs \$deplibs \$compiler_flags"
-coming from gsl-1.9/aclocal.m4 ( line 6541 ) : 
-   _LT_AC_TAGVAR(archive_cmds, $1)='$CC -b ${wl}+h ${wl}$soname ${wl}+b ${wl}$install_libdir -o $lib $libobjs $deplibs $compiler_flags'
-
-the compiler cc don't recognize the "-b" option ( it is a linker option ) and throw it : the linker looks for a main module and don't find it
-with the correct form ${wl}-b to pass the option to the linker, cc add a start-up module ( like /usr/ccs/lib/crt0.o or /opt/langtools/lib/crt0.o ) which is useless for a shared library and has not be compiled with a PIC option ( +z or +Z ) and the linker stops.
-
-In the preceding version 1.6 ( I have never downloaded version 1.7 and 1.8 ) the command was :
-gsl-1.6/libtool ( line 187 ) : archive_cmds="\$LD -b +h \$soname +b \$install_libdir -o \$lib \$libobjs \$deplibs \$linker_flags"
-from
-gsl-1.6/aclocal.m4 ( line 2441 ) :    *) archive_cmds='$LD -b +h $soname +b $install_libdir -o $lib $libobjs $deplibs $linker_flags' ;;
-
-This command works fine
-
-so, look for a way to return to the LD command in gsl-1.9/aclocal.m4 ( line 6541 ) :
-
-Best regards
-
-Gérard BENOIT
-
-Ce courriel (incluant ses éventuelles pièces jointes) peut contenir des informations confidentielles et/ou protégées ou dont la diffusion est restreinte. Si vous avez reçu ce courriel par erreur, vous ne devez ni le copier, ni l'utiliser, ni en divulguer le contenu à quiconque. Merci d’en avertir immédiatement l’expéditeur et d’effacer ce courriel de votre système. Astrium décline toute responsabilité en cas de corruption par virus, d’altération ou de falsification de ce courriel lors de sa transmission par voie électronique.
-
-This email (including any attachments) may contain confidential and/or privileged information or information otherwise protected from disclosure. If you are not the intended recipient, please notify the sender immediately, do not copy this message or any attachments, do not use it for any purpose or disclose its content to any person, but delete this message and any attachments from your system. Astrium disclaims any and all liability if this email transmission was virus corrupted, altered or falsified.
-----------------------------------------------------------------
-Astrium SAS (393 341 516 RCS Paris) - Siège social: 6 rue Laurent Pichat, 75016 Paris, France
-_______________________________________________
-Bug-gsl mailing list
-Bug-gsl@gnu.org
-http://lists.gnu.org/mailman/listinfo/bug-gsl
+This file was generated from it at Tue Aug 25 15:52:36 2009
 
 ------------------------------------------------------------------------
 BUG-ID:   21828   
@@ -208,52 +75,6 @@ Help-gsl@gnu.org
 http://lists.gnu.org/mailman/listinfo/help-gsl
 
 ------------------------------------------------------------------------
-BUG-ID:   21830   
-STATUS:   Open/Confirmed  
-CATEGORY: None
-SUMMARY:  provide function to retrieve size of chebyshev data
-
-Reply-To: help-gsl@gnu.org
-From: Brian Gough <bjg@network-theory.co.uk>
-To: help-gsl@gnu.org
-Subject: Re: [Help-gsl] Writing Chebychev coefficients to disk
-Date: Mon, 12 Mar 2007 21:40:21 +0000
-
-At Mon, 12 Mar 2007 10:28:10 -0600,
-Patrick Alken wrote:
-> 
-> It seems to me the simplest way to do this is just:
-> 
-> fwrite(gsl_cheb_ptr, sizeof(gsl_cheb_series), 1, fp);
-> fwrite(gsl_cheb_ptr->c, sizeof(double), n, fp);
-> 
-> and later:
-> 
-> fread(gsl_cheb_ptr, sizeof(gsl_cheb_series), 1, fp);
-> fread(gsl_cheb_ptr->c, sizeof(double), n, fp);
-> 
-
-Yes, the library should help in getting the correct value of "n"
-(which is c->order + 1 in this case) to avoid subtle off-by-one
-errors.
-
-It's certainly more useful to expose the memory than provide the read
-and write functions directly though.
-
--- 
-Brian Gough
-
-Network Theory Ltd,
-Publishing the GSL Manual - http://www.network-theory.co.uk/gsl/manual/
-
-_______________________________________________
-Help-gsl mailing list
-Help-gsl@gnu.org
-http://lists.gnu.org/mailman/listinfo/help-gsl
-
-None
-
-------------------------------------------------------------------------
 BUG-ID:   21831   
 STATUS:   Open            
 CATEGORY: Accuracy problem
@@ -289,7 +110,7 @@ http://lists.gnu.org/mailman/listinfo/bug-gsl
 From: rafael@fis.unb.br
 To: Brian Gough <bjg@network-theory.co.uk>
 Cc: 
-Subject: Re: [Bug-gsl] Lev� random number generator
+Subject: Re: [Bug-gsl] Lev? random number generator
 Date: Tue, 27 Mar 2007 09:35:15 -0300
 
 Thanks for your quick answer, and sorry about my poor english, it is  
@@ -422,12 +243,12 @@ int main (int argc,char *argv[])
 > At Mon, 26 Mar 2007 19:48:01 -0300,
 > rafael@fis.unb.br wrote:
 >>
->> The Lev� skew random number generator (gsl_ran_levy_skew) does not
->> procuce a Lev� random number when beta=0 (symmetric case), and the
+>> The Lev? skew random number generator (gsl_ran_levy_skew) does not
+>> procuce a Lev? random number when beta=0 (symmetric case), and the
 >> gsl_ran_levy function does not work as stated in the docs. I made some
 >> histograms from 10^6 samples to check the accuracy of the algorithms,
 >> by comparison agaisnt the numerical integration of the equation of
->> Lev�'s PDF. For the gsl_ran_levy function there is a good precison for
+>> Lev?'s PDF. For the gsl_ran_levy function there is a good precison for
 >> alpha [1,2], for alpha (0.3,1) you must sum a series of random numbers
 >> to get the same precision (tipicaly 100 or more gsl_ran_levy numbers).
 >> For alpha<=0.3 the algorithm does not work properly, even worse, the
@@ -462,87 +283,6 @@ http://lists.gnu.org/mailman/listinfo/bug-gsl
 -
 
 ------------------------------------------------------------------------
-BUG-ID:   21832   
-STATUS:   Open/Fixed      
-CATEGORY: None
-SUMMARY:  gsl infnan.c configure/build bug on solaris
-
-From: Richard Smith <Richard.Smith@Sun.COM>
-To: bug-gsl@gnu.org
-Subject: [Bug-gsl] gsl infnan.c configure/build bug
-Date: Tue, 24 Jul 2007 10:24:22 +1000
-
-infnan.c currently fails to compile on Solaris with Sun Studio 12 compilers
-when using default compiler options as generated by running configure with
-no options. Here is an extract of the output when running make:
-
-/bin/bash ../libtool --tag=CC --mode=compile cc -DHAVE_CONFIG_H  -I. 
--I../../sys
- -I.. -I..     -g -c -o infnan.lo ../../sys/infnan.c
- cc -DHAVE_CONFIG_H -I. -I../../sys -I.. -I.. -g -c ../../sys/infnan.c  
--KPIC -D
-PIC -o .libs/infnan.o
-"/usr/include/ieeefp.h", line 74: syntax error before or at: 
-__builtin_isfinite
-cc: acomp failed for ../../sys/infnan.c
-
-The problem seems to occur as a result of the following combination of 
-things:
-1. "finite" function is used in various source files
-2. configure.ac checks for <ieeefp.h> and finds it
-3. On Solaris, "finite" is defined in <ieeefp.h>
-4. configure.ac only checks <math.h> for "finite", and doesn't find it.
-5. Since its a c99 environment, "isfinite" is found.
-6. config.h ends up containing amongst other things the following lines:
-#define HAVE_DECL_FINITE 0
-#define HAVE_DECL_ISFINITE 1
-#if !HAVE_DECL_FINITE
-#if HAVE_DECL_ISFINITE
-#define finite isfinite
-#else
-#define finite gsl_finite
-#endif
-#endif
-   This means that "finite" macro has the value "isfinite"
-7. "isfinite" is a macro, ultimately defined in <iso/math_c99.h>:
-#define        isfinite(x)     __builtin_isfinite(x)
-8. <ieeefp.h> declares "finite" function:
-extern int      finite(double);
-9. After macro expansion the compiler sees
-extern int      __builtin_isfinite ( double ) ;
-and complains with an error.
-
-There's probably multiple ways of overcoming the problem. A workaround is
-to force the compiler not to use a C99 environment e.g. -xc99=%none. However
-since it would be desirable to have configure work well by default, maybe
-the test in configure.ac for "finite" should be something like:
-AC_CHECK_DECLS(finite,,,[#include <math.h>
-#if HAVE_IEEEFP_H
-# include <ieeefp.h>
-#endif])
-
-Alternatively all uses of "finite" could be changed to use "isfinite", and
-the configuration/build be based around assuming a C99 environment, with
-substitute functions and macros being provided where the necessary C99
-facilities are missing. On Linux, the BSD floating point classification
-functions are documented as being obsolete, so their use should probably
-be avoided.
-
--- 
-============================================================================
-   ,-_|\   Richard Smith - Technical Specialist
-  /     \  Sun Microsystems Australia         Phone : +61 3 9869 6200
-richard.smith@Sun.COM                        Direct : +61 3 9869 6224
-  \_,-._/  476 St Kilda Road                    Fax : +61 3 9869 6290
-       v   Melbourne Vic 3004 Australia
-=========================================================================== 
-
-_______________________________________________
-Bug-gsl mailing list
-Bug-gsl@gnu.org
-http://lists.gnu.org/mailman/listinfo/bug-gsl
-
-------------------------------------------------------------------------
 BUG-ID:   21833   
 STATUS:   Open            
 CATEGORY: Performance
@@ -572,7 +312,7 @@ allocation.
 best regards.
 
 _________________________________________________________________
-MSN Hotmail sur i-mode : envoyez et recevez des e-mails depuis votre 
+MSN Hotmail sur i-mode? : envoyez et recevez des e-mails depuis votre 
 téléphone portable ! http://www.msn.fr/hotmailimode/
 
 3 - Normal
@@ -739,39 +479,226 @@ we would need to do a permutation, see slatec/dgtsl.f
 3 - NormalNone
 
 ------------------------------------------------------------------------
-BUG-ID:   22478   
+BUG-ID:   24252   
 STATUS:   Open/Confirmed  
 CATEGORY: None
-SUMMARY:  Missing functions for complex vectors
+SUMMARY:  suggestion: add gamma tail distribution
 
-From: Federico Zenith <federico.zenith@member.fsf.org>
-To: help-gsl@gnu.org
-Subject: [Help-gsl] Missing functions for complex vectors
-Date: Mon, 03 Mar 2008 13:50:43 +0100
+From: Laedermann Jean-Pascal <Jean-Pascal.Laedermann@chuv.ch>
+To: Brian Gough <bjg@gnu.org>
+Subject: RE : RE : tail gamma
+Date: Thu, 11 Sep 2008 08:45:41 +0200
 
-Hi,
-I am working on a C++ GSL wrapper (yes, there are not enough of them
-already around :-), and I have been working on vectors last week; while
-writing the wrapper, I noticed a couple of oddities I'd like to point
-out before reporting them as a bug (I am using the GSL version 1.10):
+Hello,
 
-1) complex vectors have defined all properties mentioned on this page:
-http://www.gnu.org/software/gsl/manual/html_node/Vector-properties.html
-except isnonneg(). I am not sure what's the meaning of ispos() or
-isneg() for a vector of complex numbers, I suppose it means "both real
-AND imaginary part are positive", but this should be documented;
-furthermore, I do not understand why, if ispos() and isneg() could be
-defined, why could not isnonneg() be as well.
+It's only a piece of C code I attach here.
+The source is the excellent book of Devroye (chapter nine p 420), see attachments.
 
-2) Vector operations, defined on this page:
-http://www.gnu.org/software/gsl/manual/html_node/Vector-operations.html
-are not defined for complex types. As far as I can guess, all these
-operations would still make sense for complex numbers. What is really
-odd is, the same operations are defined for complex matrices.
+Hoping this will be useful.
 
-Did I miss something?
+Jean-Pascal Laedermann, PhD
+ing. phys. EPFL, math. UNIL
 
-Cheers,
--Federico
+--None
+
+------------------------------------------------------------------------
+BUG-ID:   24812   
+STATUS:   Open/Confirmed  
+CATEGORY: Runtime error
+SUMMARY:  gsl_sf_hyperg_2F1(11, -1 ; 11/2; 0.125) fails
+
+From: "Didier Pinchon" <pinchon.didier@orange.fr>
+To: <bug-gsl@gnu.org>
+Subject: [Bug-gsl] Bug in gsl_sf_hyperg_2F1 ??
+Date: Sat, 8 Nov 2008 03:00:41 +0100
+
+Hello,
+
+I have tried to compute 2F1(11, -1 ; 11/2; 0.125) and I got an error message (below is my sample program).
+However 2F1(-1, 11 ; 11/2; 0.125) provides the right result 0.75
+
+Am I wrong somewhere ?
+I did not find any indication in archives.
+
+Thank you for your help.
+All the best,
+Didier
+
+/* Compilation and execution:
+$ gcc -o bug_gsl -I/usr/local/include/gsl bug_gsl.c -L/usr/local/lib -lgsl -lm
+
+$ ./bug_gsl
+gsl: hyperg_2F1.c:750: ERROR: error
+Default GSL error handler invoked.
+Abandon
+
+*/
+
+-line 732:
+    if(GSL_MAX_DBL(fabs(a),1.0)*fabs(bp)*fabs(x) < 2.0*fabs(c)) {
+line 740:
+    if(fabs(bp*bp*x*x) < 0.001*fabs(bp) && fabs(a) < 10.0) {
+
+I think these should have a=>ap for consistency
+
+------------------------------------------------------------------------
+BUG-ID:   24871   
+STATUS:   Open/Confirmed  
+CATEGORY: None
+SUMMARY:  suggestion, add support for E_n
+
+Dear GSL group,
+
+Thank you very much for your work on GSL. I use it much in Octave.
+
+I think it would be great if you could improve the GSL routines
+for computations of exponential integrals so that they can accept complex arguments too. A good algorithm for this was published in
+
+ACM Transactions on Mathematical Software
+Donald E. Amos, Computation of Exponential Integrals of a Complex Argument, vol.16, no. 2, p.169--177, 1990,
+http://doi.acm.org/10.1145/78928.78933
+
+ACM Transactions on Mathematical Software
+Donald E. Amos, Algorithm 683: A Portable FORTRAN Subroutine for Exponential Integrals of a Complex Argument, vol.16, no. 2,
+p.178--182, 1990,
+http://doi.acm.org/10.1145/78928.78934
+
+The fortran code is available at
+http://www.netlib.org/toms/683
+http://www.netlib.no/netlib/toms/683
+http://www.mirrorservice.org/sites/netlib.bell-labs.com/netlib/toms/683.gz
+http://scicomp.ewha.ac.kr/netlib/toms/683
+
+With best wishes,
+Oleg
+
+---
+D.Sc. Oleg V. Motygin,
+Institute of Problems in Mech Engineering
+Russian Academy of Sciences
+V.O., Bol'shoj pr. 61
+199178 St.Petersburg
+Russia
+email: o.v.motygin@gmail.com, mov222@yandex.ru
+
+_______________________________________________
+Bug-gsl mailing list
+Bug-gsl@gnu.org
+http://lists.gnu.org/mailman/listinfo/bug-gsl
+
+------------------------------------------------------------------------
+BUG-ID:   25320   
+STATUS:   Open            
+CATEGORY: Accuracy problem
+SUMMARY:  Import fresnel, bugs on GSL Extension Fresnel
+
+The fresnel extension should be imported for the next release, with the following bug report checked.
+
+From: "Toshiro Ohsaki" <t.ohsaki@ipb.co.jp>
+To: <bug-gsl@gnu.org>
+Subject: [Bug-gsl] Bugs on GSL Extension Fresnel
+Date: Wed, 26 Nov 2008 21:07:02 +0900
+
+Dear staff of GNU
+
+  I found bugs on GSL Extensions/Applications Fresnel by Andrew Steiner.
+ This program does not return a correct value, if x is negative.
+
+The original function fresnel_c is coded as,
+
+double fresnel_c(double x)
+{
+  double xx = x*x*pi_2;
+  double ret_val;
+  if(xx<=8.0)
+   ret_val = fresnel_cos_0_8(xx);
+  else
+   ret_val = fresnel_cos_8_inf(xx);
+  return (x<0.0) ? -ret_val : ret_val;
+}
+.
+
+ I think it should be coded as,
+
+double fresnel_c(double x)
+{
+  double xx = x*x*pi_2;
+  double ret_val;
+  double sign;
+
+  if(xx < 0.0){
+    xx*=-1.0;
+    sign=-1.0;
+  }
+  else{
+    sign=1.0;
+  }
+
+  if(xx<=8.0)
+   ret_val = fresnel_cos_0_8(xx);
+  else
+   ret_val = fresnel_cos_8_inf(xx);
+
+  ret_val*=sign;
+
+  return(ret_val);
+}
+.
+
+The same correction should be done on the function fresnel_s.
+
+Sincerely yours,
+Toshiro Ohsaki
+from Tokyo Japan.
+_______________________________________________
+Bug-gsl mailing list
+Bug-gsl@gnu.org
+http://lists.gnu.org/mailman/listinfo/bug-gsl
+
+------------------------------------------------------------------------
+BUG-ID:   25383   
+STATUS:   Open/Postponed  
+CATEGORY: None
+SUMMARY:  use GSL_ENOPROG instead of GSL_CONTINUE in lmiterate.c
+
+[I think we should use GSL_ENOPROG in lmiterate.c although it could break existing code I guess]
+
+From: "Mark M. Ito" <marki@jlab.org>
+To: bug-gsl@gnu.org
+Subject: [Bug-gsl] non-linear LS fit example in documentation: bug?
+Date: Tue, 20 Jan 2009 15:16:26 -0500
+
+Dear GSL folks,
+
+In section 37.9 "Example programs for Nonlinear Least-Squares Fitting" 
+in the gsl manual, the main loop says:
+
+       do
+         {
+           iter++;
+           status = gsl_multifit_fdfsolver_iterate (s);
+
+           printf ("status = %s\n", gsl_strerror (status));
+
+           print_state (iter, s);
+
+           if (status)
+             break;
+
+           status = gsl_multifit_test_delta (s->dx, s->x,
+                                             1e-4, 1e-4);
+         }
+       while (status == GSL_CONTINUE && iter < 500);
+
+       gsl_multifit_covar (s->J, 0.0, covar);
+
+Shouldn't the "if (status) break;" be an "if (status) continue;"? It is 
+normal for the solver to return GSL_CONTINUE in which case you want to 
+continue to iterate. Break exits the do loop completely, no?
+
+  -- Mark Ito
+
+________________________________
+This has been documented in the manual. Will change in a future release (1.14)3 - NormalConfirmed
 
 ------------------------------------------------------------------------

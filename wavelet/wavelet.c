@@ -1,6 +1,6 @@
 /* wavelet/wavelet.c
  * 
- * Copyright (C) 2004 Ivo Alxneit
+ * Copyright (C) 2004, 2009 Ivo Alxneit
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@ gsl_wavelet_alloc (const gsl_wavelet_type * T, size_t k)
 void
 gsl_wavelet_free (gsl_wavelet * w)
 {
+  RETURN_IF_NULL (w);
   free (w);
 }
 
@@ -125,6 +126,7 @@ gsl_wavelet_workspace_alloc (size_t n)
 void
 gsl_wavelet_workspace_free (gsl_wavelet_workspace * work)
 {
+  RETURN_IF_NULL (work);
   /* release scratch space */
   free (work->scratch);
   work->scratch = NULL;
