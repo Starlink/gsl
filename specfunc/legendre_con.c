@@ -1,6 +1,7 @@
 /* specfunc/legendre_con.c
  * 
  * Copyright (C) 1996, 1997, 1998, 1999, 2000 Gerard Jungman
+ * Copyright (C) 2010 Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -896,7 +897,7 @@ gsl_sf_conicalP_1_e(const double lambda, const double x, gsl_sf_result * result)
         result->val  = pre * (E.val - c2 * K.val);
         result->err  = pre * (E.err + fabs(c2) * K.err);
         result->err += 2.0 * GSL_DBL_EPSILON * fabs(result->val);
-        return stat_K;
+        return GSL_ERROR_SELECT_2(stat_K, stat_E);
       }
     }
     else {
@@ -917,7 +918,7 @@ gsl_sf_conicalP_1_e(const double lambda, const double x, gsl_sf_result * result)
         result->val  = pre * (E.val - K.val);
         result->err  = pre * (E.err + K.err);
         result->err += 2.0 * GSL_DBL_EPSILON * fabs(result->val);
-        return stat_K;
+        return GSL_ERROR_SELECT_2(stat_K, stat_E);
       }
     }
   }

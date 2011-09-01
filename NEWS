@@ -1,4 +1,57 @@
-* What is new in gsl-1.13:
+* What is new in gsl-1.14:
+
+** Upgraded to latest libtool, autoconf and automake (libtool-2.2.6b,
+   autoconf-2.65, automake-1.11.1).  Fixes security hole in 'make
+   dist' (see Automake CVE-2009-4029).
+
+** Added support for "multisets", which are similar to permutations
+   and combinations.  A multiset is an array of k integers in the
+   range 0 to n-1 where each value may occur more than once. Multisets
+   can be used to iterate over the indices of a k-th order symmetric
+   tensor in n-space. (Rhys Ulerich)
+
+** Added gsl_integrate_glfixed routines for performing fixed order
+   Gauss-Legendre integration 
+   (Pavel Holoborodko, Konstantin Holoborodko, Rhys Ulerich)
+
+** In the LMDER multi-dimensional fitting routines, the return code
+   GSL_ENOPROG is now used instead of GSL_CONTINUE for the case where
+   10 or more attempts to find a suitable trial step have been made
+   without success. [bug #25383]
+
+** The confluent hypergeometric function gsl_sf_hyperg_U (a,b,x) has
+   been extended to support x < 0 for cases not involving
+   singularities in 1F1(a,b,x). [bug #27859]
+
+** The F-distribution gsl_ran_fdist_pdf now avoids unnecessary
+   underflow and overflow and handles cases where n > 248. [bug
+   #28500]
+
+** The SVD routines now use a scaled version of the implicit QR method
+   and compute the shift more reliably for values at the limit of
+   double precision, avoiding potential NaNs. [bug #28767]
+
+** A compile time error is emitted if the configuration stage prevents
+   the functions gsl_isnan and gsl_finite from being defined.
+
+** Added missing dereference in GSL_VECTOR_COMPLEX when not using
+   GSL_RANGE_CHECK [bug #28017]
+
+** Improved the range of gsl_sf_hyperg1F1(a,b,x) when a<0,b>0. [bug
+   #28718]
+
+** Added macros GSL_MAJOR_VERSION and GSL_MINOR_VERSION in
+   <gsl/gsl_version.h>
+
+** Improved gsl_eigen_symmv and gsl_eigen_symm to avoid a potential
+   infinite loop when the tridiagonalised matrix contains very small
+   values. [bug #28096]
+
+** Added functions gsl_multifit_linear_usvd and
+   gsl_multifit_wlinear_usvd for multilinear fitting without
+   column-scaling of the fit matrix.
+
+* What was new in gsl-1.13:
 
 ** Upgraded to latest autoconf and automake (autoconf-2.64,
    automake-1.11)

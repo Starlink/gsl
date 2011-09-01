@@ -431,9 +431,11 @@ the change in the position vector falls below machine precision
 the norm of the gradient, relative to the norm of the function, falls
 below machine precision
 
-@item GSL_CONTINUE
+@item GSL_ENOPROG
 the routine has made 10 or more attempts to find a suitable trial step
-without success (but subsequent calls can be made to continue the search).
+without success (but subsequent calls can be made to continue the
+search).@footnote{The return code @code{GSL_CONTINUE} was used for
+this case in versions prior to 1.14.}
 @end table
 
 @noindent
@@ -634,7 +636,7 @@ be outside the range of validity for gaussian errors.
 
 The @sc{minpack} algorithm is described in the following article,
 
-@itemize @asis
+@itemize @w{}
 @item
 J.J. Mor@'e, @cite{The Levenberg-Marquardt Algorithm: Implementation and
 Theory}, Lecture Notes in Mathematics, v630 (1978), ed G. Watson.
@@ -644,7 +646,7 @@ Theory}, Lecture Notes in Mathematics, v630 (1978), ed G. Watson.
 The following paper is also relevant to the algorithms described in this
 section,
 
-@itemize @asis
+@itemize @w{}
 @item 
 J.J. Mor@'e, B.S. Garbow, K.E. Hillstrom, ``Testing Unconstrained
 Optimization Software'', ACM Transactions on Mathematical Software, Vol

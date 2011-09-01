@@ -7,7 +7,7 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007, 2008, 2009 The GSL Team.
+2005, 2006, 2007, 2008, 2009, 2010 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -22,9 +22,308 @@ License".
 this GNU Manual."
 
 
-File: gsl-ref.info,  Node: Sorting,  Next: BLAS Support,  Prev: Combinations,  Up: Top
+File: gsl-ref.info,  Node: Multisets,  Next: Sorting,  Prev: Combinations,  Up: Top
 
-11 Sorting
+11 Multisets
+************
+
+This chapter describes functions for creating and manipulating
+multisets. A multiset c is represented by an array of k integers in the
+range 0 to n-1, where each value c_i may occur more than once.  The
+multiset c corresponds to indices of k elements chosen from an n
+element vector with replacement.  In mathematical terms, n is the
+cardinality of the multiset while k is the maximum multiplicity of any
+value.  Multisets are useful, for example, when iterating over the
+indices of a k-th order symmetric tensor in n-space.
+
+   The functions described in this chapter are defined in the header
+file `gsl_multiset.h'.
+
+* Menu:
+
+* The Multiset struct::
+* Multiset allocation::
+* Accessing multiset elements::
+* Multiset properties::
+* Multiset functions::
+* Reading and writing multisets::
+* Multiset Examples::
+
+
+File: gsl-ref.info,  Node: The Multiset struct,  Next: Multiset allocation,  Up: Multisets
+
+11.1 The Multiset struct
+========================
+
+A multiset is defined by a structure containing three components, the
+values of n and k, and a pointer to the multiset array.  The elements
+of the multiset array are all of type `size_t', and are stored in
+increasing order.  The `gsl_multiset' structure looks like this,
+
+     typedef struct
+     {
+       size_t n;
+       size_t k;
+       size_t *data;
+     } gsl_multiset;
+
+
+
+File: gsl-ref.info,  Node: Multiset allocation,  Next: Accessing multiset elements,  Prev: The Multiset struct,  Up: Multisets
+
+11.2 Multiset allocation
+========================
+
+ -- Function: gsl_multiset * gsl_multiset_alloc (size_t N, size_t K)
+     This function allocates memory for a new multiset with parameters
+     N, K.  The multiset is not initialized and its elements are
+     undefined.  Use the function `gsl_multiset_calloc' if you want to
+     create a multiset which is initialized to the lexicographically
+     first multiset element. A null pointer is returned if insufficient
+     memory is available to create the multiset.
+
+ -- Function: gsl_multiset * gsl_multiset_calloc (size_t N, size_t K)
+     This function allocates memory for a new multiset with parameters
+     N, K and initializes it to the lexicographically first multiset
+     element. A null pointer is returned if insufficient memory is
+     available to create the multiset.
+
+ -- Function: void gsl_multiset_init_first (gsl_multiset * C)
+     This function initializes the multiset C to the lexicographically
+     first multiset element, i.e. 0 repeated k times.
+
+ -- Function: void gsl_multiset_init_last (gsl_multiset * C)
+     This function initializes the multiset C to the lexicographically
+     last multiset element, i.e. n-1 repeated k times.
+
+ -- Function: void gsl_multiset_free (gsl_multiset * C)
+     This function frees all the memory used by the multiset C.
+
+ -- Function: int gsl_multiset_memcpy (gsl_multiset * DEST, const
+          gsl_multiset * SRC)
+     This function copies the elements of the multiset SRC into the
+     multiset DEST.  The two multisets must have the same size.
+
+
+File: gsl-ref.info,  Node: Accessing multiset elements,  Next: Multiset properties,  Prev: Multiset allocation,  Up: Multisets
+
+11.3 Accessing multiset elements
+================================
+
+The following function can be used to access the elements of a multiset.
+
+ -- Function: size_t gsl_multiset_get (const gsl_multiset * C, const
+          size_t I)
+     This function returns the value of the I-th element of the
+     multiset C.  If I lies outside the allowed range of 0 to K-1 then
+     the error handler is invoked and 0 is returned.  An inline version
+     of this function is used when `HAVE_INLINE' is defined.
+
+
+File: gsl-ref.info,  Node: Multiset properties,  Next: Multiset functions,  Prev: Accessing multiset elements,  Up: Multisets
+
+11.4 Multiset properties
+========================
+
+ -- Function: size_t gsl_multiset_n (const gsl_multiset * C)
+     This function returns the range (n) of the multiset C.
+
+ -- Function: size_t gsl_multiset_k (const gsl_multiset * C)
+     This function returns the number of elements (k) in the multiset C.
+
+ -- Function: size_t * gsl_multiset_data (const gsl_multiset * C)
+     This function returns a pointer to the array of elements in the
+     multiset C.
+
+ -- Function: int gsl_multiset_valid (gsl_multiset * C)
+     This function checks that the multiset C is valid.  The K elements
+     should lie in the range 0 to N-1, with each value occurring in
+     nondecreasing order.
+
+
+File: gsl-ref.info,  Node: Multiset functions,  Next: Reading and writing multisets,  Prev: Multiset properties,  Up: Multisets
+
+11.5 Multiset functions
+=======================
+
+ -- Function: int gsl_multiset_next (gsl_multiset * C)
+     This function advances the multiset C to the next multiset element
+     in lexicographic order and returns `GSL_SUCCESS'.  If no further
+     multisets elements are available it returns `GSL_FAILURE' and
+     leaves C unmodified.  Starting with the first multiset and
+     repeatedly applying this function will iterate through all
+     possible multisets of a given order.
+
+ -- Function: int gsl_multiset_prev (gsl_multiset * C)
+     This function steps backwards from the multiset C to the previous
+     multiset element in lexicographic order, returning `GSL_SUCCESS'.
+     If no previous multiset is available it returns `GSL_FAILURE' and
+     leaves C unmodified.
+
+
+File: gsl-ref.info,  Node: Reading and writing multisets,  Next: Multiset Examples,  Prev: Multiset functions,  Up: Multisets
+
+11.6 Reading and writing multisets
+==================================
+
+The library provides functions for reading and writing multisets to a
+file as binary data or formatted text.
+
+ -- Function: int gsl_multiset_fwrite (FILE * STREAM, const
+          gsl_multiset * C)
+     This function writes the elements of the multiset C to the stream
+     STREAM in binary format.  The function returns `GSL_EFAILED' if
+     there was a problem writing to the file.  Since the data is
+     written in the native binary format it may not be portable between
+     different architectures.
+
+ -- Function: int gsl_multiset_fread (FILE * STREAM, gsl_multiset * C)
+     This function reads elements from the open stream STREAM into the
+     multiset C in binary format.  The multiset C must be preallocated
+     with correct values of n and k since the function uses the size of
+     C to determine how many bytes to read.  The function returns
+     `GSL_EFAILED' if there was a problem reading from the file.  The
+     data is assumed to have been written in the native binary format
+     on the same architecture.
+
+ -- Function: int gsl_multiset_fprintf (FILE * STREAM, const
+          gsl_multiset * C, const char * FORMAT)
+     This function writes the elements of the multiset C line-by-line
+     to the stream STREAM using the format specifier FORMAT, which
+     should be suitable for a type of SIZE_T.  In ISO C99 the type
+     modifier `z' represents `size_t', so `"%zu\n"' is a suitable
+     format.(1)  The function returns `GSL_EFAILED' if there was a
+     problem writing to the file.
+
+ -- Function: int gsl_multiset_fscanf (FILE * STREAM, gsl_multiset * C)
+     This function reads formatted data from the stream STREAM into the
+     multiset C.  The multiset C must be preallocated with correct
+     values of n and k since the function uses the size of C to
+     determine how many numbers to read.  The function returns
+     `GSL_EFAILED' if there was a problem reading from the file.
+
+   ---------- Footnotes ----------
+
+   (1) In versions of the GNU C library prior to the ISO C99 standard,
+the type modifier `Z' was used instead.
+
+
+File: gsl-ref.info,  Node: Multiset Examples,  Prev: Reading and writing multisets,  Up: Multisets
+
+11.7 Examples
+=============
+
+The example program below prints all multisets elements containing the
+values {0,1,2,3} ordered by size.  Multiset elements of the same size
+are ordered lexicographically.
+
+     #include <stdio.h>
+     #include <gsl/gsl_multiset.h>
+
+     int
+     main (void)
+     {
+       gsl_multiset * c;
+       size_t i;
+
+       printf ("All multisets of {0,1,2,3} by size:\n") ;
+       for (i = 0; i <= 4; i++)
+         {
+           c = gsl_multiset_calloc (4, i);
+           do
+             {
+               printf ("{");
+               gsl_multiset_fprintf (stdout, c, " %u");
+               printf (" }\n");
+             }
+           while (gsl_multiset_next (c) == GSL_SUCCESS);
+           gsl_multiset_free (c);
+         }
+
+       return 0;
+     }
+
+Here is the output from the program,
+
+     $ ./a.out
+     all multisets of {0,1,2,3} by size:
+     { }
+     { 0 }
+     { 1 }
+     { 2 }
+     { 3 }
+     { 0 0 }
+     { 0 1 }
+     { 0 2 }
+     { 0 3 }
+     { 1 1 }
+     { 1 2 }
+     { 1 3 }
+     { 2 2 }
+     { 2 3 }
+     { 3 3 }
+     { 0 0 0 }
+     { 0 0 1 }
+     { 0 0 2 }
+     { 0 0 3 }
+     { 0 1 1 }
+     { 0 1 2 }
+     { 0 1 3 }
+     { 0 2 2 }
+     { 0 2 3 }
+     { 0 3 3 }
+     { 1 1 1 }
+     { 1 1 2 }
+     { 1 1 3 }
+     { 1 2 2 }
+     { 1 2 3 }
+     { 1 3 3 }
+     { 2 2 2 }
+     { 2 2 3 }
+     { 2 3 3 }
+     { 3 3 3 }
+     { 0 0 0 0 }
+     { 0 0 0 1 }
+     { 0 0 0 2 }
+     { 0 0 0 3 }
+     { 0 0 1 1 }
+     { 0 0 1 2 }
+     { 0 0 1 3 }
+     { 0 0 2 2 }
+     { 0 0 2 3 }
+     { 0 0 3 3 }
+     { 0 1 1 1 }
+     { 0 1 1 2 }
+     { 0 1 1 3 }
+     { 0 1 2 2 }
+     { 0 1 2 3 }
+     { 0 1 3 3 }
+     { 0 2 2 2 }
+     { 0 2 2 3 }
+     { 0 2 3 3 }
+     { 0 3 3 3 }
+     { 1 1 1 1 }
+     { 1 1 1 2 }
+     { 1 1 1 3 }
+     { 1 1 2 2 }
+     { 1 1 2 3 }
+     { 1 1 3 3 }
+     { 1 2 2 2 }
+     { 1 2 2 3 }
+     { 1 2 3 3 }
+     { 1 3 3 3 }
+     { 2 2 2 2 }
+     { 2 2 2 3 }
+     { 2 2 3 3 }
+     { 2 3 3 3 }
+     { 3 3 3 3 }
+
+All 70 multisets are generated and sorted lexicographically.
+
+
+File: gsl-ref.info,  Node: Sorting,  Next: BLAS Support,  Prev: Multisets,  Up: Top
+
+12 Sorting
 **********
 
 This chapter describes functions for sorting data, both directly and
@@ -50,7 +349,7 @@ when using these functions.
 
 File: gsl-ref.info,  Node: Sorting objects,  Next: Sorting vectors,  Up: Sorting
 
-11.1 Sorting objects
+12.1 Sorting objects
 ====================
 
 The following function provides a simple alternative to the standard
@@ -119,7 +418,7 @@ file `gsl_heapsort.h'.
 
 File: gsl-ref.info,  Node: Sorting vectors,  Next: Selecting the k smallest or largest elements,  Prev: Sorting objects,  Up: Sorting
 
-11.2 Sorting vectors
+12.2 Sorting vectors
 ====================
 
 The following functions will sort the elements of an array or vector,
@@ -170,7 +469,7 @@ complex vector.
 
 File: gsl-ref.info,  Node: Selecting the k smallest or largest elements,  Next: Computing the rank,  Prev: Sorting vectors,  Up: Sorting
 
-11.3 Selecting the k smallest or largest elements
+12.3 Selecting the k smallest or largest elements
 =================================================
 
 The functions described in this section select the k smallest or
@@ -235,7 +534,7 @@ largest elements of a dataset,
 
 File: gsl-ref.info,  Node: Computing the rank,  Next: Sorting Examples,  Prev: Selecting the k smallest or largest elements,  Up: Sorting
 
-11.4 Computing the rank
+12.4 Computing the rank
 =======================
 
 The "rank" of an element is its order in the sorted data.  The rank is
@@ -279,7 +578,7 @@ vector V,
 
 File: gsl-ref.info,  Node: Sorting Examples,  Next: Sorting References and Further Reading,  Prev: Computing the rank,  Up: Sorting
 
-11.5 Examples
+12.5 Examples
 =============
 
 The following example shows how to use the permutation P to print the
@@ -347,7 +646,7 @@ smallest numbers from 100000 uniform random variates stored in an array,
 
 File: gsl-ref.info,  Node: Sorting References and Further Reading,  Prev: Sorting Examples,  Up: Sorting
 
-11.6 References and Further Reading
+12.6 References and Further Reading
 ===================================
 
 The subject of sorting is covered extensively in Knuth's `Sorting and
@@ -364,7 +663,7 @@ The Heapsort algorithm is described in the following book,
 
 File: gsl-ref.info,  Node: BLAS Support,  Next: Linear Algebra,  Prev: Sorting,  Up: Top
 
-12 BLAS Support
+13 BLAS Support
 ***************
 
 The Basic Linear Algebra Subprograms (BLAS) define a set of fundamental
@@ -503,7 +802,7 @@ vector elements in reverse order, i.e. the i-th element is given by
 
 File: gsl-ref.info,  Node: GSL BLAS Interface,  Next: BLAS Examples,  Up: BLAS Support
 
-12.1 GSL BLAS Interface
+13.1 GSL BLAS Interface
 =======================
 
 GSL provides dense vector and matrix objects, based on the relevant
@@ -520,7 +819,7 @@ functionality is given in the file `gsl_blas.h'.
 
 File: gsl-ref.info,  Node: Level 1 GSL BLAS Interface,  Next: Level 2 GSL BLAS Interface,  Up: GSL BLAS Interface
 
-12.1.1 Level 1
+13.1.1 Level 1
 --------------
 
  -- Function: int gsl_blas_sdsdot (float ALPHA, const gsl_vector_float
@@ -665,7 +964,7 @@ File: gsl-ref.info,  Node: Level 1 GSL BLAS Interface,  Next: Level 2 GSL BLAS I
 
 File: gsl-ref.info,  Node: Level 2 GSL BLAS Interface,  Next: Level 3 GSL BLAS Interface,  Prev: Level 1 GSL BLAS Interface,  Up: GSL BLAS Interface
 
-12.1.2 Level 2
+13.1.2 Level 2
 --------------
 
  -- Function: int gsl_blas_sgemv (CBLAS_TRANSPOSE_t TRANSA, float
@@ -831,7 +1130,7 @@ File: gsl-ref.info,  Node: Level 2 GSL BLAS Interface,  Next: Level 3 GSL BLAS I
 
 File: gsl-ref.info,  Node: Level 3 GSL BLAS Interface,  Prev: Level 2 GSL BLAS Interface,  Up: GSL BLAS Interface
 
-12.1.3 Level 3
+13.1.3 Level 3
 --------------
 
  -- Function: int gsl_blas_sgemm (CBLAS_TRANSPOSE_t TRANSA,
@@ -1022,7 +1321,7 @@ File: gsl-ref.info,  Node: Level 3 GSL BLAS Interface,  Prev: Level 2 GSL BLAS I
 
 File: gsl-ref.info,  Node: BLAS Examples,  Next: BLAS References and Further Reading,  Prev: GSL BLAS Interface,  Up: BLAS Support
 
-12.2 Examples
+13.2 Examples
 =============
 
 The following program computes the product of two matrices using the
@@ -1076,7 +1375,7 @@ Here is the output from the program,
 
 File: gsl-ref.info,  Node: BLAS References and Further Reading,  Prev: BLAS Examples,  Up: BLAS Support
 
-12.3 References and Further Reading
+13.3 References and Further Reading
 ===================================
 
 Information on the BLAS standards, including both the legacy and
@@ -1112,7 +1411,7 @@ libraries is available from the same location.
 
 File: gsl-ref.info,  Node: Linear Algebra,  Next: Eigensystems,  Prev: BLAS Support,  Up: Top
 
-13 Linear Algebra
+14 Linear Algebra
 *****************
 
 This chapter describes functions for solving linear systems.  The
@@ -1146,7 +1445,7 @@ file `gsl_linalg.h'.
 
 File: gsl-ref.info,  Node: LU Decomposition,  Next: QR Decomposition,  Up: Linear Algebra
 
-13.1 LU Decomposition
+14.1 LU Decomposition
 =====================
 
 A general square matrix A has an LU decomposition into upper and lower
@@ -1252,7 +1551,7 @@ singular matrices.
 
 File: gsl-ref.info,  Node: QR Decomposition,  Next: QR Decomposition with Column Pivoting,  Prev: LU Decomposition,  Up: Linear Algebra
 
-13.2 QR Decomposition
+14.2 QR Decomposition
 =====================
 
 A general rectangular M-by-N matrix A has a QR decomposition into the
@@ -1380,7 +1679,7 @@ rank.
 
 File: gsl-ref.info,  Node: QR Decomposition with Column Pivoting,  Next: Singular Value Decomposition,  Prev: QR Decomposition,  Up: Linear Algebra
 
-13.3 QR Decomposition with Column Pivoting
+14.3 QR Decomposition with Column Pivoting
 ==========================================
 
 The QR decomposition can be extended to the rank deficient case by
@@ -1467,7 +1766,7 @@ QRP^T since A = Q R P^T.
 
 File: gsl-ref.info,  Node: Singular Value Decomposition,  Next: Cholesky Decomposition,  Prev: QR Decomposition with Column Pivoting,  Up: Linear Algebra
 
-13.4 Singular Value Decomposition
+14.4 Singular Value Decomposition
 =================================
 
 A general rectangular M-by-N matrix A has a singular value
@@ -1546,7 +1845,7 @@ M-by-N diagonal matrix (with additional rows of zeros).
 
 File: gsl-ref.info,  Node: Cholesky Decomposition,  Next: Tridiagonal Decomposition of Real Symmetric Matrices,  Prev: Singular Value Decomposition,  Up: Linear Algebra
 
-13.5 Cholesky Decomposition
+14.5 Cholesky Decomposition
 ===========================
 
 A symmetric, positive definite square matrix A has a Cholesky
@@ -1607,7 +1906,7 @@ L^T x = y), which can be solved by forward and back-substitution.
 
 File: gsl-ref.info,  Node: Tridiagonal Decomposition of Real Symmetric Matrices,  Next: Tridiagonal Decomposition of Hermitian Matrices,  Prev: Cholesky Decomposition,  Up: Linear Algebra
 
-13.6 Tridiagonal Decomposition of Real Symmetric Matrices
+14.6 Tridiagonal Decomposition of Real Symmetric Matrices
 =========================================================
 
 A symmetric matrix A can be factorized by similarity transformations
@@ -1645,7 +1944,7 @@ where Q is an orthogonal matrix and T is a symmetric tridiagonal matrix.
 
 File: gsl-ref.info,  Node: Tridiagonal Decomposition of Hermitian Matrices,  Next: Hessenberg Decomposition of Real Matrices,  Prev: Tridiagonal Decomposition of Real Symmetric Matrices,  Up: Linear Algebra
 
-13.7 Tridiagonal Decomposition of Hermitian Matrices
+14.7 Tridiagonal Decomposition of Hermitian Matrices
 ====================================================
 
 A hermitian matrix A can be factorized by similarity transformations
@@ -1685,7 +1984,7 @@ matrix.
 
 File: gsl-ref.info,  Node: Hessenberg Decomposition of Real Matrices,  Next: Hessenberg-Triangular Decomposition of Real Matrices,  Prev: Tridiagonal Decomposition of Hermitian Matrices,  Up: Linear Algebra
 
-13.8 Hessenberg Decomposition of Real Matrices
+14.8 Hessenberg Decomposition of Real Matrices
 ==============================================
 
 A general real matrix A can be decomposed by orthogonal similarity
@@ -1733,7 +2032,7 @@ eigenvalue problem, but has applications in other areas as well.
 
 File: gsl-ref.info,  Node: Hessenberg-Triangular Decomposition of Real Matrices,  Next: Bidiagonalization,  Prev: Hessenberg Decomposition of Real Matrices,  Up: Linear Algebra
 
-13.9 Hessenberg-Triangular Decomposition of Real Matrices
+14.9 Hessenberg-Triangular Decomposition of Real Matrices
 =========================================================
 
 A general real matrix pair (A, B) can be decomposed by orthogonal
@@ -1758,7 +2057,7 @@ eigenvalue problem.
 
 File: gsl-ref.info,  Node: Bidiagonalization,  Next: Householder Transformations,  Prev: Hessenberg-Triangular Decomposition of Real Matrices,  Up: Linear Algebra
 
-13.10 Bidiagonalization
+14.10 Bidiagonalization
 =======================
 
 A general matrix A can be factorized by similarity transformations into
@@ -1806,7 +2105,7 @@ The size of U is M-by-N and the size of V is N-by-N.
 
 File: gsl-ref.info,  Node: Householder Transformations,  Next: Householder solver for linear systems,  Prev: Bidiagonalization,  Up: Linear Algebra
 
-13.11 Householder Transformations
+14.11 Householder Transformations
 =================================
 
 A Householder transformation is a rank-1 modification of the identity
@@ -1855,7 +2154,7 @@ transformations efficiently.
 
 File: gsl-ref.info,  Node: Householder solver for linear systems,  Next: Tridiagonal Systems,  Prev: Householder Transformations,  Up: Linear Algebra
 
-13.12 Householder solver for linear systems
+14.12 Householder solver for linear systems
 ===========================================
 
  -- Function: int gsl_linalg_HH_solve (gsl_matrix * A, const gsl_vector
@@ -1874,7 +2173,7 @@ File: gsl-ref.info,  Node: Householder solver for linear systems,  Next: Tridiag
 
 File: gsl-ref.info,  Node: Tridiagonal Systems,  Next: Balancing,  Prev: Householder solver for linear systems,  Up: Linear Algebra
 
-13.13 Tridiagonal Systems
+14.13 Tridiagonal Systems
 =========================
 
 The functions described in this section efficiently solve symmetric,
@@ -1941,7 +2240,7 @@ error code `GSL_ESING'.
 
 File: gsl-ref.info,  Node: Balancing,  Next: Linear Algebra Examples,  Prev: Tridiagonal Systems,  Up: Linear Algebra
 
-13.14 Balancing
+14.14 Balancing
 ===============
 
 The process of balancing a matrix applies similarity transformations to
@@ -1964,7 +2263,7 @@ floating point radix.
 
 File: gsl-ref.info,  Node: Linear Algebra Examples,  Next: Linear Algebra References and Further Reading,  Prev: Balancing,  Up: Linear Algebra
 
-13.15 Examples
+14.15 Examples
 ==============
 
 The following program solves the linear system A x = b. The system to
@@ -2044,7 +2343,7 @@ with the equation A x = b.
 
 File: gsl-ref.info,  Node: Linear Algebra References and Further Reading,  Prev: Linear Algebra Examples,  Up: Linear Algebra
 
-13.16 References and Further Reading
+14.16 References and Further Reading
 ====================================
 
 Further information on the algorithms described in this section can be
@@ -2089,7 +2388,7 @@ the following papers,
 
 File: gsl-ref.info,  Node: Eigensystems,  Next: Fast Fourier Transforms,  Prev: Linear Algebra,  Up: Top
 
-14 Eigensystems
+15 Eigensystems
 ***************
 
 This chapter describes functions for computing eigenvalues and
@@ -2120,7 +2419,7 @@ file `gsl_eigen.h'.
 
 File: gsl-ref.info,  Node: Real Symmetric Matrices,  Next: Complex Hermitian Matrices,  Up: Eigensystems
 
-14.1 Real Symmetric Matrices
+15.1 Real Symmetric Matrices
 ============================
 
 For real symmetric matrices, the library uses the symmetric
@@ -2172,7 +2471,7 @@ precision.
 
 File: gsl-ref.info,  Node: Complex Hermitian Matrices,  Next: Real Nonsymmetric Matrices,  Prev: Real Symmetric Matrices,  Up: Eigensystems
 
-14.2 Complex Hermitian Matrices
+15.2 Complex Hermitian Matrices
 ===============================
 
 For hermitian matrices, the library uses the complex form of the
@@ -2225,7 +2524,7 @@ symmetric bidiagonalization and QR reduction method.
 
 File: gsl-ref.info,  Node: Real Nonsymmetric Matrices,  Next: Real Generalized Symmetric-Definite Eigensystems,  Prev: Complex Hermitian Matrices,  Up: Eigensystems
 
-14.3 Real Nonsymmetric Matrices
+15.3 Real Nonsymmetric Matrices
 ===============================
 
 The solution of the real nonsymmetric eigensystem problem for a matrix
@@ -2333,7 +2632,7 @@ double-shift Francis method.
 
 File: gsl-ref.info,  Node: Real Generalized Symmetric-Definite Eigensystems,  Next: Complex Generalized Hermitian-Definite Eigensystems,  Prev: Real Nonsymmetric Matrices,  Up: Eigensystems
 
-14.4 Real Generalized Symmetric-Definite Eigensystems
+15.4 Real Generalized Symmetric-Definite Eigensystems
 =====================================================
 
 The real generalized symmetric-definite eigenvalue problem is to find
@@ -2391,7 +2690,7 @@ eigenproblem are always real.
 
 File: gsl-ref.info,  Node: Complex Generalized Hermitian-Definite Eigensystems,  Next: Real Generalized Nonsymmetric Eigensystems,  Prev: Real Generalized Symmetric-Definite Eigensystems,  Up: Eigensystems
 
-14.5 Complex Generalized Hermitian-Definite Eigensystems
+15.5 Complex Generalized Hermitian-Definite Eigensystems
 ========================================================
 
 The complex generalized hermitian-definite eigenvalue problem is to find
@@ -2445,7 +2744,7 @@ always real.
 
 File: gsl-ref.info,  Node: Real Generalized Nonsymmetric Eigensystems,  Next: Sorting Eigenvalues and Eigenvectors,  Prev: Complex Generalized Hermitian-Definite Eigensystems,  Up: Eigensystems
 
-14.6 Real Generalized Nonsymmetric Eigensystems
+15.6 Real Generalized Nonsymmetric Eigensystems
 ===============================================
 
 Given two square matrices (A, B), the generalized nonsymmetric
@@ -2573,7 +2872,7 @@ is the QZ method due to Moler and Stewart (see references).
 
 File: gsl-ref.info,  Node: Sorting Eigenvalues and Eigenvectors,  Next: Eigenvalue and Eigenvector Examples,  Prev: Real Generalized Nonsymmetric Eigensystems,  Up: Eigensystems
 
-14.7 Sorting Eigenvalues and Eigenvectors
+15.7 Sorting Eigenvalues and Eigenvectors
 =========================================
 
  -- Function: int gsl_eigen_symmv_sort (gsl_vector * EVAL, gsl_matrix *
@@ -2640,7 +2939,7 @@ File: gsl-ref.info,  Node: Sorting Eigenvalues and Eigenvectors,  Next: Eigenval
 
 File: gsl-ref.info,  Node: Eigenvalue and Eigenvector Examples,  Next: Eigenvalue and Eigenvector References,  Prev: Sorting Eigenvalues and Eigenvectors,  Up: Eigensystems
 
-14.8 Examples
+15.8 Examples
 =============
 
 The following program computes the eigenvalues and eigenvectors of the
@@ -2841,7 +3140,7 @@ which is an arbitrary phase factor of magnitude 1.
 
 File: gsl-ref.info,  Node: Eigenvalue and Eigenvector References,  Prev: Eigenvalue and Eigenvector Examples,  Up: Eigensystems
 
-14.9 References and Further Reading
+15.9 References and Further Reading
 ===================================
 
 Further information on the algorithms described in this section can be
@@ -2870,7 +3169,7 @@ online copy of the users guide.
 
 File: gsl-ref.info,  Node: Fast Fourier Transforms,  Next: Numerical Integration,  Prev: Eigensystems,  Up: Top
 
-15 Fast Fourier Transforms (FFTs)
+16 Fast Fourier Transforms (FFTs)
 *********************************
 
 This chapter describes functions for performing Fast Fourier Transforms
@@ -2899,7 +3198,7 @@ Reading::)
 
 File: gsl-ref.info,  Node: Mathematical Definitions,  Next: Overview of complex data FFTs,  Up: Fast Fourier Transforms
 
-15.1 Mathematical Definitions
+16.1 Mathematical Definitions
 =============================
 
 Fast Fourier Transforms are efficient algorithms for calculating the
@@ -2954,7 +3253,7 @@ unnecessary divisions.
 
 File: gsl-ref.info,  Node: Overview of complex data FFTs,  Next: Radix-2 FFT routines for complex data,  Prev: Mathematical Definitions,  Up: Fast Fourier Transforms
 
-15.2 Overview of complex data FFTs
+16.2 Overview of complex data FFTs
 ==================================
 
 The inputs and outputs for the complex FFT routines are "packed arrays"
@@ -3027,7 +3326,7 @@ does not appear.
 
 File: gsl-ref.info,  Node: Radix-2 FFT routines for complex data,  Next: Mixed-radix FFT routines for complex data,  Prev: Overview of complex data FFTs,  Up: Fast Fourier Transforms
 
-15.3 Radix-2 FFT routines for complex data
+16.3 Radix-2 FFT routines for complex data
 ==========================================
 
 The radix-2 algorithms described in this section are simple and compact,
@@ -3137,7 +3436,7 @@ modulated sine function.
 
 File: gsl-ref.info,  Node: Mixed-radix FFT routines for complex data,  Next: Overview of real data FFTs,  Prev: Radix-2 FFT routines for complex data,  Up: Fast Fourier Transforms
 
-15.4 Mixed-radix FFT routines for complex data
+16.4 Mixed-radix FFT routines for complex data
 ==============================================
 
 This section describes mixed-radix FFT algorithms for complex data.  The
@@ -3362,7 +3661,7 @@ all the `gsl' routines.
 
 File: gsl-ref.info,  Node: Overview of real data FFTs,  Next: Radix-2 FFT routines for real data,  Prev: Mixed-radix FFT routines for complex data,  Up: Fast Fourier Transforms
 
-15.5 Overview of real data FFTs
+16.5 Overview of real data FFTs
 ===============================
 
 The functions for real data are similar to those for complex data.
@@ -3412,7 +3711,7 @@ accesses).
 
 File: gsl-ref.info,  Node: Radix-2 FFT routines for real data,  Next: Mixed-radix FFT routines for real data,  Prev: Overview of real data FFTs,  Up: Fast Fourier Transforms
 
-15.6 Radix-2 FFT routines for real data
+16.6 Radix-2 FFT routines for real data
 =======================================
 
 This section describes radix-2 FFT algorithms for real data.  They use
@@ -3512,7 +3811,7 @@ header file `gsl_fft_halfcomplex.h'.
 
 File: gsl-ref.info,  Node: Mixed-radix FFT routines for real data,  Next: FFT References and Further Reading,  Prev: Radix-2 FFT routines for real data,  Up: Fast Fourier Transforms
 
-15.7 Mixed-radix FFT routines for real data
+16.7 Mixed-radix FFT routines for real data
 ===========================================
 
 This section describes mixed-radix FFT algorithms for real data.  The
@@ -3771,7 +4070,7 @@ signal is also real.
 
 File: gsl-ref.info,  Node: FFT References and Further Reading,  Prev: Mixed-radix FFT routines for real data,  Up: Fast Fourier Transforms
 
-15.8 References and Further Reading
+16.8 References and Further Reading
 ===================================
 
 A good starting point for learning more about the FFT is the review
@@ -3839,7 +4138,7 @@ The source code for FFTPACK is available from Netlib,
 
 File: gsl-ref.info,  Node: Numerical Integration,  Next: Random Number Generation,  Prev: Fast Fourier Transforms,  Up: Top
 
-16 Numerical Integration
+17 Numerical Integration
 ************************
 
 This chapter describes routines for performing numerical integration
@@ -3851,7 +4150,9 @@ logarithmic singularities, computation of Cauchy principal values and
 oscillatory integrals.  The library reimplements the algorithms used in
 QUADPACK, a numerical integration package written by Piessens,
 Doncker-Kapenga, Uberhuber and Kahaner.  Fortran code for QUADPACK is
-available on Netlib.
+available on Netlib.  Also included are non-adaptive, fixed-order
+Gauss-Legendre integration routines with high precision coefficients by
+Pavel Holoborodko.
 
    The functions described in this chapter are declared in the header
 file `gsl_integration.h'.
@@ -3868,6 +4169,7 @@ file `gsl_integration.h'.
 * QAWS adaptive integration for singular functions::
 * QAWO adaptive integration for oscillatory functions::
 * QAWF adaptive integration for Fourier integrals::
+* Fixed order Gauss-Legendre integration::
 * Numerical integration error codes::
 * Numerical integration examples::
 * Numerical integration References and Further Reading::
@@ -3875,7 +4177,7 @@ file `gsl_integration.h'.
 
 File: gsl-ref.info,  Node: Numerical Integration Introduction,  Next: QNG non-adaptive Gauss-Kronrod integration,  Up: Numerical Integration
 
-16.1 Introduction
+17.1 Introduction
 =================
 
 Each algorithm computes an approximation to a definite integral of the
@@ -3938,7 +4240,7 @@ order rule gives an estimate of the error in the approximation.
 
 File: gsl-ref.info,  Node: Integrands without weight functions,  Next: Integrands with weight functions,  Up: Numerical Integration Introduction
 
-16.1.1 Integrands without weight functions
+17.1.1 Integrands without weight functions
 ------------------------------------------
 
 The algorithms for general functions (without a weight function) are
@@ -3957,7 +4259,7 @@ estimate of the error in the approximation.
 
 File: gsl-ref.info,  Node: Integrands with weight functions,  Next: Integrands with singular weight functions,  Prev: Integrands without weight functions,  Up: Numerical Integration Introduction
 
-16.1.2 Integrands with weight functions
+17.1.2 Integrands with weight functions
 ---------------------------------------
 
 For integrands with weight functions the algorithms use Clenshaw-Curtis
@@ -3973,7 +4275,7 @@ error.
 
 File: gsl-ref.info,  Node: Integrands with singular weight functions,  Prev: Integrands with weight functions,  Up: Numerical Integration Introduction
 
-16.1.3 Integrands with singular weight functions
+17.1.3 Integrands with singular weight functions
 ------------------------------------------------
 
 The presence of singularities (or other behavior) in the integrand can
@@ -3992,7 +4294,7 @@ integration.
 
 File: gsl-ref.info,  Node: QNG non-adaptive Gauss-Kronrod integration,  Next: QAG adaptive integration,  Prev: Numerical Integration Introduction,  Up: Numerical Integration
 
-16.2 QNG non-adaptive Gauss-Kronrod integration
+17.2 QNG non-adaptive Gauss-Kronrod integration
 ===============================================
 
 The QNG algorithm is a non-adaptive procedure which uses fixed
@@ -4015,7 +4317,7 @@ of 87 points.  It is provided for fast integration of smooth functions.
 
 File: gsl-ref.info,  Node: QAG adaptive integration,  Next: QAGS adaptive integration with singularities,  Prev: QNG non-adaptive Gauss-Kronrod integration,  Up: Numerical Integration
 
-16.3 QAG adaptive integration
+17.3 QAG adaptive integration
 =============================
 
 The QAG algorithm is a simple adaptive integration procedure.  The
@@ -4069,7 +4371,7 @@ gsl_integration_workspace_alloc (size_t N)
 
 File: gsl-ref.info,  Node: QAGS adaptive integration with singularities,  Next: QAGP adaptive integration with known singular points,  Prev: QAG adaptive integration,  Up: Numerical Integration
 
-16.4 QAGS adaptive integration with singularities
+17.4 QAGS adaptive integration with singularities
 =================================================
 
 The presence of an integrable singularity in the integration region
@@ -4102,7 +4404,7 @@ integrable singularities.
 
 File: gsl-ref.info,  Node: QAGP adaptive integration with known singular points,  Next: QAGI adaptive integration on infinite intervals,  Prev: QAGS adaptive integration with singularities,  Up: Numerical Integration
 
-16.5 QAGP adaptive integration with known singular points
+17.5 QAGP adaptive integration with known singular points
 =========================================================
 
  -- Function: int gsl_integration_qagp (const gsl_function * F, double
@@ -4132,7 +4434,7 @@ File: gsl-ref.info,  Node: QAGP adaptive integration with known singular points,
 
 File: gsl-ref.info,  Node: QAGI adaptive integration on infinite intervals,  Next: QAWC adaptive integration for Cauchy principal values,  Prev: QAGP adaptive integration with known singular points,  Up: Numerical Integration
 
-16.6 QAGI adaptive integration on infinite intervals
+17.6 QAGI adaptive integration on infinite intervals
 ====================================================
 
  -- Function: int gsl_integration_qagi (gsl_function * F, double
@@ -4183,7 +4485,7 @@ File: gsl-ref.info,  Node: QAGI adaptive integration on infinite intervals,  Nex
 
 File: gsl-ref.info,  Node: QAWC adaptive integration for Cauchy principal values,  Next: QAWS adaptive integration for singular functions,  Prev: QAGI adaptive integration on infinite intervals,  Up: Numerical Integration
 
-16.7 QAWC adaptive integration for Cauchy principal values
+17.7 QAWC adaptive integration for Cauchy principal values
 ==========================================================
 
  -- Function: int gsl_integration_qawc (gsl_function * F, double A,
@@ -4207,7 +4509,7 @@ File: gsl-ref.info,  Node: QAWC adaptive integration for Cauchy principal values
 
 File: gsl-ref.info,  Node: QAWS adaptive integration for singular functions,  Next: QAWO adaptive integration for oscillatory functions,  Prev: QAWC adaptive integration for Cauchy principal values,  Up: Numerical Integration
 
-16.8 QAWS adaptive integration for singular functions
+17.8 QAWS adaptive integration for singular functions
 =====================================================
 
 The QAWS algorithm is designed for integrands with algebraic-logarithmic
@@ -4276,7 +4578,7 @@ gsl_integration_qaws_table_alloc (double ALPHA, double BETA, int MU,
 
 File: gsl-ref.info,  Node: QAWO adaptive integration for oscillatory functions,  Next: QAWF adaptive integration for Fourier integrals,  Prev: QAWS adaptive integration for singular functions,  Up: Numerical Integration
 
-16.9 QAWO adaptive integration for oscillatory functions
+17.9 QAWO adaptive integration for oscillatory functions
 ========================================================
 
 The QAWO algorithm is designed for integrands with an oscillatory
@@ -4355,9 +4657,9 @@ gsl_integration_qawo_table_alloc (double OMEGA, double L, enum
 
 
 
-File: gsl-ref.info,  Node: QAWF adaptive integration for Fourier integrals,  Next: Numerical integration error codes,  Prev: QAWO adaptive integration for oscillatory functions,  Up: Numerical Integration
+File: gsl-ref.info,  Node: QAWF adaptive integration for Fourier integrals,  Next: Fixed order Gauss-Legendre integration,  Prev: QAWO adaptive integration for oscillatory functions,  Up: Numerical Integration
 
-16.10 QAWF adaptive integration for Fourier integrals
+17.10 QAWF adaptive integration for Fourier integrals
 =====================================================
 
  -- Function: int gsl_integration_qawf (gsl_function * F, const double
@@ -4415,9 +4717,40 @@ File: gsl-ref.info,  Node: QAWF adaptive integration for Fourier integrals,  Nex
 
 
 
-File: gsl-ref.info,  Node: Numerical integration error codes,  Next: Numerical integration examples,  Prev: QAWF adaptive integration for Fourier integrals,  Up: Numerical Integration
+File: gsl-ref.info,  Node: Fixed order Gauss-Legendre integration,  Next: Numerical integration error codes,  Prev: QAWF adaptive integration for Fourier integrals,  Up: Numerical Integration
 
-16.11 Error codes
+17.11 Gauss-Legendre integration
+================================
+
+The fixed-order Gauss-Legendre integration routines are provided for
+fast integration of smooth functions with known polynomial order.  The
+n-point Gauss-Legendre rule is exact for polynomials of order 2*n-1 or
+less.  For example, these rules are useful when integrating basis
+functions to form mass matrices for the Galerkin method.  Unlike other
+numerical integration routines within the library, these routines do
+not accept absolute or relative error bounds.
+
+ -- Function: gsl_integration_glfixed_table *
+gsl_integration_glfixed_table_alloc (size_t N)
+     This function determines the Gauss-Legendre abscissae and weights
+     necessary for an n-point fixed order integration scheme.  If
+     possible, high precision precomputed coefficients are used.  If
+     precomputed weights are not available, lower precision
+     coefficients are computed on the fly.
+
+ -- Function: double gsl_integration_glfixed (const gsl_function * F,
+          double A, double B, gsl_integration_glfixed_table * T)
+     This function applies the Gauss-Legendre integration rule
+     contained in table T and returns the result.
+
+ -- Function: void gsl_integration_glfixed_table_alloc
+          (gsl_integration_glfixed_table * T)
+     This function frees the memory associated with the table T.
+
+
+File: gsl-ref.info,  Node: Numerical integration error codes,  Next: Numerical integration examples,  Prev: Fixed order Gauss-Legendre integration,  Up: Numerical Integration
+
+17.12 Error codes
 =================
 
 In addition to the standard error codes for invalid arguments the
@@ -4441,7 +4774,7 @@ functions can return the following values,
 
 File: gsl-ref.info,  Node: Numerical integration examples,  Next: Numerical integration References and Further Reading,  Prev: Numerical integration error codes,  Up: Numerical Integration
 
-16.12 Examples
+17.13 Examples
 ==============
 
 The integrator `QAGS' will handle a large class of definite integrals.
@@ -4509,7 +4842,7 @@ margin of safety of one order of magnitude.
 
 File: gsl-ref.info,  Node: Numerical integration References and Further Reading,  Prev: Numerical integration examples,  Up: Numerical Integration
 
-16.13 References and Further Reading
+17.14 References and Further Reading
 ====================================
 
 The following book is the definitive reference for QUADPACK, and was
@@ -4526,7 +4859,7 @@ the numerical integration literature used in developing QUADPACK.
 
 File: gsl-ref.info,  Node: Random Number Generation,  Next: Quasi-Random Sequences,  Prev: Numerical Integration,  Up: Top
 
-17 Random Number Generation
+18 Random Number Generation
 ***************************
 
 The library provides a large collection of random number generators
@@ -4562,7 +4895,7 @@ distributions such as the Gaussian, log-normal or Poisson distributions.
 
 File: gsl-ref.info,  Node: General comments on random numbers,  Next: The Random Number Generator Interface,  Up: Random Number Generation
 
-17.1 General comments on random numbers
+18.1 General comments on random numbers
 =======================================
 
 In 1988, Park and Miller wrote a paper entitled "Random number
@@ -4597,7 +4930,7 @@ exact answer.  Comparison to this exact answer provides a measure of
 
 File: gsl-ref.info,  Node: The Random Number Generator Interface,  Next: Random number generator initialization,  Prev: General comments on random numbers,  Up: Random Number Generation
 
-17.2 The Random Number Generator Interface
+18.2 The Random Number Generator Interface
 ==========================================
 
 It is important to remember that a random number generator is not a
@@ -4623,7 +4956,7 @@ file `gsl_rng.h'.
 
 File: gsl-ref.info,  Node: Random number generator initialization,  Next: Sampling from a random number generator,  Prev: The Random Number Generator Interface,  Up: Random Number Generation
 
-17.3 Random number generator initialization
+18.3 Random number generator initialization
 ===========================================
 
  -- Function: gsl_rng * gsl_rng_alloc (const gsl_rng_type * T)
@@ -4671,7 +5004,7 @@ File: gsl-ref.info,  Node: Random number generator initialization,  Next: Sampli
 
 File: gsl-ref.info,  Node: Sampling from a random number generator,  Next: Auxiliary random number generator functions,  Prev: Random number generator initialization,  Up: Random Number Generation
 
-17.4 Sampling from a random number generator
+18.4 Sampling from a random number generator
 ============================================
 
 The following functions return uniformly distributed random numbers,
@@ -4730,7 +5063,7 @@ obtain non-uniform distributions *note Random Number Distributions::.
 
 File: gsl-ref.info,  Node: Auxiliary random number generator functions,  Next: Random number environment variables,  Prev: Sampling from a random number generator,  Up: Random Number Generation
 
-17.5 Auxiliary random number generator functions
+18.5 Auxiliary random number generator functions
 ================================================
 
 The following functions provide information about an existing
@@ -4788,7 +5121,7 @@ generator parameters into your own code.
 
 File: gsl-ref.info,  Node: Random number environment variables,  Next: Copying random number generator state,  Prev: Auxiliary random number generator functions,  Up: Random Number Generation
 
-17.6 Random number environment variables
+18.6 Random number environment variables
 ========================================
 
 The library allows you to choose a default generator and seed from the
@@ -4863,7 +5196,7 @@ default generator and the seed,
 
 File: gsl-ref.info,  Node: Copying random number generator state,  Next: Reading and writing random number generator state,  Prev: Random number environment variables,  Up: Random Number Generation
 
-17.7 Copying random number generator state
+18.7 Copying random number generator state
 ==========================================
 
 The above methods do not expose the random number `state' which changes
@@ -4883,7 +5216,7 @@ functions are supplied.  These include:
 
 File: gsl-ref.info,  Node: Reading and writing random number generator state,  Next: Random number generator algorithms,  Prev: Copying random number generator state,  Up: Random Number Generation
 
-17.8 Reading and writing random number generator state
+18.8 Reading and writing random number generator state
 ======================================================
 
 The library provides functions for reading and writing the random
@@ -4909,7 +5242,7 @@ number state to a file as binary data.
 
 File: gsl-ref.info,  Node: Random number generator algorithms,  Next: Unix random number generators,  Prev: Reading and writing random number generator state,  Up: Random Number Generation
 
-17.9 Random number generator algorithms
+18.9 Random number generator algorithms
 =======================================
 
 The functions described above make no reference to the actual algorithm
@@ -5115,7 +5448,7 @@ randomness.
 
 File: gsl-ref.info,  Node: Unix random number generators,  Next: Other random number generators,  Prev: Random number generator algorithms,  Up: Random Number Generation
 
-17.10 Unix random number generators
+18.10 Unix random number generators
 ===================================
 
 The standard Unix random number generators `rand', `random' and
@@ -5191,7 +5524,7 @@ quite acceptable.
 
 File: gsl-ref.info,  Node: Other random number generators,  Next: Random Number Generator Performance,  Prev: Unix random number generators,  Up: Random Number Generation
 
-17.11 Other random number generators
+18.11 Other random number generators
 ====================================
 
 The generators in this section are provided for compatibility with
@@ -5402,7 +5735,7 @@ it is best to avoid using the least significant bits.
 
 File: gsl-ref.info,  Node: Random Number Generator Performance,  Next: Random Number Generator Examples,  Prev: Other random number generators,  Up: Random Number Generation
 
-17.12 Performance
+18.12 Performance
 =================
 
 The following table shows the relative performance of a selection the
@@ -5424,15 +5757,10 @@ RANLUX algorithm.
       247 k ints/sec,    198 k doubles/sec, ranlux389
       141 k ints/sec,    140 k doubles/sec, ranlxd2
 
-     1852 k ints/sec,    935 k doubles/sec, ran3
-      813 k ints/sec,    575 k doubles/sec, ran0
-      787 k ints/sec,    476 k doubles/sec, ran1
-      379 k ints/sec,    292 k doubles/sec, ran2
-
 
 File: gsl-ref.info,  Node: Random Number Generator Examples,  Next: Random Number References and Further Reading,  Prev: Random Number Generator Performance,  Up: Random Number Generation
 
-17.13 Examples
+18.13 Examples
 ==============
 
 The following program demonstrates the use of a random number generator
@@ -5503,7 +5831,7 @@ generator `mrg',
 
 File: gsl-ref.info,  Node: Random Number References and Further Reading,  Next: Random Number Acknowledgements,  Prev: Random Number Generator Examples,  Up: Random Number Generation
 
-17.14 References and Further Reading
+18.14 References and Further Reading
 ====================================
 
 The subject of random number generation and testing is reviewed
@@ -5540,7 +5868,7 @@ NIST,
 
 File: gsl-ref.info,  Node: Random Number Acknowledgements,  Prev: Random Number References and Further Reading,  Up: Random Number Generation
 
-17.15 Acknowledgements
+18.15 Acknowledgements
 ======================
 
 Thanks to Makoto Matsumoto, Takuji Nishimura and Yoshiharu Kurita for
@@ -5552,7 +5880,7 @@ generators.
 
 File: gsl-ref.info,  Node: Quasi-Random Sequences,  Next: Random Number Distributions,  Prev: Random Number Generation,  Up: Top
 
-18 Quasi-Random Sequences
+19 Quasi-Random Sequences
 *************************
 
 This chapter describes functions for generating quasi-random sequences
@@ -5579,7 +5907,7 @@ file `gsl_qrng.h'.
 
 File: gsl-ref.info,  Node: Quasi-random number generator initialization,  Next: Sampling from a quasi-random number generator,  Up: Quasi-Random Sequences
 
-18.1 Quasi-random number generator initialization
+19.1 Quasi-random number generator initialization
 =================================================
 
  -- Function: gsl_qrng * gsl_qrng_alloc (const gsl_qrng_type * T,
@@ -5601,7 +5929,7 @@ File: gsl-ref.info,  Node: Quasi-random number generator initialization,  Next: 
 
 File: gsl-ref.info,  Node: Sampling from a quasi-random number generator,  Next: Auxiliary quasi-random number generator functions,  Prev: Quasi-random number generator initialization,  Up: Quasi-Random Sequences
 
-18.2 Sampling from a quasi-random number generator
+19.2 Sampling from a quasi-random number generator
 ==================================================
 
  -- Function: int gsl_qrng_get (const gsl_qrng * Q, double X[])
@@ -5614,7 +5942,7 @@ File: gsl-ref.info,  Node: Sampling from a quasi-random number generator,  Next:
 
 File: gsl-ref.info,  Node: Auxiliary quasi-random number generator functions,  Next: Saving and resorting quasi-random number generator state,  Prev: Sampling from a quasi-random number generator,  Up: Quasi-Random Sequences
 
-18.3 Auxiliary quasi-random number generator functions
+19.3 Auxiliary quasi-random number generator functions
 ======================================================
 
  -- Function: const char * gsl_qrng_name (const gsl_qrng * Q)
@@ -5634,7 +5962,7 @@ File: gsl-ref.info,  Node: Auxiliary quasi-random number generator functions,  N
 
 File: gsl-ref.info,  Node: Saving and resorting quasi-random number generator state,  Next: Quasi-random number generator algorithms,  Prev: Auxiliary quasi-random number generator functions,  Up: Quasi-Random Sequences
 
-18.4 Saving and resorting quasi-random number generator state
+19.4 Saving and resorting quasi-random number generator state
 =============================================================
 
  -- Function: int gsl_qrng_memcpy (gsl_qrng * DEST, const gsl_qrng *
@@ -5650,7 +5978,7 @@ File: gsl-ref.info,  Node: Saving and resorting quasi-random number generator st
 
 File: gsl-ref.info,  Node: Quasi-random number generator algorithms,  Next: Quasi-random number generator examples,  Prev: Saving and resorting quasi-random number generator state,  Up: Quasi-Random Sequences
 
-18.5 Quasi-random number generator algorithms
+19.5 Quasi-random number generator algorithms
 =============================================
 
 The following quasi-random sequence algorithms are available,
@@ -5676,7 +6004,7 @@ The following quasi-random sequence algorithms are available,
 
 File: gsl-ref.info,  Node: Quasi-random number generator examples,  Next: Quasi-random number references,  Prev: Quasi-random number generator algorithms,  Up: Quasi-Random Sequences
 
-18.6 Examples
+19.6 Examples
 =============
 
 The following program prints the first 1024 points of the 2-dimensional
@@ -5720,7 +6048,7 @@ between previous points.
 
 File: gsl-ref.info,  Node: Quasi-random number references,  Prev: Quasi-random number generator examples,  Up: Quasi-Random Sequences
 
-18.7 References
+19.7 References
 ===============
 
 The implementations of the quasi-random sequence routines are based on
@@ -5734,7 +6062,7 @@ the algorithms described in the following paper,
 
 File: gsl-ref.info,  Node: Random Number Distributions,  Next: Statistics,  Prev: Quasi-Random Sequences,  Up: Top
 
-19 Random Number Distributions
+20 Random Number Distributions
 ******************************
 
 This chapter describes functions for generating random variates and
@@ -5815,7 +6143,7 @@ overflow.
 
 File: gsl-ref.info,  Node: Random Number Distribution Introduction,  Next: The Gaussian Distribution,  Up: Random Number Distributions
 
-19.1 Introduction
+20.1 Introduction
 =================
 
 Continuous random number distributions are defined by a probability
@@ -5867,7 +6195,7 @@ Q(n)=0 while P(1) = p(1), Q(1)=1-p(1).
 
 File: gsl-ref.info,  Node: The Gaussian Distribution,  Next: The Gaussian Tail Distribution,  Prev: Random Number Distribution Introduction,  Up: Random Number Distributions
 
-19.2 The Gaussian Distribution
+20.2 The Gaussian Distribution
 ==============================
 
  -- Function: double gsl_ran_gaussian (const gsl_rng * R, double SIGMA)
@@ -5923,7 +6251,7 @@ File: gsl-ref.info,  Node: The Gaussian Distribution,  Next: The Gaussian Tail D
 
 File: gsl-ref.info,  Node: The Gaussian Tail Distribution,  Next: The Bivariate Gaussian Distribution,  Prev: The Gaussian Distribution,  Up: Random Number Distributions
 
-19.3 The Gaussian Tail Distribution
+20.3 The Gaussian Tail Distribution
 ===================================
 
  -- Function: double gsl_ran_gaussian_tail (const gsl_rng * R, double
@@ -5962,7 +6290,7 @@ File: gsl-ref.info,  Node: The Gaussian Tail Distribution,  Next: The Bivariate 
 
 File: gsl-ref.info,  Node: The Bivariate Gaussian Distribution,  Next: The Exponential Distribution,  Prev: The Gaussian Tail Distribution,  Up: Random Number Distributions
 
-19.4 The Bivariate Gaussian Distribution
+20.4 The Bivariate Gaussian Distribution
 ========================================
 
  -- Function: void gsl_ran_bivariate_gaussian (const gsl_rng * R,
@@ -5989,7 +6317,7 @@ File: gsl-ref.info,  Node: The Bivariate Gaussian Distribution,  Next: The Expon
 
 File: gsl-ref.info,  Node: The Exponential Distribution,  Next: The Laplace Distribution,  Prev: The Bivariate Gaussian Distribution,  Up: Random Number Distributions
 
-19.5 The Exponential Distribution
+20.5 The Exponential Distribution
 =================================
 
  -- Function: double gsl_ran_exponential (const gsl_rng * R, double MU)
@@ -6017,7 +6345,7 @@ File: gsl-ref.info,  Node: The Exponential Distribution,  Next: The Laplace Dist
 
 File: gsl-ref.info,  Node: The Laplace Distribution,  Next: The Exponential Power Distribution,  Prev: The Exponential Distribution,  Up: Random Number Distributions
 
-19.6 The Laplace Distribution
+20.6 The Laplace Distribution
 =============================
 
  -- Function: double gsl_ran_laplace (const gsl_rng * R, double A)
@@ -6044,7 +6372,7 @@ File: gsl-ref.info,  Node: The Laplace Distribution,  Next: The Exponential Powe
 
 File: gsl-ref.info,  Node: The Exponential Power Distribution,  Next: The Cauchy Distribution,  Prev: The Laplace Distribution,  Up: Random Number Distributions
 
-19.7 The Exponential Power Distribution
+20.7 The Exponential Power Distribution
 =======================================
 
  -- Function: double gsl_ran_exppow (const gsl_rng * R, double A,
@@ -6074,7 +6402,7 @@ File: gsl-ref.info,  Node: The Exponential Power Distribution,  Next: The Cauchy
 
 File: gsl-ref.info,  Node: The Cauchy Distribution,  Next: The Rayleigh Distribution,  Prev: The Exponential Power Distribution,  Up: Random Number Distributions
 
-19.8 The Cauchy Distribution
+20.8 The Cauchy Distribution
 ============================
 
  -- Function: double gsl_ran_cauchy (const gsl_rng * R, double A)
@@ -6104,7 +6432,7 @@ File: gsl-ref.info,  Node: The Cauchy Distribution,  Next: The Rayleigh Distribu
 
 File: gsl-ref.info,  Node: The Rayleigh Distribution,  Next: The Rayleigh Tail Distribution,  Prev: The Cauchy Distribution,  Up: Random Number Distributions
 
-19.9 The Rayleigh Distribution
+20.9 The Rayleigh Distribution
 ==============================
 
  -- Function: double gsl_ran_rayleigh (const gsl_rng * R, double SIGMA)
@@ -6132,7 +6460,7 @@ File: gsl-ref.info,  Node: The Rayleigh Distribution,  Next: The Rayleigh Tail D
 
 File: gsl-ref.info,  Node: The Rayleigh Tail Distribution,  Next: The Landau Distribution,  Prev: The Rayleigh Distribution,  Up: Random Number Distributions
 
-19.10 The Rayleigh Tail Distribution
+20.10 The Rayleigh Tail Distribution
 ====================================
 
  -- Function: double gsl_ran_rayleigh_tail (const gsl_rng * R, double
@@ -6155,7 +6483,7 @@ File: gsl-ref.info,  Node: The Rayleigh Tail Distribution,  Next: The Landau Dis
 
 File: gsl-ref.info,  Node: The Landau Distribution,  Next: The Levy alpha-Stable Distributions,  Prev: The Rayleigh Tail Distribution,  Up: Random Number Distributions
 
-19.11 The Landau Distribution
+20.11 The Landau Distribution
 =============================
 
  -- Function: double gsl_ran_landau (const gsl_rng * R)
@@ -6178,7 +6506,7 @@ File: gsl-ref.info,  Node: The Landau Distribution,  Next: The Levy alpha-Stable
 
 File: gsl-ref.info,  Node: The Levy alpha-Stable Distributions,  Next: The Levy skew alpha-Stable Distribution,  Prev: The Landau Distribution,  Up: Random Number Distributions
 
-19.12 The Levy alpha-Stable Distributions
+20.12 The Levy alpha-Stable Distributions
 =========================================
 
  -- Function: double gsl_ran_levy (const gsl_rng * R, double C, double
@@ -6201,7 +6529,7 @@ File: gsl-ref.info,  Node: The Levy alpha-Stable Distributions,  Next: The Levy 
 
 File: gsl-ref.info,  Node: The Levy skew alpha-Stable Distribution,  Next: The Gamma Distribution,  Prev: The Levy alpha-Stable Distributions,  Up: Random Number Distributions
 
-19.13 The Levy skew alpha-Stable Distribution
+20.13 The Levy skew alpha-Stable Distribution
 =============================================
 
  -- Function: double gsl_ran_levy_skew (const gsl_rng * R, double C,
@@ -6235,7 +6563,7 @@ distributed as an alpha-stable variate, p(N^(1/\alpha) c, \alpha,
 
 File: gsl-ref.info,  Node: The Gamma Distribution,  Next: The Flat (Uniform) Distribution,  Prev: The Levy skew alpha-Stable Distribution,  Up: Random Number Distributions
 
-19.14 The Gamma Distribution
+20.14 The Gamma Distribution
 ============================
 
  -- Function: double gsl_ran_gamma (const gsl_rng * R, double A, double
@@ -6276,7 +6604,7 @@ File: gsl-ref.info,  Node: The Gamma Distribution,  Next: The Flat (Uniform) Dis
 
 File: gsl-ref.info,  Node: The Flat (Uniform) Distribution,  Next: The Lognormal Distribution,  Prev: The Gamma Distribution,  Up: Random Number Distributions
 
-19.15 The Flat (Uniform) Distribution
+20.15 The Flat (Uniform) Distribution
 =====================================
 
  -- Function: double gsl_ran_flat (const gsl_rng * R, double A, double
@@ -6304,7 +6632,7 @@ File: gsl-ref.info,  Node: The Flat (Uniform) Distribution,  Next: The Lognormal
 
 File: gsl-ref.info,  Node: The Lognormal Distribution,  Next: The Chi-squared Distribution,  Prev: The Flat (Uniform) Distribution,  Up: Random Number Distributions
 
-19.16 The Lognormal Distribution
+20.16 The Lognormal Distribution
 ================================
 
  -- Function: double gsl_ran_lognormal (const gsl_rng * R, double ZETA,
@@ -6338,7 +6666,7 @@ File: gsl-ref.info,  Node: The Lognormal Distribution,  Next: The Chi-squared Di
 
 File: gsl-ref.info,  Node: The Chi-squared Distribution,  Next: The F-distribution,  Prev: The Lognormal Distribution,  Up: Random Number Distributions
 
-19.17 The Chi-squared Distribution
+20.17 The Chi-squared Distribution
 ==================================
 
 The chi-squared distribution arises in statistics.  If Y_i are n
@@ -6375,7 +6703,7 @@ has a chi-squared distribution with n degrees of freedom.
 
 File: gsl-ref.info,  Node: The F-distribution,  Next: The t-distribution,  Prev: The Chi-squared Distribution,  Up: Random Number Distributions
 
-19.18 The F-distribution
+20.18 The F-distribution
 ========================
 
 The F-distribution arises in statistics.  If Y_1 and Y_2 are
@@ -6419,7 +6747,7 @@ has an F-distribution F(x;\nu_1,\nu_2).
 
 File: gsl-ref.info,  Node: The t-distribution,  Next: The Beta Distribution,  Prev: The F-distribution,  Up: Random Number Distributions
 
-19.19 The t-distribution
+20.19 The t-distribution
 ========================
 
 The t-distribution arises in statistics.  If Y_1 has a normal
@@ -6456,7 +6784,7 @@ has a t-distribution t(x;\nu) with \nu degrees of freedom.
 
 File: gsl-ref.info,  Node: The Beta Distribution,  Next: The Logistic Distribution,  Prev: The t-distribution,  Up: Random Number Distributions
 
-19.20 The Beta Distribution
+20.20 The Beta Distribution
 ===========================
 
  -- Function: double gsl_ran_beta (const gsl_rng * R, double A, double
@@ -6485,7 +6813,7 @@ File: gsl-ref.info,  Node: The Beta Distribution,  Next: The Logistic Distributi
 
 File: gsl-ref.info,  Node: The Logistic Distribution,  Next: The Pareto Distribution,  Prev: The Beta Distribution,  Up: Random Number Distributions
 
-19.21 The Logistic Distribution
+20.21 The Logistic Distribution
 ===============================
 
  -- Function: double gsl_ran_logistic (const gsl_rng * R, double A)
@@ -6513,7 +6841,7 @@ File: gsl-ref.info,  Node: The Logistic Distribution,  Next: The Pareto Distribu
 
 File: gsl-ref.info,  Node: The Pareto Distribution,  Next: Spherical Vector Distributions,  Prev: The Logistic Distribution,  Up: Random Number Distributions
 
-19.22 The Pareto Distribution
+20.22 The Pareto Distribution
 =============================
 
  -- Function: double gsl_ran_pareto (const gsl_rng * R, double A,
@@ -6542,7 +6870,7 @@ File: gsl-ref.info,  Node: The Pareto Distribution,  Next: Spherical Vector Dist
 
 File: gsl-ref.info,  Node: Spherical Vector Distributions,  Next: The Weibull Distribution,  Prev: The Pareto Distribution,  Up: Random Number Distributions
 
-19.23 Spherical Vector Distributions
+20.23 Spherical Vector Distributions
 ====================================
 
 The spherical distributions generate random vectors, located on a
@@ -6593,7 +6921,7 @@ in the steps of a random walk.
 
 File: gsl-ref.info,  Node: The Weibull Distribution,  Next: The Type-1 Gumbel Distribution,  Prev: Spherical Vector Distributions,  Up: Random Number Distributions
 
-19.24 The Weibull Distribution
+20.24 The Weibull Distribution
 ==============================
 
  -- Function: double gsl_ran_weibull (const gsl_rng * R, double A,
@@ -6622,7 +6950,7 @@ File: gsl-ref.info,  Node: The Weibull Distribution,  Next: The Type-1 Gumbel Di
 
 File: gsl-ref.info,  Node: The Type-1 Gumbel Distribution,  Next: The Type-2 Gumbel Distribution,  Prev: The Weibull Distribution,  Up: Random Number Distributions
 
-19.25 The Type-1 Gumbel Distribution
+20.25 The Type-1 Gumbel Distribution
 ====================================
 
  -- Function: double gsl_ran_gumbel1 (const gsl_rng * R, double A,
@@ -6651,7 +6979,7 @@ File: gsl-ref.info,  Node: The Type-1 Gumbel Distribution,  Next: The Type-2 Gum
 
 File: gsl-ref.info,  Node: The Type-2 Gumbel Distribution,  Next: The Dirichlet Distribution,  Prev: The Type-1 Gumbel Distribution,  Up: Random Number Distributions
 
-19.26 The Type-2 Gumbel Distribution
+20.26 The Type-2 Gumbel Distribution
 ====================================
 
  -- Function: double gsl_ran_gumbel2 (const gsl_rng * R, double A,
@@ -6680,7 +7008,7 @@ File: gsl-ref.info,  Node: The Type-2 Gumbel Distribution,  Next: The Dirichlet 
 
 File: gsl-ref.info,  Node: The Dirichlet Distribution,  Next: General Discrete Distributions,  Prev: The Type-2 Gumbel Distribution,  Up: Random Number Distributions
 
-19.27 The Dirichlet Distribution
+20.27 The Dirichlet Distribution
 ================================
 
  -- Function: void gsl_ran_dirichlet (const gsl_rng * R, size_t K,
@@ -6712,260 +7040,4 @@ File: gsl-ref.info,  Node: The Dirichlet Distribution,  Next: General Discrete D
      This function computes the logarithm of the probability density
      p(\theta_1, ... , \theta_K) for a Dirichlet distribution with
      parameters ALPHA[K].
-
-
-File: gsl-ref.info,  Node: General Discrete Distributions,  Next: The Poisson Distribution,  Prev: The Dirichlet Distribution,  Up: Random Number Distributions
-
-19.28 General Discrete Distributions
-====================================
-
-Given K discrete events with different probabilities P[k], produce a
-random value k consistent with its probability.
-
-   The obvious way to do this is to preprocess the probability list by
-generating a cumulative probability array with K+1 elements:
-
-       C[0] = 0
-     C[k+1] = C[k]+P[k].
-
-Note that this construction produces C[K]=1.  Now choose a uniform
-deviate u between 0 and 1, and find the value of k such that C[k] <= u
-< C[k+1].  Although this in principle requires of order \log K steps per
-random number generation, they are fast steps, and if you use something
-like \lfloor uK \rfloor as a starting point, you can often do pretty
-well.
-
-   But faster methods have been devised.  Again, the idea is to
-preprocess the probability list, and save the result in some form of
-lookup table; then the individual calls for a random discrete event can
-go rapidly.  An approach invented by G. Marsaglia (Generating discrete
-random variables in a computer, Comm ACM 6, 37-38 (1963)) is very
-clever, and readers interested in examples of good algorithm design are
-directed to this short and well-written paper.  Unfortunately, for
-large K, Marsaglia's lookup table can be quite large.
-
-   A much better approach is due to Alastair J. Walker (An efficient
-method for generating discrete random variables with general
-distributions, ACM Trans on Mathematical Software 3, 253-256 (1977);
-see also Knuth, v2, 3rd ed, p120-121,139).  This requires two lookup
-tables, one floating point and one integer, but both only of size K.
-After preprocessing, the random numbers are generated in O(1) time,
-even for large K.  The preprocessing suggested by Walker requires
-O(K^2) effort, but that is not actually necessary, and the
-implementation provided here only takes O(K) effort.  In general, more
-preprocessing leads to faster generation of the individual random
-numbers, but a diminishing return is reached pretty early.  Knuth points
-out that the optimal preprocessing is combinatorially difficult for
-large K.
-
-   This method can be used to speed up some of the discrete random
-number generators below, such as the binomial distribution.  To use it
-for something like the Poisson Distribution, a modification would have
-to be made, since it only takes a finite set of K outcomes.
-
- -- Function: gsl_ran_discrete_t * gsl_ran_discrete_preproc (size_t K,
-          const double * P)
-     This function returns a pointer to a structure that contains the
-     lookup table for the discrete random number generator.  The array
-     P[] contains the probabilities of the discrete events; these array
-     elements must all be positive, but they needn't add up to one (so
-     you can think of them more generally as "weights")--the
-     preprocessor will normalize appropriately.  This return value is
-     used as an argument for the `gsl_ran_discrete' function below.
-
- -- Function: size_t gsl_ran_discrete (const gsl_rng * R, const
-          gsl_ran_discrete_t * G)
-     After the preprocessor, above, has been called, you use this
-     function to get the discrete random numbers.
-
- -- Function: double gsl_ran_discrete_pdf (size_t K, const
-          gsl_ran_discrete_t * G)
-     Returns the probability P[k] of observing the variable K.  Since
-     P[k] is not stored as part of the lookup table, it must be
-     recomputed; this computation takes O(K), so if K is large and you
-     care about the original array P[k] used to create the lookup
-     table, then you should just keep this original array P[k] around.
-
- -- Function: void gsl_ran_discrete_free (gsl_ran_discrete_t * G)
-     De-allocates the lookup table pointed to by G.
-
-
-File: gsl-ref.info,  Node: The Poisson Distribution,  Next: The Bernoulli Distribution,  Prev: General Discrete Distributions,  Up: Random Number Distributions
-
-19.29 The Poisson Distribution
-==============================
-
- -- Function: unsigned int gsl_ran_poisson (const gsl_rng * R, double
-          MU)
-     This function returns a random integer from the Poisson
-     distribution with mean MU.  The probability distribution for
-     Poisson variates is,
-
-          p(k) = {\mu^k \over k!} \exp(-\mu)
-
-     for k >= 0.
-
- -- Function: double gsl_ran_poisson_pdf (unsigned int K, double MU)
-     This function computes the probability p(k) of obtaining  K from a
-     Poisson distribution with mean MU, using the formula given above.
-
-
- -- Function: double gsl_cdf_poisson_P (unsigned int K, double MU)
- -- Function: double gsl_cdf_poisson_Q (unsigned int K, double MU)
-     These functions compute the cumulative distribution functions
-     P(k), Q(k) for the Poisson distribution with parameter MU.
-
-
-File: gsl-ref.info,  Node: The Bernoulli Distribution,  Next: The Binomial Distribution,  Prev: The Poisson Distribution,  Up: Random Number Distributions
-
-19.30 The Bernoulli Distribution
-================================
-
- -- Function: unsigned int gsl_ran_bernoulli (const gsl_rng * R, double
-          P)
-     This function returns either 0 or 1, the result of a Bernoulli
-     trial with probability P.  The probability distribution for a
-     Bernoulli trial is,
-
-          p(0) = 1 - p
-          p(1) = p
-
-
- -- Function: double gsl_ran_bernoulli_pdf (unsigned int K, double P)
-     This function computes the probability p(k) of obtaining K from a
-     Bernoulli distribution with probability parameter P, using the
-     formula given above.
-
-
-
-File: gsl-ref.info,  Node: The Binomial Distribution,  Next: The Multinomial Distribution,  Prev: The Bernoulli Distribution,  Up: Random Number Distributions
-
-19.31 The Binomial Distribution
-===============================
-
- -- Function: unsigned int gsl_ran_binomial (const gsl_rng * R, double
-          P, unsigned int N)
-     This function returns a random integer from the binomial
-     distribution, the number of successes in N independent trials with
-     probability P.  The probability distribution for binomial variates
-     is,
-
-          p(k) = {n! \over k! (n-k)! } p^k (1-p)^{n-k}
-
-     for 0 <= k <= n.
-
- -- Function: double gsl_ran_binomial_pdf (unsigned int K, double P,
-          unsigned int N)
-     This function computes the probability p(k) of obtaining K from a
-     binomial distribution with parameters P and N, using the formula
-     given above.
-
-
- -- Function: double gsl_cdf_binomial_P (unsigned int K, double P,
-          unsigned int N)
- -- Function: double gsl_cdf_binomial_Q (unsigned int K, double P,
-          unsigned int N)
-     These functions compute the cumulative distribution functions
-     P(k), Q(k)  for the binomial distribution with parameters P and N.
-
-
-File: gsl-ref.info,  Node: The Multinomial Distribution,  Next: The Negative Binomial Distribution,  Prev: The Binomial Distribution,  Up: Random Number Distributions
-
-19.32 The Multinomial Distribution
-==================================
-
- -- Function: void gsl_ran_multinomial (const gsl_rng * R, size_t K,
-          unsigned int N, const double P[], unsigned int N[])
-     This function computes a random sample N[] from the multinomial
-     distribution formed by N trials from an underlying distribution
-     P[K]. The distribution function for N[] is,
-
-          P(n_1, n_2, ..., n_K) =
-            (N!/(n_1! n_2! ... n_K!)) p_1^n_1 p_2^n_2 ... p_K^n_K
-
-     where (n_1, n_2, ..., n_K) are nonnegative integers with
-     sum_{k=1}^K n_k = N, and (p_1, p_2, ..., p_K) is a probability
-     distribution with \sum p_i = 1.  If the array P[K] is not
-     normalized then its entries will be treated as weights and
-     normalized appropriately.  The arrays N[] and P[] must both be of
-     length K.
-
-     Random variates are generated using the conditional binomial
-     method (see C.S. Davis, `The computer generation of multinomial
-     random variates', Comp. Stat. Data Anal. 16 (1993) 205-217 for
-     details).
-
- -- Function: double gsl_ran_multinomial_pdf (size_t K, const double
-          P[], const unsigned int N[])
-     This function computes the probability P(n_1, n_2, ..., n_K) of
-     sampling N[K] from a multinomial distribution with parameters
-     P[K], using the formula given above.
-
- -- Function: double gsl_ran_multinomial_lnpdf (size_t K, const double
-          P[], const unsigned int N[])
-     This function returns the logarithm of the probability for the
-     multinomial distribution P(n_1, n_2, ..., n_K) with parameters
-     P[K].
-
-
-File: gsl-ref.info,  Node: The Negative Binomial Distribution,  Next: The Pascal Distribution,  Prev: The Multinomial Distribution,  Up: Random Number Distributions
-
-19.33 The Negative Binomial Distribution
-========================================
-
- -- Function: unsigned int gsl_ran_negative_binomial (const gsl_rng *
-          R, double P, double N)
-     This function returns a random integer from the negative binomial
-     distribution, the number of failures occurring before N successes
-     in independent trials with probability P of success.  The
-     probability distribution for negative binomial variates is,
-
-          p(k) = {\Gamma(n + k) \over \Gamma(k+1) \Gamma(n) } p^n (1-p)^k
-
-     Note that n is not required to be an integer.
-
- -- Function: double gsl_ran_negative_binomial_pdf (unsigned int K,
-          double P, double N)
-     This function computes the probability p(k) of obtaining K from a
-     negative binomial distribution with parameters P and N, using the
-     formula given above.
-
-
- -- Function: double gsl_cdf_negative_binomial_P (unsigned int K,
-          double P, double N)
- -- Function: double gsl_cdf_negative_binomial_Q (unsigned int K,
-          double P, double N)
-     These functions compute the cumulative distribution functions
-     P(k), Q(k) for the negative binomial distribution with parameters
-     P and N.
-
-
-File: gsl-ref.info,  Node: The Pascal Distribution,  Next: The Geometric Distribution,  Prev: The Negative Binomial Distribution,  Up: Random Number Distributions
-
-19.34 The Pascal Distribution
-=============================
-
- -- Function: unsigned int gsl_ran_pascal (const gsl_rng * R, double P,
-          unsigned int N)
-     This function returns a random integer from the Pascal
-     distribution.  The Pascal distribution is simply a negative
-     binomial distribution with an integer value of n.
-
-          p(k) = {(n + k - 1)! \over k! (n - 1)! } p^n (1-p)^k
-
-     for k >= 0
-
- -- Function: double gsl_ran_pascal_pdf (unsigned int K, double P,
-          unsigned int N)
-     This function computes the probability p(k) of obtaining K from a
-     Pascal distribution with parameters P and N, using the formula
-     given above.
-
-
- -- Function: double gsl_cdf_pascal_P (unsigned int K, double P,
-          unsigned int N)
- -- Function: double gsl_cdf_pascal_Q (unsigned int K, double P,
-          unsigned int N)
-     These functions compute the cumulative distribution functions
-     P(k), Q(k) for the Pascal distribution with parameters P and N.
 

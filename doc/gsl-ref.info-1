@@ -7,7 +7,7 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007, 2008, 2009 The GSL Team.
+2005, 2006, 2007, 2008, 2009, 2010 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -29,7 +29,7 @@ GSL
 
 This file documents the GNU Scientific Library (GSL), a collection of
 numerical routines for scientific computing.  It corresponds to release
-1.13 of the library.  Please report any errors in this manual to
+1.14 of the library.  Please report any errors in this manual to
 <bug-gsl@gnu.org>.
 
    More information about GSL can be found at the project homepage,
@@ -43,7 +43,7 @@ from sales of the manual helps support the development of GSL.
 project homepage thanks to Daisuke Tominaga.
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007, 2008, 2009 The GSL Team.
+2005, 2006, 2007, 2008, 2009, 2010 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -70,6 +70,7 @@ this GNU Manual."
 * Vectors and Matrices::
 * Permutations::
 * Combinations::
+* Multisets::
 * Sorting::
 * BLAS Support::
 * Linear Algebra::
@@ -4365,7 +4366,7 @@ uses a similar recursion, but with the normalized functions.
  -- Function: int gsl_sf_legendre_sphPlm_e (int L, int M, double X,
           gsl_sf_result * RESULT)
      These routines compute the normalized associated Legendre
-     polynomial $\sqrt{(2l+1)/(4\pi)} \sqrt{(l-m)!/(l+m)!} P_l^m(x)$
+     polynomial \sqrt{(2l+1)/(4\pi)} \sqrt{(l-m)!/(l+m)!} P_l^m(x)
      suitable for use in spherical harmonics.  The parameters must
      satisfy m >= 0, l >= m, |x| <= 1. Theses routines avoid the
      overflows that occur for the standard normalization of P_l^m(x).
@@ -4375,8 +4376,8 @@ uses a similar recursion, but with the normalized functions.
  -- Function: int gsl_sf_legendre_sphPlm_deriv_array (int LMAX, int M,
           double X, double RESULT_ARRAY[], double RESULT_DERIV_ARRAY[])
      These functions compute arrays of normalized associated Legendre
-     functions $\sqrt{(2l+1)/(4\pi)} \sqrt{(l-m)!/(l+m)!} P_l^m(x)$,
-     and derivatives, for m >= 0, l = |m|, ..., lmax, |x| <= 1.0
+     functions \sqrt{(2l+1)/(4\pi)} \sqrt{(l-m)!/(l+m)!} P_l^m(x), and
+     derivatives, for m >= 0, l = |m|, ..., lmax, |x| <= 1.0
 
  -- Function: int gsl_sf_legendre_array_size (const int LMAX, const int
           M)
@@ -6325,7 +6326,7 @@ block.
  -- Function: gsl_vector_view gsl_matrix_diagonal (gsl_matrix * M)
  -- Function: gsl_vector_const_view gsl_matrix_const_diagonal (const
           gsl_matrix * M)
-     These functions returns a vector view of the diagonal of the matrix
+     These functions return a vector view of the diagonal of the matrix
      M. The matrix M is not required to be square. For a rectangular
      matrix the length of the diagonal is the same as the smaller
      dimension of the matrix.
@@ -7152,7 +7153,7 @@ For the definition of the "canonical form" see,
      Section 1.3.3, `An Unusual Correspondence', p.178-179.
 
 
-File: gsl-ref.info,  Node: Combinations,  Next: Sorting,  Prev: Permutations,  Up: Top
+File: gsl-ref.info,  Node: Combinations,  Next: Multisets,  Prev: Permutations,  Up: Top
 
 10 Combinations
 ***************

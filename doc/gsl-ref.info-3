@@ -7,7 +7,7 @@ START-INFO-DIR-ENTRY
 END-INFO-DIR-ENTRY
 
    Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-2005, 2006, 2007, 2008, 2009 The GSL Team.
+2005, 2006, 2007, 2008, 2009, 2010 The GSL Team.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -22,9 +22,265 @@ License".
 this GNU Manual."
 
 
+File: gsl-ref.info,  Node: General Discrete Distributions,  Next: The Poisson Distribution,  Prev: The Dirichlet Distribution,  Up: Random Number Distributions
+
+20.28 General Discrete Distributions
+====================================
+
+Given K discrete events with different probabilities P[k], produce a
+random value k consistent with its probability.
+
+   The obvious way to do this is to preprocess the probability list by
+generating a cumulative probability array with K+1 elements:
+
+       C[0] = 0
+     C[k+1] = C[k]+P[k].
+
+Note that this construction produces C[K]=1.  Now choose a uniform
+deviate u between 0 and 1, and find the value of k such that C[k] <= u
+< C[k+1].  Although this in principle requires of order \log K steps per
+random number generation, they are fast steps, and if you use something
+like \lfloor uK \rfloor as a starting point, you can often do pretty
+well.
+
+   But faster methods have been devised.  Again, the idea is to
+preprocess the probability list, and save the result in some form of
+lookup table; then the individual calls for a random discrete event can
+go rapidly.  An approach invented by G. Marsaglia (Generating discrete
+random variables in a computer, Comm ACM 6, 37-38 (1963)) is very
+clever, and readers interested in examples of good algorithm design are
+directed to this short and well-written paper.  Unfortunately, for
+large K, Marsaglia's lookup table can be quite large.
+
+   A much better approach is due to Alastair J. Walker (An efficient
+method for generating discrete random variables with general
+distributions, ACM Trans on Mathematical Software 3, 253-256 (1977);
+see also Knuth, v2, 3rd ed, p120-121,139).  This requires two lookup
+tables, one floating point and one integer, but both only of size K.
+After preprocessing, the random numbers are generated in O(1) time,
+even for large K.  The preprocessing suggested by Walker requires
+O(K^2) effort, but that is not actually necessary, and the
+implementation provided here only takes O(K) effort.  In general, more
+preprocessing leads to faster generation of the individual random
+numbers, but a diminishing return is reached pretty early.  Knuth points
+out that the optimal preprocessing is combinatorially difficult for
+large K.
+
+   This method can be used to speed up some of the discrete random
+number generators below, such as the binomial distribution.  To use it
+for something like the Poisson Distribution, a modification would have
+to be made, since it only takes a finite set of K outcomes.
+
+ -- Function: gsl_ran_discrete_t * gsl_ran_discrete_preproc (size_t K,
+          const double * P)
+     This function returns a pointer to a structure that contains the
+     lookup table for the discrete random number generator.  The array
+     P[] contains the probabilities of the discrete events; these array
+     elements must all be positive, but they needn't add up to one (so
+     you can think of them more generally as "weights")--the
+     preprocessor will normalize appropriately.  This return value is
+     used as an argument for the `gsl_ran_discrete' function below.
+
+ -- Function: size_t gsl_ran_discrete (const gsl_rng * R, const
+          gsl_ran_discrete_t * G)
+     After the preprocessor, above, has been called, you use this
+     function to get the discrete random numbers.
+
+ -- Function: double gsl_ran_discrete_pdf (size_t K, const
+          gsl_ran_discrete_t * G)
+     Returns the probability P[k] of observing the variable K.  Since
+     P[k] is not stored as part of the lookup table, it must be
+     recomputed; this computation takes O(K), so if K is large and you
+     care about the original array P[k] used to create the lookup
+     table, then you should just keep this original array P[k] around.
+
+ -- Function: void gsl_ran_discrete_free (gsl_ran_discrete_t * G)
+     De-allocates the lookup table pointed to by G.
+
+
+File: gsl-ref.info,  Node: The Poisson Distribution,  Next: The Bernoulli Distribution,  Prev: General Discrete Distributions,  Up: Random Number Distributions
+
+20.29 The Poisson Distribution
+==============================
+
+ -- Function: unsigned int gsl_ran_poisson (const gsl_rng * R, double
+          MU)
+     This function returns a random integer from the Poisson
+     distribution with mean MU.  The probability distribution for
+     Poisson variates is,
+
+          p(k) = {\mu^k \over k!} \exp(-\mu)
+
+     for k >= 0.
+
+ -- Function: double gsl_ran_poisson_pdf (unsigned int K, double MU)
+     This function computes the probability p(k) of obtaining  K from a
+     Poisson distribution with mean MU, using the formula given above.
+
+
+ -- Function: double gsl_cdf_poisson_P (unsigned int K, double MU)
+ -- Function: double gsl_cdf_poisson_Q (unsigned int K, double MU)
+     These functions compute the cumulative distribution functions
+     P(k), Q(k) for the Poisson distribution with parameter MU.
+
+
+File: gsl-ref.info,  Node: The Bernoulli Distribution,  Next: The Binomial Distribution,  Prev: The Poisson Distribution,  Up: Random Number Distributions
+
+20.30 The Bernoulli Distribution
+================================
+
+ -- Function: unsigned int gsl_ran_bernoulli (const gsl_rng * R, double
+          P)
+     This function returns either 0 or 1, the result of a Bernoulli
+     trial with probability P.  The probability distribution for a
+     Bernoulli trial is,
+
+          p(0) = 1 - p
+          p(1) = p
+
+
+ -- Function: double gsl_ran_bernoulli_pdf (unsigned int K, double P)
+     This function computes the probability p(k) of obtaining K from a
+     Bernoulli distribution with probability parameter P, using the
+     formula given above.
+
+
+
+File: gsl-ref.info,  Node: The Binomial Distribution,  Next: The Multinomial Distribution,  Prev: The Bernoulli Distribution,  Up: Random Number Distributions
+
+20.31 The Binomial Distribution
+===============================
+
+ -- Function: unsigned int gsl_ran_binomial (const gsl_rng * R, double
+          P, unsigned int N)
+     This function returns a random integer from the binomial
+     distribution, the number of successes in N independent trials with
+     probability P.  The probability distribution for binomial variates
+     is,
+
+          p(k) = {n! \over k! (n-k)! } p^k (1-p)^{n-k}
+
+     for 0 <= k <= n.
+
+ -- Function: double gsl_ran_binomial_pdf (unsigned int K, double P,
+          unsigned int N)
+     This function computes the probability p(k) of obtaining K from a
+     binomial distribution with parameters P and N, using the formula
+     given above.
+
+
+ -- Function: double gsl_cdf_binomial_P (unsigned int K, double P,
+          unsigned int N)
+ -- Function: double gsl_cdf_binomial_Q (unsigned int K, double P,
+          unsigned int N)
+     These functions compute the cumulative distribution functions
+     P(k), Q(k)  for the binomial distribution with parameters P and N.
+
+
+File: gsl-ref.info,  Node: The Multinomial Distribution,  Next: The Negative Binomial Distribution,  Prev: The Binomial Distribution,  Up: Random Number Distributions
+
+20.32 The Multinomial Distribution
+==================================
+
+ -- Function: void gsl_ran_multinomial (const gsl_rng * R, size_t K,
+          unsigned int N, const double P[], unsigned int N[])
+     This function computes a random sample N[] from the multinomial
+     distribution formed by N trials from an underlying distribution
+     P[K]. The distribution function for N[] is,
+
+          P(n_1, n_2, ..., n_K) =
+            (N!/(n_1! n_2! ... n_K!)) p_1^n_1 p_2^n_2 ... p_K^n_K
+
+     where (n_1, n_2, ..., n_K) are nonnegative integers with
+     sum_{k=1}^K n_k = N, and (p_1, p_2, ..., p_K) is a probability
+     distribution with \sum p_i = 1.  If the array P[K] is not
+     normalized then its entries will be treated as weights and
+     normalized appropriately.  The arrays N[] and P[] must both be of
+     length K.
+
+     Random variates are generated using the conditional binomial
+     method (see C.S. Davis, `The computer generation of multinomial
+     random variates', Comp. Stat. Data Anal. 16 (1993) 205-217 for
+     details).
+
+ -- Function: double gsl_ran_multinomial_pdf (size_t K, const double
+          P[], const unsigned int N[])
+     This function computes the probability P(n_1, n_2, ..., n_K) of
+     sampling N[K] from a multinomial distribution with parameters
+     P[K], using the formula given above.
+
+ -- Function: double gsl_ran_multinomial_lnpdf (size_t K, const double
+          P[], const unsigned int N[])
+     This function returns the logarithm of the probability for the
+     multinomial distribution P(n_1, n_2, ..., n_K) with parameters
+     P[K].
+
+
+File: gsl-ref.info,  Node: The Negative Binomial Distribution,  Next: The Pascal Distribution,  Prev: The Multinomial Distribution,  Up: Random Number Distributions
+
+20.33 The Negative Binomial Distribution
+========================================
+
+ -- Function: unsigned int gsl_ran_negative_binomial (const gsl_rng *
+          R, double P, double N)
+     This function returns a random integer from the negative binomial
+     distribution, the number of failures occurring before N successes
+     in independent trials with probability P of success.  The
+     probability distribution for negative binomial variates is,
+
+          p(k) = {\Gamma(n + k) \over \Gamma(k+1) \Gamma(n) } p^n (1-p)^k
+
+     Note that n is not required to be an integer.
+
+ -- Function: double gsl_ran_negative_binomial_pdf (unsigned int K,
+          double P, double N)
+     This function computes the probability p(k) of obtaining K from a
+     negative binomial distribution with parameters P and N, using the
+     formula given above.
+
+
+ -- Function: double gsl_cdf_negative_binomial_P (unsigned int K,
+          double P, double N)
+ -- Function: double gsl_cdf_negative_binomial_Q (unsigned int K,
+          double P, double N)
+     These functions compute the cumulative distribution functions
+     P(k), Q(k) for the negative binomial distribution with parameters
+     P and N.
+
+
+File: gsl-ref.info,  Node: The Pascal Distribution,  Next: The Geometric Distribution,  Prev: The Negative Binomial Distribution,  Up: Random Number Distributions
+
+20.34 The Pascal Distribution
+=============================
+
+ -- Function: unsigned int gsl_ran_pascal (const gsl_rng * R, double P,
+          unsigned int N)
+     This function returns a random integer from the Pascal
+     distribution.  The Pascal distribution is simply a negative
+     binomial distribution with an integer value of n.
+
+          p(k) = {(n + k - 1)! \over k! (n - 1)! } p^n (1-p)^k
+
+     for k >= 0
+
+ -- Function: double gsl_ran_pascal_pdf (unsigned int K, double P,
+          unsigned int N)
+     This function computes the probability p(k) of obtaining K from a
+     Pascal distribution with parameters P and N, using the formula
+     given above.
+
+
+ -- Function: double gsl_cdf_pascal_P (unsigned int K, double P,
+          unsigned int N)
+ -- Function: double gsl_cdf_pascal_Q (unsigned int K, double P,
+          unsigned int N)
+     These functions compute the cumulative distribution functions
+     P(k), Q(k) for the Pascal distribution with parameters P and N.
+
+
 File: gsl-ref.info,  Node: The Geometric Distribution,  Next: The Hypergeometric Distribution,  Prev: The Pascal Distribution,  Up: Random Number Distributions
 
-19.35 The Geometric Distribution
+20.35 The Geometric Distribution
 ================================
 
  -- Function: unsigned int gsl_ran_geometric (const gsl_rng * R, double
@@ -54,7 +310,7 @@ File: gsl-ref.info,  Node: The Geometric Distribution,  Next: The Hypergeometric
 
 File: gsl-ref.info,  Node: The Hypergeometric Distribution,  Next: The Logarithmic Distribution,  Prev: The Geometric Distribution,  Up: Random Number Distributions
 
-19.36 The Hypergeometric Distribution
+20.36 The Hypergeometric Distribution
 =====================================
 
  -- Function: unsigned int gsl_ran_hypergeometric (const gsl_rng * R,
@@ -91,7 +347,7 @@ File: gsl-ref.info,  Node: The Hypergeometric Distribution,  Next: The Logarithm
 
 File: gsl-ref.info,  Node: The Logarithmic Distribution,  Next: Shuffling and Sampling,  Prev: The Hypergeometric Distribution,  Up: Random Number Distributions
 
-19.37 The Logarithmic Distribution
+20.37 The Logarithmic Distribution
 ==================================
 
  -- Function: unsigned int gsl_ran_logarithmic (const gsl_rng * R,
@@ -113,7 +369,7 @@ File: gsl-ref.info,  Node: The Logarithmic Distribution,  Next: Shuffling and Sa
 
 File: gsl-ref.info,  Node: Shuffling and Sampling,  Next: Random Number Distribution Examples,  Prev: The Logarithmic Distribution,  Up: Random Number Distributions
 
-19.38 Shuffling and Sampling
+20.38 Shuffling and Sampling
 ============================
 
 The following functions allow the shuffling and sampling of a set of
@@ -181,7 +437,7 @@ short period.  For more information see Knuth, v2, 3rd ed, Section
 
 File: gsl-ref.info,  Node: Random Number Distribution Examples,  Next: Random Number Distribution References and Further Reading,  Prev: Shuffling and Sampling,  Up: Random Number Distributions
 
-19.39 Examples
+20.39 Examples
 ==============
 
 The following program demonstrates the use of a random number generator
@@ -315,7 +571,7 @@ Here is the output of the program,
 
 File: gsl-ref.info,  Node: Random Number Distribution References and Further Reading,  Prev: Random Number Distribution Examples,  Up: Random Number Distributions
 
-19.40 References and Further Reading
+20.40 References and Further Reading
 ====================================
 
 For an encyclopaedic coverage of the subject readers are advised to
@@ -367,7 +623,7 @@ based on the following papers,
 
 File: gsl-ref.info,  Node: Statistics,  Next: Histograms,  Prev: Random Number Distributions,  Up: Top
 
-20 Statistics
+21 Statistics
 *************
 
 This chapter describes the statistical functions in the library.  The
@@ -403,7 +659,7 @@ STRIDE parameter specifying the spacing between elements.
 
 File: gsl-ref.info,  Node: Mean and standard deviation and variance,  Next: Absolute deviation,  Up: Statistics
 
-20.1 Mean, Standard Deviation and Variance
+21.1 Mean, Standard Deviation and Variance
 ==========================================
 
  -- Function: double gsl_stats_mean (const double DATA[], size_t
@@ -482,7 +738,7 @@ File: gsl-ref.info,  Node: Mean and standard deviation and variance,  Next: Abso
 
 File: gsl-ref.info,  Node: Absolute deviation,  Next: Higher moments (skewness and kurtosis),  Prev: Mean and standard deviation and variance,  Up: Statistics
 
-20.2 Absolute deviation
+21.2 Absolute deviation
 =======================
 
  -- Function: double gsl_stats_absdev (const double DATA[], size_t
@@ -513,7 +769,7 @@ File: gsl-ref.info,  Node: Absolute deviation,  Next: Higher moments (skewness a
 
 File: gsl-ref.info,  Node: Higher moments (skewness and kurtosis),  Next: Autocorrelation,  Prev: Absolute deviation,  Up: Statistics
 
-20.3 Higher moments (skewness and kurtosis)
+21.3 Higher moments (skewness and kurtosis)
 ===========================================
 
  -- Function: double gsl_stats_skew (const double DATA[], size_t
@@ -563,7 +819,7 @@ File: gsl-ref.info,  Node: Higher moments (skewness and kurtosis),  Next: Autoco
 
 File: gsl-ref.info,  Node: Autocorrelation,  Next: Covariance,  Prev: Higher moments (skewness and kurtosis),  Up: Statistics
 
-20.4 Autocorrelation
+21.4 Autocorrelation
 ====================
 
  -- Function: double gsl_stats_lag1_autocorrelation (const double
@@ -585,7 +841,7 @@ File: gsl-ref.info,  Node: Autocorrelation,  Next: Covariance,  Prev: Higher mom
 
 File: gsl-ref.info,  Node: Covariance,  Next: Correlation,  Prev: Autocorrelation,  Up: Statistics
 
-20.5 Covariance
+21.5 Covariance
 ===============
 
  -- Function: double gsl_stats_covariance (const double DATA1[], const
@@ -608,7 +864,7 @@ File: gsl-ref.info,  Node: Covariance,  Next: Correlation,  Prev: Autocorrelatio
 
 File: gsl-ref.info,  Node: Correlation,  Next: Weighted Samples,  Prev: Covariance,  Up: Statistics
 
-20.6 Correlation
+21.6 Correlation
 ================
 
  -- Function: double gsl_stats_correlation (const double DATA1[], const
@@ -626,7 +882,7 @@ File: gsl-ref.info,  Node: Correlation,  Next: Weighted Samples,  Prev: Covarian
 
 File: gsl-ref.info,  Node: Weighted Samples,  Next: Maximum and Minimum values,  Prev: Correlation,  Up: Statistics
 
-20.7 Weighted Samples
+21.7 Weighted Samples
 =====================
 
 The functions described in this section allow the computation of
@@ -749,7 +1005,7 @@ zero corresponds to removing a sample from a dataset.
 
 File: gsl-ref.info,  Node: Maximum and Minimum values,  Next: Median and Percentiles,  Prev: Weighted Samples,  Up: Statistics
 
-20.8 Maximum and Minimum values
+21.8 Maximum and Minimum values
 ===============================
 
 The following functions find the maximum and minimum values of a
@@ -807,7 +1063,7 @@ array is returned.
 
 File: gsl-ref.info,  Node: Median and Percentiles,  Next: Example statistical programs,  Prev: Maximum and Minimum values,  Up: Statistics
 
-20.9 Median and Percentiles
+21.9 Median and Percentiles
 ===========================
 
 The median and percentile functions described in this section operate on
@@ -857,7 +1113,7 @@ of 0 to 1, instead of percentiles (which use a scale of 0 to 100).
 
 File: gsl-ref.info,  Node: Example statistical programs,  Next: Statistics References and Further Reading,  Prev: Median and Percentiles,  Up: Statistics
 
-20.10 Examples
+21.10 Examples
 ==============
 
 Here is a basic example of how to use the statistical functions:
@@ -944,7 +1200,7 @@ Here is a basic example of how to use the statistical functions:
 
 File: gsl-ref.info,  Node: Statistics References and Further Reading,  Prev: Example statistical programs,  Up: Statistics
 
-20.11 References and Further Reading
+21.11 References and Further Reading
 ====================================
 
 The standard reference for almost any topic in statistics is the
@@ -974,7 +1230,7 @@ The Review of Particle Physics is available online at the website
 
 File: gsl-ref.info,  Node: Histograms,  Next: N-tuples,  Prev: Statistics,  Up: Top
 
-21 Histograms
+22 Histograms
 *************
 
 This chapter describes functions for creating histograms.  Histograms
@@ -1022,7 +1278,7 @@ This can be useful for generating simulations based on real data.
 
 File: gsl-ref.info,  Node: The histogram struct,  Next: Histogram allocation,  Up: Histograms
 
-21.1 The histogram struct
+22.1 The histogram struct
 =========================
 
 A histogram is defined by the following struct,
@@ -1068,7 +1324,7 @@ in the header file `gsl_histogram.h'.
 
 File: gsl-ref.info,  Node: Histogram allocation,  Next: Copying Histograms,  Prev: The histogram struct,  Up: Histograms
 
-21.2 Histogram allocation
+22.2 Histogram allocation
 =========================
 
 The functions for allocating memory to a histogram follow the style of
@@ -1133,7 +1389,7 @@ isn't necessary to check every histogram `alloc'.
 
 File: gsl-ref.info,  Node: Copying Histograms,  Next: Updating and accessing histogram elements,  Prev: Histogram allocation,  Up: Histograms
 
-21.3 Copying Histograms
+22.3 Copying Histograms
 =======================
 
  -- Function: int gsl_histogram_memcpy (gsl_histogram * DEST, const
@@ -1150,7 +1406,7 @@ File: gsl-ref.info,  Node: Copying Histograms,  Next: Updating and accessing his
 
 File: gsl-ref.info,  Node: Updating and accessing histogram elements,  Next: Searching histogram ranges,  Prev: Copying Histograms,  Up: Histograms
 
-21.4 Updating and accessing histogram elements
+22.4 Updating and accessing histogram elements
 ==============================================
 
 There are two ways to access histogram bins, either by specifying an x
@@ -1212,7 +1468,7 @@ identify the bin which covers the appropriate range.
 
 File: gsl-ref.info,  Node: Searching histogram ranges,  Next: Histogram Statistics,  Prev: Updating and accessing histogram elements,  Up: Histograms
 
-21.5 Searching histogram ranges
+22.5 Searching histogram ranges
 ===============================
 
 The following functions are used by the access and update routines to
@@ -1233,7 +1489,7 @@ locate the bin which corresponds to a given x coordinate.
 
 File: gsl-ref.info,  Node: Histogram Statistics,  Next: Histogram Operations,  Prev: Searching histogram ranges,  Up: Histograms
 
-21.6 Histogram Statistics
+22.6 Histogram Statistics
 =========================
 
  -- Function: double gsl_histogram_max_val (const gsl_histogram * H)
@@ -1274,7 +1530,7 @@ File: gsl-ref.info,  Node: Histogram Statistics,  Next: Histogram Operations,  P
 
 File: gsl-ref.info,  Node: Histogram Operations,  Next: Reading and writing histograms,  Prev: Histogram Statistics,  Up: Histograms
 
-21.7 Histogram Operations
+22.7 Histogram Operations
 =========================
 
  -- Function: int gsl_histogram_equal_bins_p (const gsl_histogram * H1,
@@ -1319,7 +1575,7 @@ File: gsl-ref.info,  Node: Histogram Operations,  Next: Reading and writing hist
 
 File: gsl-ref.info,  Node: Reading and writing histograms,  Next: Resampling from histograms,  Prev: Histogram Operations,  Up: Histograms
 
-21.8 Reading and writing histograms
+22.8 Reading and writing histograms
 ===================================
 
 The library provides functions for reading and writing histograms to a
@@ -1380,7 +1636,7 @@ file as binary data or formatted text.
 
 File: gsl-ref.info,  Node: Resampling from histograms,  Next: The histogram probability distribution struct,  Prev: Reading and writing histograms,  Up: Histograms
 
-21.9 Resampling from histograms
+22.9 Resampling from histograms
 ===============================
 
 A histogram made by counting events can be regarded as a measurement of
@@ -1398,7 +1654,7 @@ The distribution of events within each bin is assumed to be uniform.
 
 File: gsl-ref.info,  Node: The histogram probability distribution struct,  Next: Example programs for histograms,  Prev: Resampling from histograms,  Up: Histograms
 
-21.10 The histogram probability distribution struct
+22.10 The histogram probability distribution struct
 ===================================================
 
 The probability distribution function for a histogram consists of a set
@@ -1463,7 +1719,7 @@ random samples from it.
 
 File: gsl-ref.info,  Node: Example programs for histograms,  Next: Two dimensional histograms,  Prev: The histogram probability distribution struct,  Up: Histograms
 
-21.11 Example programs for histograms
+22.11 Example programs for histograms
 =====================================
 
 The following program shows how to make a simple histogram of a column
@@ -1529,7 +1785,7 @@ size.
 
 File: gsl-ref.info,  Node: Two dimensional histograms,  Next: The 2D histogram struct,  Prev: Example programs for histograms,  Up: Histograms
 
-21.12 Two dimensional histograms
+22.12 Two dimensional histograms
 ================================
 
 A two dimensional histogram consists of a set of "bins" which count the
@@ -1544,7 +1800,7 @@ the joint distribution n(x,E).
 
 File: gsl-ref.info,  Node: The 2D histogram struct,  Next: 2D Histogram allocation,  Prev: Two dimensional histograms,  Up: Histograms
 
-21.13 The 2D histogram struct
+22.13 The 2D histogram struct
 =============================
 
 Two dimensional histograms are defined by the following struct,
@@ -1588,7 +1844,7 @@ defined in the header file `gsl_histogram2d.h'.
 
 File: gsl-ref.info,  Node: 2D Histogram allocation,  Next: Copying 2D Histograms,  Prev: The 2D histogram struct,  Up: Histograms
 
-21.14 2D Histogram allocation
+22.14 2D Histogram allocation
 =============================
 
 The functions for allocating memory to a 2D histogram follow the style
@@ -1629,7 +1885,7 @@ isn't necessary to check every 2D histogram `alloc'.
 
 File: gsl-ref.info,  Node: Copying 2D Histograms,  Next: Updating and accessing 2D histogram elements,  Prev: 2D Histogram allocation,  Up: Histograms
 
-21.15 Copying 2D Histograms
+22.15 Copying 2D Histograms
 ===========================
 
  -- Function: int gsl_histogram2d_memcpy (gsl_histogram2d * DEST, const
@@ -1646,7 +1902,7 @@ File: gsl-ref.info,  Node: Copying 2D Histograms,  Next: Updating and accessing 
 
 File: gsl-ref.info,  Node: Updating and accessing 2D histogram elements,  Next: Searching 2D histogram ranges,  Prev: Copying 2D Histograms,  Up: Histograms
 
-21.16 Updating and accessing 2D histogram elements
+22.16 Updating and accessing 2D histogram elements
 ==================================================
 
 You can access the bins of a two-dimensional histogram either by
@@ -1713,7 +1969,7 @@ identify the bin which covers the appropriate range.
 
 File: gsl-ref.info,  Node: Searching 2D histogram ranges,  Next: 2D Histogram Statistics,  Prev: Updating and accessing 2D histogram elements,  Up: Histograms
 
-21.17 Searching 2D histogram ranges
+22.17 Searching 2D histogram ranges
 ===================================
 
 The following functions are used by the access and update routines to
@@ -1733,7 +1989,7 @@ locate the bin which corresponds to a given (x,y) coordinate.
 
 File: gsl-ref.info,  Node: 2D Histogram Statistics,  Next: 2D Histogram Operations,  Prev: Searching 2D histogram ranges,  Up: Histograms
 
-21.18 2D Histogram Statistics
+22.18 2D Histogram Statistics
 =============================
 
  -- Function: double gsl_histogram2d_max_val (const gsl_histogram2d * H)
@@ -1795,7 +2051,7 @@ File: gsl-ref.info,  Node: 2D Histogram Statistics,  Next: 2D Histogram Operatio
 
 File: gsl-ref.info,  Node: 2D Histogram Operations,  Next: Reading and writing 2D histograms,  Prev: 2D Histogram Statistics,  Up: Histograms
 
-21.19 2D Histogram Operations
+22.19 2D Histogram Operations
 =============================
 
  -- Function: int gsl_histogram2d_equal_bins_p (const gsl_histogram2d *
@@ -1843,7 +2099,7 @@ File: gsl-ref.info,  Node: 2D Histogram Operations,  Next: Reading and writing 2
 
 File: gsl-ref.info,  Node: Reading and writing 2D histograms,  Next: Resampling from 2D histograms,  Prev: 2D Histogram Operations,  Up: Histograms
 
-21.20 Reading and writing 2D histograms
+22.20 Reading and writing 2D histograms
 =======================================
 
 The library provides functions for reading and writing two dimensional
@@ -1917,7 +2173,7 @@ histograms to a file as binary data or formatted text.
 
 File: gsl-ref.info,  Node: Resampling from 2D histograms,  Next: Example programs for 2D histograms,  Prev: Reading and writing 2D histograms,  Up: Histograms
 
-21.21 Resampling from 2D histograms
+22.21 Resampling from 2D histograms
 ===================================
 
 As in the one-dimensional case, a two-dimensional histogram made by
@@ -1984,7 +2240,7 @@ generate random samples from it.
 
 File: gsl-ref.info,  Node: Example programs for 2D histograms,  Prev: Resampling from 2D histograms,  Up: Histograms
 
-21.22 Example programs for 2D histograms
+22.22 Example programs for 2D histograms
 ========================================
 
 This program demonstrates two features of two-dimensional histograms.
@@ -2050,7 +2306,7 @@ which are printed out.
 
 File: gsl-ref.info,  Node: N-tuples,  Next: Monte Carlo Integration,  Prev: Histograms,  Up: Top
 
-22 N-tuples
+23 N-tuples
 ***********
 
 This chapter describes functions for creating and manipulating
@@ -2087,7 +2343,7 @@ event.
 
 File: gsl-ref.info,  Node: The ntuple struct,  Next: Creating ntuples,  Up: N-tuples
 
-22.1 The ntuple struct
+23.1 The ntuple struct
 ======================
 
 Ntuples are manipulated using the `gsl_ntuple' struct. This struct
@@ -2104,7 +2360,7 @@ ntuple data struct.
 
 File: gsl-ref.info,  Node: Creating ntuples,  Next: Opening an existing ntuple file,  Prev: The ntuple struct,  Up: N-tuples
 
-22.2 Creating ntuples
+23.2 Creating ntuples
 =====================
 
  -- Function: gsl_ntuple * gsl_ntuple_create (char * FILENAME, void *
@@ -2119,7 +2375,7 @@ File: gsl-ref.info,  Node: Creating ntuples,  Next: Opening an existing ntuple f
 
 File: gsl-ref.info,  Node: Opening an existing ntuple file,  Next: Writing ntuples,  Prev: Creating ntuples,  Up: N-tuples
 
-22.3 Opening an existing ntuple file
+23.3 Opening an existing ntuple file
 ====================================
 
  -- Function: gsl_ntuple * gsl_ntuple_open (char * FILENAME, void *
@@ -2133,7 +2389,7 @@ File: gsl-ref.info,  Node: Opening an existing ntuple file,  Next: Writing ntupl
 
 File: gsl-ref.info,  Node: Writing ntuples,  Next: Reading ntuples,  Prev: Opening an existing ntuple file,  Up: N-tuples
 
-22.4 Writing ntuples
+23.4 Writing ntuples
 ====================
 
  -- Function: int gsl_ntuple_write (gsl_ntuple * NTUPLE)
@@ -2146,7 +2402,7 @@ File: gsl-ref.info,  Node: Writing ntuples,  Next: Reading ntuples,  Prev: Openi
 
 File: gsl-ref.info,  Node: Reading ntuples,  Next: Closing an ntuple file,  Prev: Writing ntuples,  Up: N-tuples
 
-22.5 Reading ntuples
+23.5 Reading ntuples
 ====================
 
  -- Function: int gsl_ntuple_read (gsl_ntuple * NTUPLE)
@@ -2156,7 +2412,7 @@ File: gsl-ref.info,  Node: Reading ntuples,  Next: Closing an ntuple file,  Prev
 
 File: gsl-ref.info,  Node: Closing an ntuple file,  Next: Histogramming ntuple values,  Prev: Reading ntuples,  Up: N-tuples
 
-22.6 Closing an ntuple file
+23.6 Closing an ntuple file
 ===========================
 
  -- Function: int gsl_ntuple_close (gsl_ntuple * NTUPLE)
@@ -2166,7 +2422,7 @@ File: gsl-ref.info,  Node: Closing an ntuple file,  Next: Histogramming ntuple v
 
 File: gsl-ref.info,  Node: Histogramming ntuple values,  Next: Example ntuple programs,  Prev: Closing an ntuple file,  Up: N-tuples
 
-22.7 Histogramming ntuple values
+23.7 Histogramming ntuple values
 ================================
 
 Once an ntuple has been created its contents can be histogrammed in
@@ -2213,7 +2469,7 @@ be added to the histogram for the ntuple row.
 
 File: gsl-ref.info,  Node: Example ntuple programs,  Next: Ntuple References and Further Reading,  Prev: Histogramming ntuple values,  Up: N-tuples
 
-22.8 Examples
+23.8 Examples
 =============
 
 The following example programs demonstrate the use of ntuples in
@@ -2350,7 +2606,7 @@ Note the cut-off at the lower bound.
 
 File: gsl-ref.info,  Node: Ntuple References and Further Reading,  Prev: Example ntuple programs,  Up: N-tuples
 
-22.9 References and Further Reading
+23.9 References and Further Reading
 ===================================
 
 Further information on the use of ntuples can be found in the
@@ -2359,7 +2615,7 @@ documentation for the CERN packages PAW and HBOOK (available online).
 
 File: gsl-ref.info,  Node: Monte Carlo Integration,  Next: Simulated Annealing,  Prev: N-tuples,  Up: Top
 
-23 Monte Carlo Integration
+24 Monte Carlo Integration
 **************************
 
 This chapter describes routines for multidimensional Monte Carlo
@@ -2392,7 +2648,7 @@ function, resulting in an underestimate of the error.
 
 File: gsl-ref.info,  Node: Monte Carlo Interface,  Next: PLAIN Monte Carlo,  Up: Monte Carlo Integration
 
-23.1 Interface
+24.1 Interface
 ==============
 
 All of the Monte Carlo integration routines use the same general form of
@@ -2471,7 +2727,7 @@ The function f(x) can be evaluated using the following macro,
 
 File: gsl-ref.info,  Node: PLAIN Monte Carlo,  Next: MISER,  Prev: Monte Carlo Interface,  Up: Monte Carlo Integration
 
-23.2 PLAIN Monte Carlo
+24.2 PLAIN Monte Carlo
 ======================
 
 The plain Monte Carlo algorithm samples points randomly from the
@@ -2526,7 +2782,7 @@ file `gsl_monte_plain.h'.
 
 File: gsl-ref.info,  Node: MISER,  Next: VEGAS,  Prev: PLAIN Monte Carlo,  Up: Monte Carlo Integration
 
-23.3 MISER
+24.3 MISER
 ==========
 
 The MISER algorithm of Press and Farrar is based on recursive
@@ -2669,7 +2925,7 @@ the `gsl_monte_miser_state' struct is now deprecated.
 
 File: gsl-ref.info,  Node: VEGAS,  Next: Monte Carlo Examples,  Prev: MISER,  Up: Monte Carlo Integration
 
-23.4 VEGAS
+24.4 VEGAS
 ==========
 
 The VEGAS algorithm of Lepage is based on importance sampling.  It
@@ -2859,7 +3115,7 @@ in the `gsl_monte_vegas_state' but such use is deprecated.
 
 File: gsl-ref.info,  Node: Monte Carlo Examples,  Next: Monte Carlo Integration References and Further Reading,  Prev: VEGAS,  Up: Monte Carlo Integration
 
-23.5 Examples
+24.5 Examples
 =============
 
 The example program below uses the Monte Carlo routines to estimate the
@@ -3041,7 +3297,7 @@ algorithms.
 
 File: gsl-ref.info,  Node: Monte Carlo Integration References and Further Reading,  Prev: Monte Carlo Examples,  Up: Monte Carlo Integration
 
-23.6 References and Further Reading
+24.6 References and Further Reading
 ===================================
 
 The MISER algorithm is described in the following article by Press and
@@ -3062,7 +3318,7 @@ The VEGAS algorithm is described in the following papers,
 
 File: gsl-ref.info,  Node: Simulated Annealing,  Next: Ordinary Differential Equations,  Prev: Monte Carlo Integration,  Up: Top
 
-24 Simulated Annealing
+25 Simulated Annealing
 **********************
 
 Stochastic search techniques are used when the structure of a space is
@@ -3092,7 +3348,7 @@ file `gsl_siman.h'.
 
 File: gsl-ref.info,  Node: Simulated Annealing algorithm,  Next: Simulated Annealing functions,  Up: Simulated Annealing
 
-24.1 Simulated Annealing algorithm
+25.1 Simulated Annealing algorithm
 ==================================
 
 The simulated annealing algorithm takes random walks through the problem
@@ -3120,7 +3376,7 @@ what allows simulated annealing to frequently get out of local minima.
 
 File: gsl-ref.info,  Node: Simulated Annealing functions,  Next: Examples with Simulated Annealing,  Prev: Simulated Annealing algorithm,  Up: Simulated Annealing
 
-24.2 Simulated Annealing functions
+25.2 Simulated Annealing functions
 ==================================
 
  -- Function: void gsl_siman_solve (const gsl_rng * R, void * X0_P,
@@ -3232,7 +3488,7 @@ prototypes for these functions are given below.
 
 File: gsl-ref.info,  Node: Examples with Simulated Annealing,  Next: Simulated Annealing References and Further Reading,  Prev: Simulated Annealing functions,  Up: Simulated Annealing
 
-24.3 Examples
+25.3 Examples
 =============
 
 The simulated annealing package is clumsy, and it has to be because it
@@ -3248,7 +3504,7 @@ application with little change and should make things easier.
 
 File: gsl-ref.info,  Node: Trivial example,  Next: Traveling Salesman Problem,  Up: Examples with Simulated Annealing
 
-24.3.1 Trivial example
+25.3.1 Trivial example
 ----------------------
 
 The first example, in one dimensional cartesian space, sets up an energy
@@ -3353,7 +3609,7 @@ minimum.
 
 File: gsl-ref.info,  Node: Traveling Salesman Problem,  Prev: Trivial example,  Up: Examples with Simulated Annealing
 
-24.3.2 Traveling Salesman Problem
+25.3.2 Traveling Salesman Problem
 ---------------------------------
 
 The TSP ("Traveling Salesman Problem") is the classic combinatorial
@@ -3429,7 +3685,7 @@ the calculation at which a new temperature is set) for this problem:
 
 File: gsl-ref.info,  Node: Simulated Annealing References and Further Reading,  Prev: Examples with Simulated Annealing,  Up: Simulated Annealing
 
-24.4 References and Further Reading
+25.4 References and Further Reading
 ===================================
 
 Further information is available in the following book,
@@ -3440,7 +3696,7 @@ Further information is available in the following book,
 
 File: gsl-ref.info,  Node: Ordinary Differential Equations,  Next: Interpolation,  Prev: Simulated Annealing,  Up: Top
 
-25 Ordinary Differential Equations
+26 Ordinary Differential Equations
 **********************************
 
 This chapter describes functions for solving ordinary differential
@@ -3464,7 +3720,7 @@ with full access to any intermediate steps.
 
 File: gsl-ref.info,  Node: Defining the ODE System,  Next: Stepping Functions,  Up: Ordinary Differential Equations
 
-25.1 Defining the ODE System
+26.1 Defining the ODE System
 ============================
 
 The routines solve the general n-dimensional first-order system,
@@ -3512,7 +3768,7 @@ A system of equations is defined using the `gsl_odeiv_system' datatype.
 
 File: gsl-ref.info,  Node: Stepping Functions,  Next: Adaptive Step-size Control,  Prev: Defining the ODE System,  Up: Ordinary Differential Equations
 
-25.2 Stepping Functions
+26.2 Stepping Functions
 =======================
 
 The lowest level components are the "stepping functions" which advance
@@ -3615,7 +3871,7 @@ resulting local error.
 
 File: gsl-ref.info,  Node: Adaptive Step-size Control,  Next: Evolution,  Prev: Stepping Functions,  Up: Ordinary Differential Equations
 
-25.3 Adaptive Step-size Control
+26.3 Adaptive Step-size Control
 ===============================
 
 The control function examines the proposed change to the solution
@@ -3730,7 +3986,7 @@ step-size for a user-specified level of error.
 
 File: gsl-ref.info,  Node: Evolution,  Next: ODE Example programs,  Prev: Adaptive Step-size Control,  Up: Ordinary Differential Equations
 
-25.4 Evolution
+26.4 Evolution
 ==============
 
 The highest level of the system is the evolution function which combines
@@ -3803,7 +4059,7 @@ suggested value and can be modified whenever needed.
 
 File: gsl-ref.info,  Node: ODE Example programs,  Next: ODE References and Further Reading,  Prev: Evolution,  Up: Ordinary Differential Equations
 
-25.5 Examples
+26.5 Examples
 =============
 
 The following program solves the second-order nonlinear Van der Pol
@@ -3981,7 +4237,7 @@ DYDT_IN.
 
 File: gsl-ref.info,  Node: ODE References and Further Reading,  Prev: ODE Example programs,  Up: Ordinary Differential Equations
 
-25.6 References and Further Reading
+26.6 References and Further Reading
 ===================================
 
 Many of the basic Runge-Kutta formulas can be found in the Handbook of
@@ -4000,7 +4256,7 @@ following paper,
 
 File: gsl-ref.info,  Node: Interpolation,  Next: Numerical Differentiation,  Prev: Ordinary Differential Equations,  Up: Top
 
-26 Interpolation
+27 Interpolation
 ****************
 
 This chapter describes functions for performing interpolation.  The
@@ -4032,7 +4288,7 @@ files `gsl_interp.h' and `gsl_spline.h'.
 
 File: gsl-ref.info,  Node: Introduction to Interpolation,  Next: Interpolation Functions,  Up: Interpolation
 
-26.1 Introduction
+27.1 Introduction
 =================
 
 Given a set of data points (x_1, y_1) \dots (x_n, y_n) the routines
@@ -4044,7 +4300,7 @@ interpolation used.
 
 File: gsl-ref.info,  Node: Interpolation Functions,  Next: Interpolation Types,  Prev: Introduction to Interpolation,  Up: Interpolation
 
-26.2 Interpolation Functions
+27.2 Interpolation Functions
 ============================
 
 The interpolation function for a given dataset is stored in a
@@ -4071,7 +4327,7 @@ The interpolation function for a given dataset is stored in a
 
 File: gsl-ref.info,  Node: Interpolation Types,  Next: Index Look-up and Acceleration,  Prev: Interpolation Functions,  Up: Interpolation
 
-26.3 Interpolation Types
+27.3 Interpolation Types
 ========================
 
 The interpolation library provides six interpolation types:
@@ -4133,7 +4389,7 @@ The interpolation library provides six interpolation types:
 
 File: gsl-ref.info,  Node: Index Look-up and Acceleration,  Next: Evaluation of Interpolating Functions,  Prev: Interpolation Types,  Up: Interpolation
 
-26.4 Index Look-up and Acceleration
+27.4 Index Look-up and Acceleration
 ===================================
 
 The state of searches can be stored in a `gsl_interp_accel' object,
@@ -4175,7 +4431,7 @@ immediately.
 
 File: gsl-ref.info,  Node: Evaluation of Interpolating Functions,  Next: Higher-level Interface,  Prev: Index Look-up and Acceleration,  Up: Interpolation
 
-26.5 Evaluation of Interpolating Functions
+27.5 Evaluation of Interpolating Functions
 ==========================================
 
  -- Function: double gsl_interp_eval (const gsl_interp * INTERP, const
@@ -4222,7 +4478,7 @@ File: gsl-ref.info,  Node: Evaluation of Interpolating Functions,  Next: Higher-
 
 File: gsl-ref.info,  Node: Higher-level Interface,  Next: Interpolation Example programs,  Prev: Evaluation of Interpolating Functions,  Up: Interpolation
 
-26.6 Higher-level Interface
+27.6 Higher-level Interface
 ===========================
 
 The functions described in the previous sections required the user to
@@ -4269,7 +4525,7 @@ evaluation. These functions are defined in the header file
 
 File: gsl-ref.info,  Node: Interpolation Example programs,  Next: Interpolation References and Further Reading,  Prev: Higher-level Interface,  Up: Interpolation
 
-26.7 Examples
+27.7 Examples
 =============
 
 The following program demonstrates the use of the interpolation and
@@ -4386,7 +4642,7 @@ data, and the second derivative is also.
 
 File: gsl-ref.info,  Node: Interpolation References and Further Reading,  Prev: Interpolation Example programs,  Up: Interpolation
 
-26.8 References and Further Reading
+27.8 References and Further Reading
 ===================================
 
 Descriptions of the interpolation algorithms and further references can
@@ -4402,7 +4658,7 @@ be found in the following books:
 
 File: gsl-ref.info,  Node: Numerical Differentiation,  Next: Chebyshev Approximations,  Prev: Interpolation,  Up: Top
 
-27 Numerical Differentiation
+28 Numerical Differentiation
 ****************************
 
 The functions described in this chapter compute numerical derivatives by
@@ -4419,7 +4675,7 @@ These functions are declared in the header file `gsl_deriv.h'.
 
 File: gsl-ref.info,  Node: Numerical Differentiation functions,  Next: Numerical Differentiation Examples,  Up: Numerical Differentiation
 
-27.1 Functions
+28.1 Functions
 ==============
 
  -- Function: int gsl_deriv_central (const gsl_function * F, double X,
@@ -4472,7 +4728,7 @@ File: gsl-ref.info,  Node: Numerical Differentiation functions,  Next: Numerical
 
 File: gsl-ref.info,  Node: Numerical Differentiation Examples,  Next: Numerical Differentiation References,  Prev: Numerical Differentiation functions,  Up: Numerical Differentiation
 
-27.2 Examples
+28.2 Examples
 =============
 
 The following code estimates the derivative of the function f(x) =
@@ -4527,7 +4783,7 @@ Here is the output of the program,
 
 File: gsl-ref.info,  Node: Numerical Differentiation References,  Prev: Numerical Differentiation Examples,  Up: Numerical Differentiation
 
-27.3 References and Further Reading
+28.3 References and Further Reading
 ===================================
 
 The algorithms used by these functions are described in the following
@@ -4542,7 +4798,7 @@ sources:
 
 File: gsl-ref.info,  Node: Chebyshev Approximations,  Next: Series Acceleration,  Prev: Numerical Differentiation,  Up: Top
 
-28 Chebyshev Approximations
+29 Chebyshev Approximations
 ***************************
 
 This chapter describes routines for computing Chebyshev approximations
@@ -4569,7 +4825,7 @@ file `gsl_chebyshev.h'.
 
 File: gsl-ref.info,  Node: Chebyshev Definitions,  Next: Creation and Calculation of Chebyshev Series,  Up: Chebyshev Approximations
 
-28.1 Definitions
+29.1 Definitions
 ================
 
 A Chebyshev series  is stored using the following structure,
@@ -4594,7 +4850,7 @@ which is needed when accessing the coefficients directly.
 
 File: gsl-ref.info,  Node: Creation and Calculation of Chebyshev Series,  Next: Auxiliary Functions for Chebyshev Series,  Prev: Chebyshev Definitions,  Up: Chebyshev Approximations
 
-28.2 Creation and Calculation of Chebyshev Series
+29.2 Creation and Calculation of Chebyshev Series
 =================================================
 
  -- Function: gsl_cheb_series * gsl_cheb_alloc (const size_t N)
@@ -4614,7 +4870,7 @@ File: gsl-ref.info,  Node: Creation and Calculation of Chebyshev Series,  Next: 
 
 File: gsl-ref.info,  Node: Auxiliary Functions for Chebyshev Series,  Next: Chebyshev Series Evaluation,  Prev: Creation and Calculation of Chebyshev Series,  Up: Chebyshev Approximations
 
-28.3 Auxiliary Functions
+29.3 Auxiliary Functions
 ========================
 
 The following functions provide information about an existing Chebyshev
@@ -4632,7 +4888,7 @@ series.
 
 File: gsl-ref.info,  Node: Chebyshev Series Evaluation,  Next: Derivatives and Integrals,  Prev: Auxiliary Functions for Chebyshev Series,  Up: Chebyshev Approximations
 
-28.4 Chebyshev Series Evaluation
+29.4 Chebyshev Series Evaluation
 ================================
 
  -- Function: double gsl_cheb_eval (const gsl_cheb_series * CS, double
@@ -4662,7 +4918,7 @@ File: gsl-ref.info,  Node: Chebyshev Series Evaluation,  Next: Derivatives and I
 
 File: gsl-ref.info,  Node: Derivatives and Integrals,  Next: Chebyshev Approximation Examples,  Prev: Chebyshev Series Evaluation,  Up: Chebyshev Approximations
 
-28.5 Derivatives and Integrals
+29.5 Derivatives and Integrals
 ==============================
 
 The following functions allow a Chebyshev series to be differentiated or
@@ -4689,7 +4945,7 @@ neglected.
 
 File: gsl-ref.info,  Node: Chebyshev Approximation Examples,  Next: Chebyshev Approximation References and Further Reading,  Prev: Derivatives and Integrals,  Up: Chebyshev Approximations
 
-28.6 Examples
+29.6 Examples
 =============
 
 The following example program computes Chebyshev approximations to a
@@ -4747,7 +5003,7 @@ approximation and 40-th order approximation, all sampled at intervals of
 
 File: gsl-ref.info,  Node: Chebyshev Approximation References and Further Reading,  Prev: Chebyshev Approximation Examples,  Up: Chebyshev Approximations
 
-28.7 References and Further Reading
+29.7 References and Further Reading
 ===================================
 
 The following paper describes the use of Chebyshev series,
@@ -4759,7 +5015,7 @@ The following paper describes the use of Chebyshev series,
 
 File: gsl-ref.info,  Node: Series Acceleration,  Next: Wavelet Transforms,  Prev: Chebyshev Approximations,  Up: Top
 
-29 Series Acceleration
+30 Series Acceleration
 **********************
 
 The functions described in this chapter accelerate the convergence of a
@@ -4781,7 +5037,7 @@ asymptotic series.
 
 File: gsl-ref.info,  Node: Acceleration functions,  Next: Acceleration functions without error estimation,  Up: Series Acceleration
 
-29.1 Acceleration functions
+30.1 Acceleration functions
 ===========================
 
 The following functions compute the full Levin u-transform of a series
@@ -4827,7 +5083,7 @@ reliable error estimate.
 
 File: gsl-ref.info,  Node: Acceleration functions without error estimation,  Next: Example of accelerating a series,  Prev: Acceleration functions,  Up: Series Acceleration
 
-29.2 Acceleration functions without error estimation
+30.2 Acceleration functions without error estimation
 ====================================================
 
 The functions described in this section compute the Levin u-transform of
@@ -4875,7 +5131,7 @@ gsl_sum_levin_utrunc_alloc (size_t N)
 
 File: gsl-ref.info,  Node: Example of accelerating a series,  Next: Series Acceleration References,  Prev: Acceleration functions without error estimation,  Up: Series Acceleration
 
-29.3 Examples
+30.3 Examples
 =============
 
 The following code calculates an estimate of \zeta(2) = \pi^2 / 6 using
@@ -4953,7 +5209,7 @@ to achieve the same precision as the accelerated sum does in 13 terms.
 
 File: gsl-ref.info,  Node: Series Acceleration References,  Prev: Example of accelerating a series,  Up: Series Acceleration
 
-29.4 References and Further Reading
+30.4 References and Further Reading
 ===================================
 
 The algorithms used by these functions are described in the following
@@ -4977,7 +5233,7 @@ A review paper on the Levin Transform is available online,
 
 File: gsl-ref.info,  Node: Wavelet Transforms,  Next: Discrete Hankel Transforms,  Prev: Series Acceleration,  Up: Top
 
-30 Wavelet Transforms
+31 Wavelet Transforms
 *********************
 
 This chapter describes functions for performing Discrete Wavelet
@@ -4996,7 +5252,7 @@ header files `gsl_wavelet.h' and `gsl_wavelet2d.h'.
 
 File: gsl-ref.info,  Node: DWT Definitions,  Next: DWT Initialization,  Up: Wavelet Transforms
 
-30.1 Definitions
+31.1 Definitions
 ================
 
 The continuous wavelet transform and its inverse are defined by the
@@ -5024,7 +5280,7 @@ referred to as the "fast wavelet transform".
 
 File: gsl-ref.info,  Node: DWT Initialization,  Next: DWT Transform Functions,  Prev: DWT Definitions,  Up: Wavelet Transforms
 
-30.2 Initialization
+31.2 Initialization
 ===================
 
 The `gsl_wavelet' structure contains the filter coefficients defining
@@ -5041,7 +5297,7 @@ the wavelet and any associated offset parameters.
 
  -- Wavelet: gsl_wavelet_daubechies
  -- Wavelet: gsl_wavelet_daubechies_centered
-     The is the Daubechies wavelet family of maximum phase with k/2
+     This is the Daubechies wavelet family of maximum phase with k/2
      vanishing moments.  The implemented wavelets are k=4, 6, ..., 20,
      with K even.
 
@@ -5079,7 +5335,8 @@ during the transform.
      a workspace of size N must be provided.  For two-dimensional
      transforms of N-by-N matrices it is sufficient to allocate a
      workspace of size N, since the transform operates on individual
-     rows and columns.
+     rows and columns. A null pointer is returned if insufficient
+     memory is available.
 
  -- Function: void gsl_wavelet_workspace_free (gsl_wavelet_workspace *
           WORK)
@@ -5088,7 +5345,7 @@ during the transform.
 
 File: gsl-ref.info,  Node: DWT Transform Functions,  Next: DWT Examples,  Prev: DWT Initialization,  Up: Wavelet Transforms
 
-30.3 Transform Functions
+31.3 Transform Functions
 ========================
 
 This sections describes the actual functions performing the discrete
@@ -5105,7 +5362,7 @@ of the transform.
 
 File: gsl-ref.info,  Node: DWT in one dimension,  Next: DWT in two dimension,  Up: DWT Transform Functions
 
-30.3.1 Wavelet transforms in one dimension
+31.3.1 Wavelet transforms in one dimension
 ------------------------------------------
 
  -- Function: int gsl_wavelet_transform (const gsl_wavelet * W, double
@@ -5146,7 +5403,7 @@ File: gsl-ref.info,  Node: DWT in one dimension,  Next: DWT in two dimension,  U
 
 File: gsl-ref.info,  Node: DWT in two dimension,  Prev: DWT in one dimension,  Up: DWT Transform Functions
 
-30.3.2 Wavelet transforms in two dimension
+31.3.2 Wavelet transforms in two dimension
 ------------------------------------------
 
 The library provides functions to perform two-dimensional discrete
@@ -5231,7 +5488,7 @@ file `gsl_wavelet2d.h'.
 
 File: gsl-ref.info,  Node: DWT Examples,  Next: DWT References,  Prev: DWT Transform Functions,  Up: Wavelet Transforms
 
-30.4 Examples
+31.4 Examples
 =============
 
 The following program demonstrates the use of the one-dimensional
@@ -5302,7 +5559,7 @@ The output can be used with the GNU plotutils `graph' program,
 
 File: gsl-ref.info,  Node: DWT References,  Prev: DWT Examples,  Up: Wavelet Transforms
 
-30.5 References and Further Reading
+31.5 References and Further Reading
 ===================================
 
 The mathematical background to wavelet transforms is covered in the
@@ -5356,7 +5613,7 @@ The PhysioNet archive of physiological datasets can be found online at
 
 File: gsl-ref.info,  Node: Discrete Hankel Transforms,  Next: One dimensional Root-Finding,  Prev: Wavelet Transforms,  Up: Top
 
-31 Discrete Hankel Transforms
+32 Discrete Hankel Transforms
 *****************************
 
 This chapter describes functions for performing Discrete Hankel
@@ -5372,7 +5629,7 @@ Transforms (DHTs).  The functions are declared in the header file
 
 File: gsl-ref.info,  Node: Discrete Hankel Transform Definition,  Next: Discrete Hankel Transform Functions,  Up: Discrete Hankel Transforms
 
-31.1 Definitions
+32.1 Definitions
 ================
 
 The discrete Hankel transform acts on a vector of sampled data, where
@@ -5381,13 +5638,14 @@ zeroes of a Bessel function of fixed order; compare this to the case of
 the discrete Fourier transform, where samples are taken at points
 related to the zeroes of the sine or cosine function.
 
-   Specifically, let f(t) be a function on the unit interval.  Then the
+   Specifically, let f(t) be a function on the unit interval and
+j_(\nu,m) the m-th zero of the Bessel function J_\nu(x).  Then the
 finite \nu-Hankel transform of f(t) is defined to be the set of numbers
 g_m given by,
      g_m = \int_0^1 t dt J_\nu(j_(\nu,m)t) f(t),
 
 so that,
-     f(t) = \sum_{m=1}^\infty (2 J_\nu(j_(\nu,m)x) / J_(\nu+1)(j_(\nu,m))^2) g_m.
+     f(t) = \sum_{m=1}^\infty (2 J_\nu(j_(\nu,m)t) / J_(\nu+1)(j_(\nu,m))^2) g_m.
 
 Suppose that f is band-limited in the sense that g_m=0 for m > M. Then
 we have the following fundamental sampling theorem.
@@ -5417,7 +5675,7 @@ Bessel differential equation.
 
 File: gsl-ref.info,  Node: Discrete Hankel Transform Functions,  Next: Discrete Hankel Transform References,  Prev: Discrete Hankel Transform Definition,  Up: Discrete Hankel Transforms
 
-31.2 Functions
+32.2 Functions
 ==============
 
  -- Function: gsl_dht * gsl_dht_alloc (size_t SIZE)
@@ -5442,6 +5700,9 @@ File: gsl-ref.info,  Node: Discrete Hankel Transform Functions,  Next: Discrete 
      is equal to the size of the transform.  The result is stored in
      the array F_OUT which must be of the same length.
 
+     Applying this function to its output gives the original data
+     multiplied by (1/j_(\nu,M))^2, up to numerical errors.
+
  -- Function: double gsl_dht_x_sample (const gsl_dht * T, int N)
      This function returns the value of the N-th sample point in the
      unit interval, (j_{\nu,n+1}/j_{\nu,M}) X. These are the points
@@ -5454,7 +5715,7 @@ File: gsl-ref.info,  Node: Discrete Hankel Transform Functions,  Next: Discrete 
 
 File: gsl-ref.info,  Node: Discrete Hankel Transform References,  Prev: Discrete Hankel Transform Functions,  Up: Discrete Hankel Transforms
 
-31.3 References and Further Reading
+32.3 References and Further Reading
 ===================================
 
 The algorithms used by these functions are described in the following
@@ -5467,7 +5728,7 @@ papers,
 
 File: gsl-ref.info,  Node: One dimensional Root-Finding,  Next: One dimensional Minimization,  Prev: Discrete Hankel Transforms,  Up: Top
 
-32 One dimensional Root-Finding
+33 One dimensional Root-Finding
 *******************************
 
 This chapter describes routines for finding roots of arbitrary
@@ -5500,7 +5761,7 @@ finding functions and related declarations.
 
 File: gsl-ref.info,  Node: Root Finding Overview,  Next: Root Finding Caveats,  Up: One dimensional Root-Finding
 
-32.1 Overview
+33.1 Overview
 =============
 
 One-dimensional root finding algorithms can be divided into two classes,
@@ -5540,7 +5801,7 @@ its derivative (hence the name `fdf') to be supplied by the user.
 
 File: gsl-ref.info,  Node: Root Finding Caveats,  Next: Initializing the Solver,  Prev: Root Finding Overview,  Up: One dimensional Root-Finding
 
-32.2 Caveats
+33.2 Caveats
 ============
 
 Note that root finding functions can only search for one root at a time.
@@ -5573,7 +5834,7 @@ root.
 
 File: gsl-ref.info,  Node: Initializing the Solver,  Next: Providing the function to solve,  Prev: Root Finding Caveats,  Up: One dimensional Root-Finding
 
-32.3 Initializing the Solver
+33.3 Initializing the Solver
 ============================
 
  -- Function: gsl_root_fsolver * gsl_root_fsolver_alloc (const
@@ -5636,7 +5897,7 @@ File: gsl-ref.info,  Node: Initializing the Solver,  Next: Providing the functio
 
 File: gsl-ref.info,  Node: Providing the function to solve,  Next: Search Bounds and Guesses,  Prev: Initializing the Solver,  Up: One dimensional Root-Finding
 
-32.4 Providing the function to solve
+33.4 Providing the function to solve
 ====================================
 
 You must provide a continuous function of one variable for the root
@@ -5762,7 +6023,7 @@ argument--both of these should be pointers to `double'.
 
 File: gsl-ref.info,  Node: Search Bounds and Guesses,  Next: Root Finding Iteration,  Prev: Providing the function to solve,  Up: One dimensional Root-Finding
 
-32.5 Search Bounds and Guesses
+33.5 Search Bounds and Guesses
 ==============================
 
 You provide either search bounds or an initial guess; this section
@@ -5782,7 +6043,7 @@ used.
 
 File: gsl-ref.info,  Node: Root Finding Iteration,  Next: Search Stopping Parameters,  Prev: Search Bounds and Guesses,  Up: One dimensional Root-Finding
 
-32.6 Iteration
+33.6 Iteration
 ==============
 
 The following functions drive the iteration of each algorithm.  Each
@@ -5827,7 +6088,7 @@ following auxiliary functions,
 
 File: gsl-ref.info,  Node: Search Stopping Parameters,  Next: Root Bracketing Algorithms,  Prev: Root Finding Iteration,  Up: One dimensional Root-Finding
 
-32.7 Search Stopping Parameters
+33.7 Search Stopping Parameters
 ===============================
 
 A root finding procedure should stop when one of the following
@@ -5891,7 +6152,7 @@ several standard ways.
 
 File: gsl-ref.info,  Node: Root Bracketing Algorithms,  Next: Root Finding Algorithms using Derivatives,  Prev: Search Stopping Parameters,  Up: One dimensional Root-Finding
 
-32.8 Root Bracketing Algorithms
+33.8 Root Bracketing Algorithms
 ===============================
 
 The root bracketing algorithms described in this section require an
@@ -5959,7 +6220,7 @@ since these do not cross the x-axis.
 
 File: gsl-ref.info,  Node: Root Finding Algorithms using Derivatives,  Next: Root Finding Examples,  Prev: Root Bracketing Algorithms,  Up: One dimensional Root-Finding
 
-32.9 Root Finding Algorithms using Derivatives
+33.9 Root Finding Algorithms using Derivatives
 ==============================================
 
 The root polishing algorithms described in this section require an
@@ -6044,7 +6305,7 @@ incompatibility.
 
 File: gsl-ref.info,  Node: Root Finding Examples,  Next: Root Finding References and Further Reading,  Prev: Root Finding Algorithms using Derivatives,  Up: One dimensional Root-Finding
 
-32.10 Examples
+33.10 Examples
 ==============
 
 For any root finding algorithm we need to prepare the function to be
@@ -6283,7 +6544,7 @@ changing `gsl_root_fdfsolver_newton' to `gsl_root_fdfsolver_secant' or
 
 File: gsl-ref.info,  Node: Root Finding References and Further Reading,  Prev: Root Finding Examples,  Up: One dimensional Root-Finding
 
-32.11 References and Further Reading
+33.11 References and Further Reading
 ====================================
 
 For information on the Brent-Dekker algorithm see the following two
@@ -6299,7 +6560,7 @@ papers,
 
 File: gsl-ref.info,  Node: One dimensional Minimization,  Next: Multidimensional Root-Finding,  Prev: One dimensional Root-Finding,  Up: Top
 
-33 One dimensional Minimization
+34 One dimensional Minimization
 *******************************
 
 This chapter describes routines for finding minima of arbitrary
@@ -6331,7 +6592,7 @@ to find the maximum of a function simply invert its sign.
 
 File: gsl-ref.info,  Node: Minimization Overview,  Next: Minimization Caveats,  Up: One dimensional Minimization
 
-33.1 Overview
+34.1 Overview
 =============
 
 The minimization algorithms begin with a bounded region known to contain
@@ -6372,7 +6633,7 @@ The updating procedure uses only function evaluations (not derivatives).
 
 File: gsl-ref.info,  Node: Minimization Caveats,  Next: Initializing the Minimizer,  Prev: Minimization Overview,  Up: One dimensional Minimization
 
-33.2 Caveats
+34.2 Caveats
 ============
 
 Note that minimization functions can only search for one minimum at a
@@ -6401,7 +6662,7 @@ location of the minimum itself.
 
 File: gsl-ref.info,  Node: Initializing the Minimizer,  Next: Providing the function to minimize,  Prev: Minimization Caveats,  Up: One dimensional Minimization
 
-33.3 Initializing the Minimizer
+34.3 Initializing the Minimizer
 ===============================
 
  -- Function: gsl_min_fminimizer * gsl_min_fminimizer_alloc (const
@@ -6453,7 +6714,7 @@ File: gsl-ref.info,  Node: Initializing the Minimizer,  Next: Providing the func
 
 File: gsl-ref.info,  Node: Providing the function to minimize,  Next: Minimization Iteration,  Prev: Initializing the Minimizer,  Up: One dimensional Minimization
 
-33.4 Providing the function to minimize
+34.4 Providing the function to minimize
 =======================================
 
 You must provide a continuous function of one variable for the
@@ -6464,7 +6725,7 @@ the function to solve::).
 
 File: gsl-ref.info,  Node: Minimization Iteration,  Next: Minimization Stopping Parameters,  Prev: Providing the function to minimize,  Up: One dimensional Minimization
 
-33.5 Iteration
+34.5 Iteration
 ==============
 
 The following functions drive the iteration of each algorithm.  Each
@@ -6515,7 +6776,7 @@ This information can be accessed with the following auxiliary functions,
 
 File: gsl-ref.info,  Node: Minimization Stopping Parameters,  Next: Minimization Algorithms,  Prev: Minimization Iteration,  Up: One dimensional Minimization
 
-33.6 Stopping Parameters
+34.6 Stopping Parameters
 ========================
 
 A minimization procedure should stop when one of the following
@@ -6557,7 +6818,7 @@ below allows the user to test the precision of the current result.
 
 File: gsl-ref.info,  Node: Minimization Algorithms,  Next: Minimization Examples,  Prev: Minimization Stopping Parameters,  Up: One dimensional Minimization
 
-33.7 Minimization Algorithms
+34.7 Minimization Algorithms
 ============================
 
 The minimization algorithms described in this section require an initial
@@ -6608,7 +6869,7 @@ these algorithm cannot fail, provided the function is well-behaved.
 
 File: gsl-ref.info,  Node: Minimization Examples,  Next: Minimization References and Further Reading,  Prev: Minimization Algorithms,  Up: One dimensional Minimization
 
-33.8 Examples
+34.8 Examples
 =============
 
 The following program uses the Brent algorithm to find the minimum of
@@ -6701,7 +6962,7 @@ Here are the results of the minimization procedure.
 
 File: gsl-ref.info,  Node: Minimization References and Further Reading,  Prev: Minimization Examples,  Up: One dimensional Minimization
 
-33.9 References and Further Reading
+34.9 References and Further Reading
 ===================================
 
 Further information on Brent's algorithm is available in the following
@@ -6714,7 +6975,7 @@ book,
 
 File: gsl-ref.info,  Node: Multidimensional Root-Finding,  Next: Multidimensional Minimization,  Prev: One dimensional Minimization,  Up: Top
 
-34 Multidimensional Root-Finding
+35 Multidimensional Root-Finding
 ********************************
 
 This chapter describes functions for multidimensional root-finding
@@ -6746,7 +7007,7 @@ multidimensional root finding functions and related declarations.
 
 File: gsl-ref.info,  Node: Overview of Multidimensional Root Finding,  Next: Initializing the Multidimensional Solver,  Up: Multidimensional Root-Finding
 
-34.1 Overview
+35.1 Overview
 =============
 
 The problem of multidimensional root finding requires the simultaneous
@@ -6797,7 +7058,7 @@ the matrix J or J^{-1} by approximate methods.
 
 File: gsl-ref.info,  Node: Initializing the Multidimensional Solver,  Next: Providing the multidimensional system of equations to solve,  Prev: Overview of Multidimensional Root Finding,  Up: Multidimensional Root-Finding
 
-34.2 Initializing the Solver
+35.2 Initializing the Solver
 ============================
 
 The following functions initialize a multidimensional solver, either
@@ -6867,7 +7128,7 @@ different problems.
 
 File: gsl-ref.info,  Node: Providing the multidimensional system of equations to solve,  Next: Iteration of the multidimensional solver,  Prev: Initializing the Multidimensional Solver,  Up: Multidimensional Root-Finding
 
-34.3 Providing the function to solve
+35.3 Providing the function to solve
 ====================================
 
 You must provide n functions of n variables for the root finders to
@@ -7004,7 +7265,7 @@ from the function when calculating the Jacobian, thus saving time.
 
 File: gsl-ref.info,  Node: Iteration of the multidimensional solver,  Next: Search Stopping Parameters for the multidimensional solver,  Prev: Providing the multidimensional system of equations to solve,  Up: Multidimensional Root-Finding
 
-34.4 Iteration
+35.4 Iteration
 ==============
 
 The following functions drive the iteration of each algorithm.  Each
@@ -7057,7 +7318,7 @@ accessed with the following auxiliary functions,
 
 File: gsl-ref.info,  Node: Search Stopping Parameters for the multidimensional solver,  Next: Algorithms using Derivatives,  Prev: Iteration of the multidimensional solver,  Up: Multidimensional Root-Finding
 
-34.5 Search Stopping Parameters
+35.5 Search Stopping Parameters
 ===============================
 
 A root finding procedure should stop when one of the following
@@ -7101,7 +7362,7 @@ several standard ways.
 
 File: gsl-ref.info,  Node: Algorithms using Derivatives,  Next: Algorithms without Derivatives,  Prev: Search Stopping Parameters for the multidimensional solver,  Up: Multidimensional Root-Finding
 
-34.6 Algorithms using Derivatives
+35.6 Algorithms using Derivatives
 =================================
 
 The root finding algorithms described in this section make use of both
@@ -7198,331 +7459,4 @@ When the conditions are satisfied then convergence is quadratic.
 
      is proposed, with r being the ratio of norms |f(x')|^2/|f(x)|^2.
      This procedure is repeated until a suitable step size is found.
-
-
-File: gsl-ref.info,  Node: Algorithms without Derivatives,  Next: Example programs for Multidimensional Root finding,  Prev: Algorithms using Derivatives,  Up: Multidimensional Root-Finding
-
-34.7 Algorithms without Derivatives
-===================================
-
-The algorithms described in this section do not require any derivative
-information to be supplied by the user.  Any derivatives needed are
-approximated by finite differences.  Note that if the
-finite-differencing step size chosen by these routines is inappropriate,
-an explicit user-supplied numerical derivative can always be used with
-the algorithms described in the previous section.
-
- -- Solver: gsl_multiroot_fsolver_hybrids
-     This is a version of the Hybrid algorithm which replaces calls to
-     the Jacobian function by its finite difference approximation.  The
-     finite difference approximation is computed using
-     `gsl_multiroots_fdjac' with a relative step size of
-     `GSL_SQRT_DBL_EPSILON'.  Note that this step size will not be
-     suitable for all problems.
-
- -- Solver: gsl_multiroot_fsolver_hybrid
-     This is a finite difference version of the Hybrid algorithm without
-     internal scaling.
-
- -- Solver: gsl_multiroot_fsolver_dnewton
-     The "discrete Newton algorithm" is the simplest method of solving a
-     multidimensional system.  It uses the Newton iteration
-
-          x -> x - J^{-1} f(x)
-
-     where the Jacobian matrix J is approximated by taking finite
-     differences of the function F.  The approximation scheme used by
-     this implementation is,
-
-          J_{ij} = (f_i(x + \delta_j) - f_i(x)) /  \delta_j
-
-     where \delta_j is a step of size \sqrt\epsilon |x_j| with \epsilon
-     being the machine precision (\epsilon \approx 2.22 \times 10^-16).
-     The order of convergence of Newton's algorithm is quadratic, but
-     the finite differences require n^2 function evaluations on each
-     iteration.  The algorithm may become unstable if the finite
-     differences are not a good approximation to the true derivatives.
-
- -- Solver: gsl_multiroot_fsolver_broyden
-     The "Broyden algorithm" is a version of the discrete Newton
-     algorithm which attempts to avoids the expensive update of the
-     Jacobian matrix on each iteration.  The changes to the Jacobian
-     are also approximated, using a rank-1 update,
-
-          J^{-1} \to J^{-1} - (J^{-1} df - dx) dx^T J^{-1} / dx^T J^{-1} df
-
-     where the vectors dx and df are the changes in x and f.  On the
-     first iteration the inverse Jacobian is estimated using finite
-     differences, as in the discrete Newton algorithm.
-
-     This approximation gives a fast update but is unreliable if the
-     changes are not small, and the estimate of the inverse Jacobian
-     becomes worse as time passes.  The algorithm has a tendency to
-     become unstable unless it starts close to the root.  The Jacobian
-     is refreshed if this instability is detected (consult the source
-     for details).
-
-     This algorithm is included only for demonstration purposes, and is
-     not recommended for serious use.
-
-
-File: gsl-ref.info,  Node: Example programs for Multidimensional Root finding,  Next: References and Further Reading for Multidimensional Root Finding,  Prev: Algorithms without Derivatives,  Up: Multidimensional Root-Finding
-
-34.8 Examples
-=============
-
-The multidimensional solvers are used in a similar way to the
-one-dimensional root finding algorithms.  This first example
-demonstrates the `hybrids' scaled-hybrid algorithm, which does not
-require derivatives. The program solves the Rosenbrock system of
-equations,
-
-     f_1 (x, y) = a (1 - x)
-     f_2 (x, y) = b (y - x^2)
-
-with a = 1, b = 10. The solution of this system lies at (x,y) = (1,1)
-in a narrow valley.
-
-   The first stage of the program is to define the system of equations,
-
-     #include <stdlib.h>
-     #include <stdio.h>
-     #include <gsl/gsl_vector.h>
-     #include <gsl/gsl_multiroots.h>
-
-     struct rparams
-       {
-         double a;
-         double b;
-       };
-
-     int
-     rosenbrock_f (const gsl_vector * x, void *params,
-                   gsl_vector * f)
-     {
-       double a = ((struct rparams *) params)->a;
-       double b = ((struct rparams *) params)->b;
-
-       const double x0 = gsl_vector_get (x, 0);
-       const double x1 = gsl_vector_get (x, 1);
-
-       const double y0 = a * (1 - x0);
-       const double y1 = b * (x1 - x0 * x0);
-
-       gsl_vector_set (f, 0, y0);
-       gsl_vector_set (f, 1, y1);
-
-       return GSL_SUCCESS;
-     }
-
-The main program begins by creating the function object `f', with the
-arguments `(x,y)' and parameters `(a,b)'. The solver `s' is initialized
-to use this function, with the `hybrids' method.
-
-     int
-     main (void)
-     {
-       const gsl_multiroot_fsolver_type *T;
-       gsl_multiroot_fsolver *s;
-
-       int status;
-       size_t i, iter = 0;
-
-       const size_t n = 2;
-       struct rparams p = {1.0, 10.0};
-       gsl_multiroot_function f = {&rosenbrock_f, n, &p};
-
-       double x_init[2] = {-10.0, -5.0};
-       gsl_vector *x = gsl_vector_alloc (n);
-
-       gsl_vector_set (x, 0, x_init[0]);
-       gsl_vector_set (x, 1, x_init[1]);
-
-       T = gsl_multiroot_fsolver_hybrids;
-       s = gsl_multiroot_fsolver_alloc (T, 2);
-       gsl_multiroot_fsolver_set (s, &f, x);
-
-       print_state (iter, s);
-
-       do
-         {
-           iter++;
-           status = gsl_multiroot_fsolver_iterate (s);
-
-           print_state (iter, s);
-
-           if (status)   /* check if solver is stuck */
-             break;
-
-           status =
-             gsl_multiroot_test_residual (s->f, 1e-7);
-         }
-       while (status == GSL_CONTINUE && iter < 1000);
-
-       printf ("status = %s\n", gsl_strerror (status));
-
-       gsl_multiroot_fsolver_free (s);
-       gsl_vector_free (x);
-       return 0;
-     }
-
-Note that it is important to check the return status of each solver
-step, in case the algorithm becomes stuck.  If an error condition is
-detected, indicating that the algorithm cannot proceed, then the error
-can be reported to the user, a new starting point chosen or a different
-algorithm used.
-
-   The intermediate state of the solution is displayed by the following
-function.  The solver state contains the vector `s->x' which is the
-current position, and the vector `s->f' with corresponding function
-values.
-
-     int
-     print_state (size_t iter, gsl_multiroot_fsolver * s)
-     {
-       printf ("iter = %3u x = % .3f % .3f "
-               "f(x) = % .3e % .3e\n",
-               iter,
-               gsl_vector_get (s->x, 0),
-               gsl_vector_get (s->x, 1),
-               gsl_vector_get (s->f, 0),
-               gsl_vector_get (s->f, 1));
-     }
-
-Here are the results of running the program. The algorithm is started at
-(-10,-5) far from the solution.  Since the solution is hidden in a
-narrow valley the earliest steps follow the gradient of the function
-downhill, in an attempt to reduce the large value of the residual. Once
-the root has been approximately located, on iteration 8, the Newton
-behavior takes over and convergence is very rapid.
-
-     iter =  0 x = -10.000  -5.000  f(x) = 1.100e+01 -1.050e+03
-     iter =  1 x = -10.000  -5.000  f(x) = 1.100e+01 -1.050e+03
-     iter =  2 x =  -3.976  24.827  f(x) = 4.976e+00  9.020e+01
-     iter =  3 x =  -3.976  24.827  f(x) = 4.976e+00  9.020e+01
-     iter =  4 x =  -3.976  24.827  f(x) = 4.976e+00  9.020e+01
-     iter =  5 x =  -1.274  -5.680  f(x) = 2.274e+00 -7.302e+01
-     iter =  6 x =  -1.274  -5.680  f(x) = 2.274e+00 -7.302e+01
-     iter =  7 x =   0.249   0.298  f(x) = 7.511e-01  2.359e+00
-     iter =  8 x =   0.249   0.298  f(x) = 7.511e-01  2.359e+00
-     iter =  9 x =   1.000   0.878  f(x) = 1.268e-10 -1.218e+00
-     iter = 10 x =   1.000   0.989  f(x) = 1.124e-11 -1.080e-01
-     iter = 11 x =   1.000   1.000  f(x) = 0.000e+00  0.000e+00
-     status = success
-
-Note that the algorithm does not update the location on every
-iteration. Some iterations are used to adjust the trust-region
-parameter, after trying a step which was found to be divergent, or to
-recompute the Jacobian, when poor convergence behavior is detected.
-
-   The next example program adds derivative information, in order to
-accelerate the solution. There are two derivative functions
-`rosenbrock_df' and `rosenbrock_fdf'. The latter computes both the
-function and its derivative simultaneously. This allows the
-optimization of any common terms.  For simplicity we substitute calls to
-the separate `f' and `df' functions at this point in the code below.
-
-     int
-     rosenbrock_df (const gsl_vector * x, void *params,
-                    gsl_matrix * J)
-     {
-       const double a = ((struct rparams *) params)->a;
-       const double b = ((struct rparams *) params)->b;
-
-       const double x0 = gsl_vector_get (x, 0);
-
-       const double df00 = -a;
-       const double df01 = 0;
-       const double df10 = -2 * b  * x0;
-       const double df11 = b;
-
-       gsl_matrix_set (J, 0, 0, df00);
-       gsl_matrix_set (J, 0, 1, df01);
-       gsl_matrix_set (J, 1, 0, df10);
-       gsl_matrix_set (J, 1, 1, df11);
-
-       return GSL_SUCCESS;
-     }
-
-     int
-     rosenbrock_fdf (const gsl_vector * x, void *params,
-                     gsl_vector * f, gsl_matrix * J)
-     {
-       rosenbrock_f (x, params, f);
-       rosenbrock_df (x, params, J);
-
-       return GSL_SUCCESS;
-     }
-
-The main program now makes calls to the corresponding `fdfsolver'
-versions of the functions,
-
-     int
-     main (void)
-     {
-       const gsl_multiroot_fdfsolver_type *T;
-       gsl_multiroot_fdfsolver *s;
-
-       int status;
-       size_t i, iter = 0;
-
-       const size_t n = 2;
-       struct rparams p = {1.0, 10.0};
-       gsl_multiroot_function_fdf f = {&rosenbrock_f,
-                                       &rosenbrock_df,
-                                       &rosenbrock_fdf,
-                                       n, &p};
-
-       double x_init[2] = {-10.0, -5.0};
-       gsl_vector *x = gsl_vector_alloc (n);
-
-       gsl_vector_set (x, 0, x_init[0]);
-       gsl_vector_set (x, 1, x_init[1]);
-
-       T = gsl_multiroot_fdfsolver_gnewton;
-       s = gsl_multiroot_fdfsolver_alloc (T, n);
-       gsl_multiroot_fdfsolver_set (s, &f, x);
-
-       print_state (iter, s);
-
-       do
-         {
-           iter++;
-
-           status = gsl_multiroot_fdfsolver_iterate (s);
-
-           print_state (iter, s);
-
-           if (status)
-             break;
-
-           status = gsl_multiroot_test_residual (s->f, 1e-7);
-         }
-       while (status == GSL_CONTINUE && iter < 1000);
-
-       printf ("status = %s\n", gsl_strerror (status));
-
-       gsl_multiroot_fdfsolver_free (s);
-       gsl_vector_free (x);
-       return 0;
-     }
-
-The addition of derivative information to the `hybrids' solver does not
-make any significant difference to its behavior, since it able to
-approximate the Jacobian numerically with sufficient accuracy.  To
-illustrate the behavior of a different derivative solver we switch to
-`gnewton'. This is a traditional Newton solver with the constraint that
-it scales back its step if the full step would lead "uphill". Here is
-the output for the `gnewton' algorithm,
-
-     iter = 0 x = -10.000  -5.000 f(x) =  1.100e+01 -1.050e+03
-     iter = 1 x =  -4.231 -65.317 f(x) =  5.231e+00 -8.321e+02
-     iter = 2 x =   1.000 -26.358 f(x) = -8.882e-16 -2.736e+02
-     iter = 3 x =   1.000   1.000 f(x) = -2.220e-16 -4.441e-15
-     status = success
-
-The convergence is much more rapid, but takes a wide excursion out to
-the point (-4.23,-65.3). This could cause the algorithm to go astray in
-a realistic application.  The hybrid algorithm follows the downhill
-path to the solution more reliably.
 

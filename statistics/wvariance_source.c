@@ -1,6 +1,6 @@
 /* statistics/wvariance_source.c
  * 
- * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007 Jim Davies, Brian Gough
+ * Copyright (C) 1996, 1997, 1998, 1999, 2000, 2007, 2010 Jim Davies, Brian Gough
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -78,7 +78,8 @@ FUNCTION(compute,wtss) (const BASE w[], const size_t wstride, const BASE data[],
 static double
 FUNCTION(compute,factor) (const BASE w[], const size_t wstride, const size_t n)
 {
-  /* Find the factor ``N/(N-1)'' which multiplies the raw std dev */
+  /* Find the factor ``N/(N-1)'' which multiplies the raw std dev 
+     see the file doc/statnotes.tex for the derivation */
 
   long double a = 0 ;
   long double b = 0;

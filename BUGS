@@ -1,6 +1,150 @@
 The GSL Bugs Database is at http://savannah.gnu.org/bugs/?group=gsl
 
-This file was generated from it at Tue Aug 25 15:52:36 2009
+This file was generated from it at Thu Mar  4 12:16:25 2010
+
+------------------------------------------------------------------------
+BUG-ID:   28267   
+STATUS:   Open/Postponed  
+CATEGORY: Accuracy problem
+SUMMARY:  poor convergence region for gsl_sf_hyperg_1F1
+
+The magnitude of the error is greater than the value itself for
+a<<0, b>0, x>>0 
+
+gsl_sf_hyperg1F1(-3.78e+01, 2, 1.035e+02) =>  -7.00055e+18 +/- 3.77654e+19
+
+-----------------------------------------------
+From: Weibin Li <weibinli@mpipks-dresden.mpg.de>
+To: bug-gsl@gnu.org
+Subject: [Bug-gsl] gsl_sf_hyperg_1F1
+Date: Mon, 30 Nov 2009 15:26:11 +0100
+
+Hi, guys
+
+I experienced bugs with gsl_sf_hyperg_1F1. The version  is gsl_1.12, but
+the testing is also done with gsl_1.13, using a  mac with version 10.5.8
+and hp-workstation with gnome_2.24.1.
+
+#include<stdlib.h>
+#include<stdio.h>
+#include<math.h>
+#include "gsl/gsl_sf_hyperg.h"
+
+int main(int argc, char **argv)
+{
+ int ii;
+ double Ri;
+ double v0;
+
+ gsl_sf_result r;
+ for(ii = 10; ii< 140;ii++)
+{
+     Ri = 2013;
+     v0 =38.86871 +ii*2.5e-10;
+
+    gsl_sf_hyperg_1F1_e(1.0-v0,2,2.0*Ri/v0,&r);
+    printf("%lg\t%14.13g\t%14.13g\n",v0,r.val,r.err);
+
+ }
+return 0;
+}
+
+The output of above code shows an extremely large error. by increasing
+Ri, the relative error decreases. Is there any idea to fix this?
+
+Thank you very much.
+
+Best
+
+Weibin
+
+-It's inherently difficult to compute the value in this region either way as there is massive cancellation in both the series and the Kummer transformed series.I cannot find any algorithm which handles this case.Confirmed
+
+------------------------------------------------------------------------
+BUG-ID:   27515   
+STATUS:   Open/Fixed      
+CATEGORY: Build
+SUMMARY:  install-sh is broken with current automake
+
+From: Alexander Belikoff <abelikoff@gmail.com>
+To: bug-gsl@gnu.org
+Subject: [Bug-gsl] GSL installation bug
+Date: Wed, 23 Sep 2009 15:20:15 -0400
+
+Hello  Im trying to install GSL on Solaris 10 and Ive run into an
+installation procedure bug. At least in ./matrix directory the install
+command is:
+
+.././install-sh -c -m 644 gsl_matrix.h gsl_matrix_char.h
+gsl_matrix_complex_double.h gsl_matrix_complex_float.h
+gsl_matrix_complex_long_double.h gsl_matrix_double.h gsl_matrix_float.h
+gsl_matrix_int.h gsl_matrix_long.h gsl_matrix_long_double.h
+gsl_matrix_short.h gsl_matrix_uchar.h gsl_matrix_uint.h gsl_matrix_ulong.h
+gsl_matrix_ushort.h TARGET_DIR
+
+However, install-sh is coded in such a way that it only uses the first
+non-option argument as a source and the last one as destination quietly
+ignoring the rest of them. This results in only gsl_matrix.h being installed
+and all other headers quietly ignored.
+
+I'll try to hack a patch overnight and send it over to you guys.
+
+-- Sasha
+_______________________________________________
+Bug-gsl mailing list
+Bug-gsl@gnu.org
+http://lists.gnu.org/mailman/listinfo/bug-gsl
+
+From: Peter Johansson <peterandrejohansson@gmail.com>
+To: Alexander Belikoff <abelikoff@gmail.com>
+Cc: bug-gsl@gnu.org
+Subject: Re: [Bug-gsl] GSL installation bug
+Date: Thu, 24 Sep 2009 00:05:31 -0400
+
+Hello Sasha,
+
+please keep bug-gsl in cc (especially since I'm just a user and not the 
+maintainer)
+
+Alexander Belikoff wrote:
+> Hello Peter - thanks for the quick response. Cannot check right now, 
+> will do tomorrow morning. GSL itself was downloaded as a .tgz package 
+> from GNU FTP server (version 1.13). What install-sh does, is the 
+> following: the moment it finds a non-option argument it assigns it to 
+> *src* variable. Next time it finds a non-option argument, given that 
+> *$src* is non-empty, it assigns it to *dst*. As a result, after 
+> processing the command-line arguments, *$src* is the first non-option 
+> arg, and *$dst* is the last one with everything in between ignored.
+I downloaded the latest gsl (1.13) and indeed the behavior of install-sh 
+is sub-optimal. When I previously claimed that install-sh worked as 
+expected for me that was based on an install-sh that comes with automake 
+1.11 (script version 2009-04-28.21). That version of install-sh differs 
+significantly from the one in gsl 1.13. It seems like the install-sh has 
+not been updated when the maintainer has updated his automake. The 
+Makefile.ins that come in gsl 1.13 are created by automake 1.11 but 
+install-sh is probably an older version. In order to update install-sh 
+(and friends) one needs to (as a maintainer) call automake with the 
+--force switch. I noticed that the autogen.sh script in the git 
+repository calls automake without the --force switch, which might 
+explain why the files have never been updated.
+
+>
+> I've fixed it for my installation by lifting install-sh from another 
+> package and putting it in place of the one in GSL.
+Seems like a good workaround.
+>
+> Anyway, I'll provide more info tomorrow...
+
+Cheers,
+Peter
+
+_______________________________________________
+Bug-gsl mailing list
+Bug-gsl@gnu.org
+http://lists.gnu.org/mailman/listinfo/bug-gsl
+
+See the errata section on http://www.gnu.org/software/gsl/
+for a link to a working install-shConfirmedVersion in the repository is updated. Need to make sure it gets in the release!
 
 ------------------------------------------------------------------------
 BUG-ID:   21828   
@@ -654,51 +798,5 @@ _______________________________________________
 Bug-gsl mailing list
 Bug-gsl@gnu.org
 http://lists.gnu.org/mailman/listinfo/bug-gsl
-
-------------------------------------------------------------------------
-BUG-ID:   25383   
-STATUS:   Open/Postponed  
-CATEGORY: None
-SUMMARY:  use GSL_ENOPROG instead of GSL_CONTINUE in lmiterate.c
-
-[I think we should use GSL_ENOPROG in lmiterate.c although it could break existing code I guess]
-
-From: "Mark M. Ito" <marki@jlab.org>
-To: bug-gsl@gnu.org
-Subject: [Bug-gsl] non-linear LS fit example in documentation: bug?
-Date: Tue, 20 Jan 2009 15:16:26 -0500
-
-Dear GSL folks,
-
-In section 37.9 "Example programs for Nonlinear Least-Squares Fitting" 
-in the gsl manual, the main loop says:
-
-       do
-         {
-           iter++;
-           status = gsl_multifit_fdfsolver_iterate (s);
-
-           printf ("status = %s\n", gsl_strerror (status));
-
-           print_state (iter, s);
-
-           if (status)
-             break;
-
-           status = gsl_multifit_test_delta (s->dx, s->x,
-                                             1e-4, 1e-4);
-         }
-       while (status == GSL_CONTINUE && iter < 500);
-
-       gsl_multifit_covar (s->J, 0.0, covar);
-
-Shouldn't the "if (status) break;" be an "if (status) continue;"? It is 
-normal for the solver to return GSL_CONTINUE in which case you want to 
-continue to iterate. Break exits the do loop completely, no?
-
-  -- Mark Ito
-
-________________________________
-This has been documented in the manual. Will change in a future release (1.14)3 - NormalConfirmed
 
 ------------------------------------------------------------------------
